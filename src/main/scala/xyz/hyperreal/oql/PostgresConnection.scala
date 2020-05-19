@@ -9,21 +9,18 @@ import scala.concurrent.duration._
 import scala.scalajs.js
 import js.JSConverters._
 
-class PostgresDriver(user: String, password: String) {
+class PostgresConnection(user: String, password: String) extends Connection {
 
   private val client = new Client(
     js.Dynamic
       .literal(user = user, password = password)
       .asInstanceOf[ClientConfig])
 
-  private val connectFuture = client.connect().toFuture
-
-  Await.ready(connectFuture, 200 millis)
+  Await.ready(client.connect.toFuture, 200 millis)
 
   def query(sql: String): js.Promise[js.Array[js.Any]] =
     client
-      .query(sql)
-      .asInstanceOf[js.Promise[QueryResult[js.Any]]]
+      .query[js.Any, js.Any](sql)
       .toFuture
       .map(_.rows)
       .toJSPromise
