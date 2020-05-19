@@ -14,13 +14,27 @@ resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releas
 
 resolvers += "Hyperreal Repository" at "https://dl.bintray.com/edadma/maven"
 
-libraryDependencies ++= Seq(
-	"org.scalatest" %% "scalatest" % "3.1.1" % "test",
-	"org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
+enablePlugins(ScalaJSPlugin)
+
+enablePlugins(ScalablyTypedConverterPlugin)
+
+Test / scalaJSUseMainModuleInitializer := true
+
+Test / scalaJSUseTestModuleInitializer := false
+
+jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
+
+npmDependencies in Compile ++= Seq(
+  "pg" -> "8.2.1",
+  "@types/pg" -> "7.14.3"
 )
 
 libraryDependencies ++= Seq(
-	"org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
+  "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
+)
+
+libraryDependencies ++= Seq(
+	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
 )
 
 //libraryDependencies ++= Seq(
@@ -28,40 +42,9 @@ libraryDependencies ++= Seq(
 //)
 
 libraryDependencies ++= Seq(
-  "org.jline" % "jline" % "3.14.1"
 )
-
-libraryDependencies ++= {
-	val akkaV = "2.5.25"
-	Seq(
-//		"com.typesafe.akka" %% "akka-actor"    % akkaV
-//		"com.typesafe.akka" %% "akka-remote"   % akkaV,
-//		"com.typesafe.akka" %% "akka-testkit"  % akkaV    % "test",
-//		"org.specs2"        %% "specs2-core"   % "2.3.11" % "test"
-	)
-}
-
-//libraryDependencies ++= {
-//	val akka_http = "10.1.10"
-//	Seq(
-//		"com.typesafe.akka" %% "akka-http-core"       % akka_http,
-//		"com.typesafe.akka" %% "akka-http"            % akka_http,
-//		"com.typesafe.akka" %% "akka-http-testkit"    % akka_http,
-//		"com.typesafe.akka" %% "akka-http-spray-json" % akka_http,
-//		"com.typesafe.akka" %% "akka-http-jackson"    % akka_http
-//	)
-//}
-
-libraryDependencies ++= Seq(
-)
-
-coverageExcludedPackages := ".*Main"
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
-
-mainClass in assembly := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
-
-assemblyJarName in assembly := name.value + "-" + version.value + ".jar"
 
 publishMavenStyle := true
 

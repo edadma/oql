@@ -80,12 +80,17 @@ class ERDParser extends RegexParsers {
       case _ ~ n ~ _ ~ fs ~ _ => EntityBlockERD(n, fs)
     }
 
-  def field: Parser[EntityFieldERD] = opt("*") ~ ident ~ ":" ~ typeSpec ^^ {
-    case None ~ n ~ _ ~ t      => EntityFieldERD(n, t, pk = false)
-    case Some("*") ~ n ~ _ ~ t => EntityFieldERD(n, t, pk = true)
-  }
+  def field: Parser[EntityFieldERD] =
+    opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ^^ {
+      case pk ~ n ~ a ~ _ ~ t =>
+        EntityFieldERD(n, if (a isDefined) a.get else n, t, pk isDefined)
+    }
 
-  def typeSpec: Parser[TypeSpecifierERD] = ident ^^ SimpleTypeERD
+  def typeSpec: Parser[TypeSpecifierERD] =
+    ident ^^ SimpleTypeERD |
+      ("[" ~> ident <~ "]") ~ ident ^^ {
+        case e ~ j => JunctionArrayTypeERD(e, j)
+      }
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {
@@ -94,48 +99,3 @@ class ERDParser extends RegexParsers {
     }
 
 }
-
-/*
-
-type Language = text: _ is in ["English", "French", "Ongota"]
-
-type Country = text: _ is in ["UK", "US", "JP"]
-
-type PosInt = integer: _ > 0
-
-entity movie {
- *mov_id: integer
-  mov_title: text
-  mov_year: integer
-  mov_time: integer //PosInt
-  mov_lang: Language
-  mov_dt_rel: date
-  mov_rel_country: text //Country
-}
-
-entity actor {
- *act_id: integer
-  act_fname: text
-  act_lname: text
-  act_gender: text
-}
-
-entity movie_cast {
-  actor (act_id): actor
-  movie (mov_id): movie
-  role: text
-}
-
-entity director {
-  dir_fname: text
-  dir_lname: text
-  movies: [movie] <movie_direction>
-}
-
-entity genres {
-  gen_title: text
-}
-
-
-
- */

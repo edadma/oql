@@ -1,0 +1,18 @@
+entity employee {
+ *emp_id: integer
+  emp_name: text
+  job_name: text
+  manager (manager_id): employee
+}
+
+entity department {
+ *dep_id: integer
+  dep_name: text
+  dep_location: text
+}
+
+entity salary_grade {
+ *grade: integer
+  min_sal: decimal
+  max_sal: decimal
+}

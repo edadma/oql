@@ -6,48 +6,69 @@ import scala.util.parsing.input.Position
 class ERModel(defn: String) {
 
   private val entities: Map[String, Entity] = {
-    val d = ERDParser.parseDefinition(defn)
-    val m = new mutable.HashMap[String, Entity]
+    val erDefinition = ERDParser.parseDefinition(defn)
+    val entityMap = new mutable.HashMap[String, Entity]
 
-    d.blocks foreach {
-      case EntityBlockERD(entity, fields) =>
-        if (m contains entity.name)
+    erDefinition.blocks foreach {
+      case EntityBlockERD(entity, _) =>
+        if (entityMap contains entity.name)
           problem(entity.pos, s"entity '${entity.name}' already defined")
-        else {
-          var epk: String = null
-          var e = Map.empty[String, EntityAttribute]
+        else
+          entityMap(entity.name) = new Entity(null, null)
+      case _ =>
+    }
 
-          for (EntityFieldERD(field, typ, pk) <- fields) {
-            if (e contains field.name)
-              problem(field.pos,
-                      s"field '${field.name}' already exists in this entity'")
-            else {
-              val fieldtype =
-                typ match {
-                  case SimpleTypeERD(typ) =>
-                    m get typ.name match {
-                      case Some(e) => ObjectEntityAttribute(typ.name, e)
-                      case None    => PrimitiveEntityAttribute(typ.name)
-                    }
-                }
+    erDefinition.blocks foreach {
+      case EntityBlockERD(entity, fields) =>
+        var epk: String = null
+        var attrs = Map.empty[String, EntityAttribute]
 
-              e += (field.name -> fieldtype)
-            }
-            if (pk) {
-              if (epk ne null)
-                problem(
-                  field.pos,
-                  "there is already a primary key defined for this entity")
-              else
-                epk = field.name
-            }
+        for (EntityFieldERD(attr, column, typ, pk) <- fields) {
+          if (attrs contains attr.name)
+            problem(attr.pos,
+                    s"attribute '${attr.name}' already exists for this entity'")
+          else {
+            val fieldtype =
+              typ match {
+                case SimpleTypeERD(typ) =>
+                  entityMap get typ.name match {
+                    case Some(e) =>
+                      ObjectEntityAttribute(column.name, typ.name, e)
+                    case None =>
+                      PrimitiveEntityAttribute(column.name, typ.name)
+                  }
+                case JunctionArrayTypeERD(typ, junction) =>
+                  (entityMap get typ.name, entityMap get junction.name) match {
+                    case (Some(t), Some(j)) =>
+                      ObjectArrayEntityAttribute(column.name,
+                                                 t,
+                                                 junction.name,
+                                                 j)
+                    case (None, _) =>
+                      problem(typ.pos, s"not an entity: ${typ.name}")
+                    case (_, None) =>
+                      problem(junction.pos, s"not an entity: ${junction.name}")
+                  }
+              }
+
+            attrs += (attr.name -> fieldtype)
           }
 
-          m(entity.name) = Entity(if (epk ne null) Some(epk) else None, e)
+          if (pk) {
+            if (epk ne null)
+              problem(attr.pos,
+                      "there is already a primary key defined for this entity")
+            else
+              epk = column.name
+          }
         }
+
+        entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
+        entityMap(entity.name).attributes = attrs
       case TypeBlockERD(name, underlying, condition) =>
     }
-    m.toMap
+
+    entityMap.toMap
   }
 
   def get(table: String, pos: Position): Entity =
@@ -61,10 +82,18 @@ class ERModel(defn: String) {
 
 }
 
-case class Entity(pk: Option[String], attributes: Map[String, EntityAttribute])
+class Entity(var pk: Option[String],
+             var attributes: Map[String, EntityAttribute])
 
 abstract class EntityAttribute
-case class PrimitiveEntityAttribute(primitiveType: String)
+case class PrimitiveEntityAttribute(column: String, primitiveType: String)
     extends EntityAttribute
-case class ObjectEntityAttribute(entityType: String, entity: Entity)
+case class ObjectEntityAttribute(column: String,
+                                 entityType: String,
+                                 entity: Entity)
+    extends EntityAttribute
+case class ObjectArrayEntityAttribute(entityType: String,
+                                      entity: Entity,
+                                      junctionType: String,
+                                      junction: Entity)
     extends EntityAttribute

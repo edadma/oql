@@ -22,6 +22,9 @@ class OQLParser extends RegexParsers {
     _.pos
   }
 
+  def integer: Parser[IntegerLiteralOQL] =
+    positioned("""\d+""".r ^^ IntegerLiteralOQL)
+
   def number: Parser[ExpressionOQL] =
     positioned("""\-?\d+(\.\d*)?""".r ^^ {
       case n if n contains '.' => FloatLiteralOQL(n)
@@ -37,9 +40,13 @@ class OQLParser extends RegexParsers {
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
   def query =
-    ident ~ opt(project) ~ opt(select) ~ opt(order) ~ opt(group) ^^ {
-      case r ~ None ~ s ~ o ~ g    => OQLQuery(r, ProjectAllOQL, s, o, g)
-      case r ~ Some(p) ~ s ~ o ~ g => OQLQuery(r, p, s, o, g)
+    ident ~ opt(project) ~ opt(select) ~ opt(order) ~ opt(restrict) ^^ {
+      case r ~ p ~ s ~ o ~ g =>
+        OQLQuery(r,
+                 if (p isDefined) p.get else ProjectAllOQL,
+                 s,
+                 o,
+                 if (g isDefined) g.get else (None, None))
     }
 
   def project: Parser[ProjectExpressionOQL] =
@@ -100,7 +107,11 @@ class OQLParser extends RegexParsers {
     case e ~ _                  => (e, false)
   }
 
-  def group = "(" ~> rep1sep(expression, ",") <~ ")"
+  def restrict =
+    "(" ~> (integer ~ "," ~ opt(integer)) <~ ")" ^^ {
+      case b ~ _ ~ e => (Some(b.n.toInt), e map (_.n.toInt))
+    } |
+      "(" ~> "," ~> integer <~ ")" ^^ (e => (None, Some(e.n.toInt)))
 
   def parseFromString[T](src: String, grammar: Parser[T]) =
     parseAll(grammar, new CharSequenceReader(src)) match {
