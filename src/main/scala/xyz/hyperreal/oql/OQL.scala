@@ -1,9 +1,11 @@
 package xyz.hyperreal.oql
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ListBuffer
 import scala.scalajs.js
 import js.JSConverters._
 import js.JSON
+import scala.concurrent.Future
 
 object OQL {
 
@@ -17,8 +19,7 @@ object OQL {
       case _ => a.asInstanceOf[js.Any]
     }
 
-  def pretty(res: Seq[Map[String, Any]]): String =
-    JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
+  def pretty(res: Seq[Map[String, Any]]): String = JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
 
 }
 
@@ -26,15 +27,15 @@ class OQL(erd: String) {
 
   private val model = new ERModel(erd)
 
-  def query(s: String, conn: Connection): Seq[Map[String, Any]] = {
+  def query(s: String, conn: Connection): Future[List[Map[String, Any]]] = {
     val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(s)
     val entity = model.get(resource.name, resource.pos)
+    val projectbuf = new ListBuffer[(String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
-    val graph =
-      branches(resource.name, entity, project, joinbuf, List(resource.name))
+    val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
 
-    executeQuery(resource.name, select, order, restrict, entity, joinbuf, graph, conn)
+    executeQuery(resource.name, select, order, restrict, entity, projectbuf, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
@@ -42,12 +43,13 @@ class OQL(erd: String) {
                            order: Option[List[(ExpressionOQL, Boolean)]],
                            restrict: (Option[Int], Option[Int]),
                            entity: Entity,
+                           projectbuf: ListBuffer[(String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode],
-                           conn: Connection): List[Map[String, Any]] = {
+                           conn: Connection): Future[List[Map[String, Any]]] = {
     val sql = new StringBuilder
 
-    sql append s"SELECT *\n"
+    sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString ", "}\n"
     sql append s"  FROM $resource"
 
     val where =
@@ -58,9 +60,7 @@ class OQL(erd: String) {
     val orderby =
       if (order isDefined)
         order.get map {
-          case (e, o) =>
-            s"(${expression(resource, entity, e, joinbuf)}) ${if (o) "ASC"
-            else "DESC"}"
+          case (e, o) => s"(${expression(resource, entity, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
         } mkString ", "
       else
         null
@@ -85,14 +85,13 @@ class OQL(erd: String) {
 
     print(sql)
 
-    val res =
-      conn
-        .query(sql.toString)
-        .asInstanceOf[RelationResult]
-        .relation
-        .collect
+    val projectmap = projectbuf.zipWithIndex.toMap
 
-    res.toList map (build(_, res.metadata, graph, conn))
+    conn
+      .query(sql.toString)
+      .map(result => {
+        result map (build(_, projectmap, graph, conn)) toList
+      })
   }
 
   private def expression(entityname: String,
@@ -103,8 +102,7 @@ class OQL(erd: String) {
 
     def expression(expr: ExpressionOQL): Unit =
       expr match {
-        case EqualsExpressionOQL(table, column, value) =>
-          buf append s"$table.$column = $value"
+        case EqualsExpressionOQL(table, column, value) => buf append s"$table.$column = $value"
         case InfixExpressionOQL(left, op, right) =>
           expression(left)
           buf append s" $op "
@@ -116,8 +114,7 @@ class OQL(erd: String) {
         case IntegerLiteralOQL(n)       => buf append n
         case StringLiteralOQL(s)        => buf append s"'$s'"
         case GroupedExpressionOQL(expr) => buf append s"($expr)"
-        case VariableExpressionOQL(ids) =>
-          buf append reference(entityname, entity, ids, joinbuf)
+        case VariableExpressionOQL(ids) => buf append reference(entityname, entity, ids, joinbuf)
       }
 
     expression(expr)
@@ -135,7 +132,7 @@ class OQL(erd: String) {
         case attr :: tail =>
           entity.attributes get attr.name match {
             case None =>
-              problem(attr.pos, s"$entityname doesn't have attribute '${attr.name}'")
+              problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
             case Some(PrimitiveEntityAttribute(column, _)) =>
               s"${attrlist mkString "$"}.$column"
             case Some(ObjectEntityAttribute(column, entityType, entity)) =>
@@ -156,6 +153,7 @@ class OQL(erd: String) {
   private def branches(entityname: String,
                        entity: Entity,
                        project: ProjectExpressionOQL,
+                       projectbuf: ListBuffer[(String, String)],
                        joinbuf: ListBuffer[(String, String, String, String, String)],
                        attrlist: List[String]): Seq[ProjectionNode] = {
     val attrs =
@@ -169,54 +167,52 @@ class OQL(erd: String) {
             case Some(typ) => (attr.attr.name, typ, attr.project)
           })
       }
+    val table = attrlist mkString "$"
+
+    if (entity.pk.isDefined && !attrs.exists(_._1 == entity.pk.get))
+      projectbuf += table -> entity.pk.get
 
     attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
-        PrimitiveProjectionNode(attrlist mkString "$", field, attr)
+        projectbuf += (table -> field)
+        PrimitiveProjectionNode(table, field, attr)
       case (field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
         val attrlist1 = field :: attrlist
 
-        joinbuf += ((attrlist mkString "$", attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
-        EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, joinbuf, attrlist1))
+        joinbuf += ((table, attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
+        EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, projectbuf, joinbuf, attrlist1))
       case (field, ObjectArrayEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
-        val subjoinbuf =
-          new ListBuffer[(String, String, String, String, String)]
+        val projectbuf = new ListBuffer[(String, String)]
+        val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
           a =>
             a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2
-              .asInstanceOf[ObjectEntityAttribute]
-              .entity == attrEntity)
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == attrEntity)
         val junctionAttr =
           ts.length match {
-            case 0 =>
-              problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
+            case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
             case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
-            case _ =>
-              problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
+            case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
           }
         val es = junction.attributes.toList.filter(
           a =>
             a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2
-              .asInstanceOf[ObjectEntityAttribute]
-              .entity == entity)
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
         val column =
           es.length match {
-            case 0 =>
-              problem(null, s"does not contain an attribute of type '$entityname'")
+            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
             case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-            case _ =>
-              problem(null, s"contains more than one attribute of type '$entityname'")
+            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
           }
 
         EntityArrayProjectionNode(
           field,
-          attrlist mkString "$",
+          table,
           entity.pk.get, // used to be attrEntity.pk.get
+          projectbuf,
           subjoinbuf,
           junctionType,
           column,
@@ -224,26 +220,38 @@ class OQL(erd: String) {
           branches(junctionType,
                    junction,
                    ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
+                   projectbuf,
                    subjoinbuf,
                    List(junctionType))
         )
     }
   }
 
-  private def build(row: Tuple, md: Metadata, branches: Seq[ProjectionNode], conn: Connection) = {
+  private def build(row: Connection#Row,
+                    projectmap: Map[(String, String), Int],
+                    branches: Seq[ProjectionNode],
+                    conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
-        case EntityProjectionNode(field, branches) => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, typ) =>
-          field -> row(md.tableColumnMap(table, field))
-        case EntityArrayProjectionNode(field, tabpk, colpk, subjoinbuf, resource, column, entity, branches) =>
+        case EntityProjectionNode(field, branches)      => field -> build(branches)
+        case PrimitiveProjectionNode(table, field, typ) => field -> row.get(table, field, projectmap)
+        case EntityArrayProjectionNode(field,
+                                       tabpk,
+                                       colpk,
+                                       subprojectbuf,
+                                       subjoinbuf,
+                                       resource,
+                                       column,
+                                       entity,
+                                       branches) =>
           val res =
             executeQuery(
               resource,
-              Some(EqualsExpressionOQL(resource, column, row(md.tableColumnMap(tabpk, colpk)).toString)),
+              Some(EqualsExpressionOQL(resource, column, row.get(tabpk, colpk, projectmap).toString)),
               None,
               (None, None),
               entity,
+              subprojectbuf,
               subjoinbuf,
               branches,
               conn
@@ -263,6 +271,7 @@ class OQL(erd: String) {
   case class EntityArrayProjectionNode(field: String,
                                        tabpk: String,
                                        colpk: String,
+                                       subprojectbuf: ListBuffer[(String, String)],
                                        subjoinbuf: ListBuffer[(String, String, String, String, String)],
                                        resource: String,
                                        column: String,

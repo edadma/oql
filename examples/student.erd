@@ -1,0 +1,16 @@
+entity class {
+ *id: integer
+  name: text
+  students: [student] enrollment
+}
+
+entity student {
+ *id: integer
+  name: text
+  classes: [class] enrollment
+}
+
+entity enrollment {
+  student (studentid): student
+  class (classid): class
+}

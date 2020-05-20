@@ -1,13 +1,11 @@
 package xyz.hyperreal.oql
 
-import typings.pg.mod.{Client, ClientConfig, QueryResult}
+import typings.pg.mod.{Client, ClientConfig, QueryArrayConfig, QueryResult}
+import typings.pg.pgStrings
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 import scala.scalajs.js
-import js.JSConverters._
+import scala.concurrent.Future
 
 class PostgresConnection(user: String, password: String) extends Connection {
 
@@ -16,13 +14,14 @@ class PostgresConnection(user: String, password: String) extends Connection {
       .literal(user = user, password = password)
       .asInstanceOf[ClientConfig])
 
-  Await.ready(client.connect.toFuture, 200 millis)
+  client.connect
 
-  def query(sql: String): js.Promise[js.Array[js.Any]] =
+  def query(sql: String): Future[ResultSet] =
     client
-      .query[js.Any, js.Any](sql)
+      .query[js.Array[js.Any], js.Any](QueryArrayConfig[js.Any](pgStrings.array, sql))
       .toFuture
-      .map(_.rows)
-      .toJSPromise
+      .map(r => new ResultSet(r.rows))
+
+  def close(): Unit = client.end
 
 }
