@@ -232,33 +232,6 @@ class OQL(erd: String) {
     }
   }
 
-  private def build(row: Connection#Row,
-                    projectmap: Map[(String, String), Int],
-                    branches: Seq[ProjectionNode],
-                    conn: Connection) = {
-    def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
-      (branches map {
-        case EntityProjectionNode(field, branches)      => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, typ) => field -> row.get(table, field, projectmap)
-        case node @ EntityArrayProjectionNode(field,
-                                              tabpk,
-                                              colpk,
-                                              subprojectbuf,
-                                              subjoinbuf,
-                                              resource,
-                                              column,
-                                              entity,
-                                              branches) =>
-          node.future.value match {
-            case Some(Success(value)) => field -> value
-            case None                 => sys.error(s"query failed to execute: $field, $tabpk, $colpk, $branches")
-          }
-      }) toMap
-    }
-
-    build(branches)
-  }
-
   private def futures(row: Connection#Row,
                       futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
                       projectmap: Map[(String, String), Int],
@@ -287,12 +260,41 @@ class OQL(erd: String) {
             subjoinbuf,
             branches,
             conn
-          )
+          ).andThen {
+            case Success(value) => println(s"debug $value ${row.get(tabpk, colpk, projectmap)}")
+          }
           futurebuf += node.future
       }
     }
 
     futures(branches)
+  }
+
+  private def build(row: Connection#Row,
+                    projectmap: Map[(String, String), Int],
+                    branches: Seq[ProjectionNode],
+                    conn: Connection) = {
+    def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
+      (branches map {
+        case EntityProjectionNode(field, branches)      => field -> build(branches)
+        case PrimitiveProjectionNode(table, field, typ) => field -> row.get(table, field, projectmap)
+        case node @ EntityArrayProjectionNode(field,
+                                              tabpk,
+                                              colpk,
+                                              subprojectbuf,
+                                              subjoinbuf,
+                                              resource,
+                                              column,
+                                              entity,
+                                              branches) =>
+          node.future.value match {
+            case Some(Success(value)) => field -> s"$value ${row.get(tabpk, colpk, projectmap)}"
+            case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
+          }
+      }) toMap
+    }
+
+    build(branches)
   }
 
   abstract class ProjectionNode { val field: String }
