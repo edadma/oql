@@ -89,9 +89,7 @@ class OQL(erd: String) {
 
     conn
       .query(sql.toString)
-      .map(result => {
-        result map (build(_, projectmap, graph, conn)) toList
-      })
+      .map(result => result map (build(_, projectmap, graph, conn)) toList)
   }
 
   private def expression(entityname: String,
@@ -263,6 +261,44 @@ class OQL(erd: String) {
     }
 
     build(branches)
+  }
+
+  private def futures(row: Connection#Row,
+                      projectmap: Map[(String, String), Int],
+                      branches: Seq[ProjectionNode],
+                      conn: Connection) = {
+    def futures(branches: Seq[ProjectionNode]): Map[String, Any] = {
+      (branches map {
+        case EntityProjectionNode(field, branches)      => futures(branches)
+        case PrimitiveProjectionNode(table, field, typ) =>
+        case EntityArrayProjectionNode(field,
+                                       tabpk,
+                                       colpk,
+                                       subprojectbuf,
+                                       subjoinbuf,
+                                       resource,
+                                       column,
+                                       entity,
+                                       branches) =>
+          val res =
+            executeQuery(
+              resource,
+              Some(EqualsExpressionOQL(resource, column, row.get(tabpk, colpk, projectmap).toString)),
+              None,
+              (None, None),
+              entity,
+              subprojectbuf,
+              subjoinbuf,
+              branches,
+              conn
+            )
+
+          field -> res
+        //          field -> ""
+      }) toMap
+    }
+
+    futures(branches)
   }
 
   abstract class ProjectionNode { val field: String }
