@@ -5,6 +5,7 @@ import scala.collection.mutable.ListBuffer
 import scala.scalajs.js
 import js.JSConverters._
 import js.JSON
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 
@@ -84,7 +85,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
     val projectmap = projectbuf.zipWithIndex.toMap
 
@@ -93,9 +94,10 @@ class OQL(erd: String) {
       .flatMap(result => {
         val list = result.toList
         val futurebuf = new ListBuffer[Future[List[Map[String, Any]]]]
+        val futuremap = new mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]]
 
-        list foreach (futures(_, futurebuf, projectmap, graph, conn))
-        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, graph, conn)))
+        list foreach (futures(_, futurebuf, futuremap, projectmap, graph, conn))
+        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, conn)))
       })
   }
 
@@ -232,11 +234,13 @@ class OQL(erd: String) {
     }
   }
 
-  private def futures(row: Connection#Row,
-                      futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
-                      projectmap: Map[(String, String), Int],
-                      branches: Seq[ProjectionNode],
-                      conn: Connection) = {
+  private def futures(
+      row: Connection#Row,
+      futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
+      futuremap: mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]],
+      projectmap: Map[(String, String), Int],
+      branches: Seq[ProjectionNode],
+      conn: Connection) = {
     def futures(branches: Seq[ProjectionNode]): Unit = {
       branches foreach {
         case EntityProjectionNode(field, branches)      => futures(branches)
@@ -250,7 +254,7 @@ class OQL(erd: String) {
                                               column,
                                               entity,
                                               branches) =>
-          node.future = executeQuery(
+          val future = executeQuery(
             resource,
             Some(EqualsExpressionOQL(resource, column, row.get(tabpk, colpk, projectmap).toString)),
             None,
@@ -260,20 +264,21 @@ class OQL(erd: String) {
             subjoinbuf,
             branches,
             conn
-          ).andThen {
-            case Success(value) => println(s"debug $value ${row.get(tabpk, colpk, projectmap)}")
-          }
-          futurebuf += node.future
+          )
+          futurebuf += future
+          futuremap((row, node)) = future
       }
     }
 
     futures(branches)
   }
 
-  private def build(row: Connection#Row,
-                    projectmap: Map[(String, String), Int],
-                    branches: Seq[ProjectionNode],
-                    conn: Connection) = {
+  private def build(
+      row: Connection#Row,
+      projectmap: Map[(String, String), Int],
+      futuremap: mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]],
+      branches: Seq[ProjectionNode],
+      conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches)      => field -> build(branches)
@@ -287,8 +292,8 @@ class OQL(erd: String) {
                                               column,
                                               entity,
                                               branches) =>
-          node.future.value match {
-            case Some(Success(value)) => field -> s"$value ${row.get(tabpk, colpk, projectmap)}"
+          futuremap((row, node)).value match {
+            case Some(Success(value)) => field -> value
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
           }
       }) toMap
@@ -309,6 +314,6 @@ class OQL(erd: String) {
                                        column: String,
                                        entity: Entity,
                                        branches: Seq[ProjectionNode])
-      extends ProjectionNode { var future: Future[List[Map[String, Any]]] = _ }
+      extends ProjectionNode
 
 }
