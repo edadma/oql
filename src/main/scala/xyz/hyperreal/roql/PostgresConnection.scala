@@ -1,12 +1,15 @@
-package xyz.hyperreal.oql
+package xyz.hyperreal.roql
 
-import typings.pg.mod.{Client, ClientConfig, QueryArrayConfig, QueryResult}
+import typings.pg.mod.{Client, ClientConfig, QueryArrayConfig}
 import typings.pg.pgStrings
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
+import js.annotation.{JSExport, JSExportTopLevel}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+@JSExportTopLevel("PostgresConnection")
 class PostgresConnection(user: String, password: String) extends Connection {
 
   private val client = new Client(
@@ -22,6 +25,7 @@ class PostgresConnection(user: String, password: String) extends Connection {
       .toFuture
       .map(r => new ResultSet(r.rows))
 
+  @JSExport
   def close(): Unit = client.end
 
 }

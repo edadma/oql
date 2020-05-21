@@ -2,9 +2,9 @@ package xyz.hyperreal
 
 import scala.util.parsing.input.Position
 
-package object oql {
+package object roql {
 
-  def problem(pos: Position, error: String) =
+  def problem(pos: Position, error: String): Nothing =
     if (pos eq null)
       sys.error(error)
     else if (pos.line == 1)

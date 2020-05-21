@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package xyz.hyperreal.roql
 
 import scala.collection.mutable
 import scala.util.parsing.input.Position
@@ -25,8 +25,7 @@ class ERModel(defn: String) {
 
         for (EntityFieldERD(attr, column, typ, pk) <- fields) {
           if (attrs contains attr.name)
-            problem(attr.pos,
-                    s"attribute '${attr.name}' already exists for this entity'")
+            problem(attr.pos, s"attribute '${attr.name}' already exists for this entity'")
           else {
             val fieldtype =
               typ match {
@@ -40,10 +39,7 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      ObjectArrayEntityAttribute(column.name,
-                                                 t,
-                                                 junction.name,
-                                                 j)
+                      ObjectArrayEntityAttribute(column.name, t, junction.name, j)
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>
@@ -56,8 +52,7 @@ class ERModel(defn: String) {
 
           if (pk) {
             if (epk ne null)
-              problem(attr.pos,
-                      "there is already a primary key defined for this entity")
+              problem(attr.pos, "there is already a primary key defined for this entity")
             else
               epk = column.name
           }
@@ -82,18 +77,10 @@ class ERModel(defn: String) {
 
 }
 
-class Entity(var pk: Option[String],
-             var attributes: Map[String, EntityAttribute])
+class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute])
 
 abstract class EntityAttribute
-case class PrimitiveEntityAttribute(column: String, primitiveType: String)
-    extends EntityAttribute
-case class ObjectEntityAttribute(column: String,
-                                 entityType: String,
-                                 entity: Entity)
-    extends EntityAttribute
-case class ObjectArrayEntityAttribute(entityType: String,
-                                      entity: Entity,
-                                      junctionType: String,
-                                      junction: Entity)
+case class PrimitiveEntityAttribute(column: String, primitiveType: String) extends EntityAttribute
+case class ObjectEntityAttribute(column: String, entityType: String, entity: Entity) extends EntityAttribute
+case class ObjectArrayEntityAttribute(entityType: String, entity: Entity, junctionType: String, junction: Entity)
     extends EntityAttribute

@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package xyz.hyperreal.roql
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
@@ -42,11 +42,7 @@ class OQLParser extends RegexParsers {
   def query =
     ident ~ opt(project) ~ opt(select) ~ opt(order) ~ opt(restrict) ^^ {
       case r ~ p ~ s ~ o ~ g =>
-        OQLQuery(r,
-                 if (p isDefined) p.get else ProjectAllOQL,
-                 s,
-                 o,
-                 if (g isDefined) g.get else (None, None))
+        OQLQuery(r, if (p isDefined) p.get else ProjectAllOQL, s, o, if (g isDefined) g.get else (None, None))
     }
 
   def project: Parser[ProjectExpressionOQL] =
@@ -82,8 +78,7 @@ class OQLParser extends RegexParsers {
     }
 
   def notExpression =
-    ("NOT" | "not") ~> comparisonExpression ^^ (p =>
-      PrefixExpressionOQL("NOT", p)) |
+    ("NOT" | "not") ~> comparisonExpression ^^ (p => PrefixExpressionOQL("NOT", p)) |
       comparisonExpression
 
   def comparisonExpression =

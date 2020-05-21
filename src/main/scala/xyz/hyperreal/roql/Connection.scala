@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package xyz.hyperreal.roql
 
 import scala.scalajs.js
 
@@ -12,7 +12,6 @@ abstract class Connection {
 
   class ResultSet(rows: js.Array[js.Array[js.Any]]) extends Iterator[Row] {
     private val it = rows.iterator
-    private var row: js.Array[js.Any] = _
 
     def hasNext: Boolean = it.hasNext
 

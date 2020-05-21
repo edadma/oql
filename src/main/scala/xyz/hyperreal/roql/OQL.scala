@@ -1,17 +1,35 @@
-package xyz.hyperreal.oql
+package xyz.hyperreal.roql
+
+import scala.scalajs.js
+import js.JSConverters._
+import js.annotation.{JSExport, JSExportTopLevel}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ListBuffer
-import scala.scalajs.js
-import js.JSConverters._
-import js.JSON
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 
-object OQL {
+@JSExportTopLevel("OQL")
+class OQL(erd: String) {
 
-  def toJS(a: Any): js.Any =
+  private val model = new ERModel(erd)
+
+  @JSExport
+  def query(sql: String, conn: Connection): js.Promise[js.Any] = scalaQuery(sql, conn).map(toJS).toJSPromise
+
+  def scalaQuery(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
+    val OQLQuery(resource, project, select, order, restrict) =
+      OQLParser.parseQuery(sql)
+    val entity = model.get(resource.name, resource.pos)
+    val projectbuf = new ListBuffer[(String, String)]
+    val joinbuf = new ListBuffer[(String, String, String, String, String)]
+    val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
+
+    executeQuery(resource.name, select, order, restrict, entity, projectbuf, joinbuf, graph, conn)
+  }
+
+  private def toJS(a: Any): js.Any =
     a match {
       case l: Seq[_] => l map toJS toJSArray
       case m: Map[_, _] =>
@@ -20,25 +38,6 @@ object OQL {
           .toJSDictionary
       case _ => a.asInstanceOf[js.Any]
     }
-
-  def pretty(res: Seq[Map[String, Any]]): String = JSON.stringify(toJS(res), null.asInstanceOf[js.Array[js.Any]], 2)
-
-}
-
-class OQL(erd: String) {
-
-  private val model = new ERModel(erd)
-
-  def query(s: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val OQLQuery(resource, project, select, order, restrict) =
-      OQLParser.parseQuery(s)
-    val entity = model.get(resource.name, resource.pos)
-    val projectbuf = new ListBuffer[(String, String)]
-    val joinbuf = new ListBuffer[(String, String, String, String, String)]
-    val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
-
-    executeQuery(resource.name, select, order, restrict, entity, projectbuf, joinbuf, graph, conn)
-  }
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
@@ -134,6 +133,7 @@ class OQL(erd: String) {
       ids: List[Ident],
       joinbuf: ListBuffer[(String, String, String, String, String)],
   ) = {
+    @scala.annotation.tailrec
     def reference(entityname: String, entity: Entity, ids: List[Ident], attrlist: List[String]): String =
       ids match {
         case attr :: tail =>
@@ -240,12 +240,12 @@ class OQL(erd: String) {
       futuremap: mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]],
       projectmap: Map[(String, String), Int],
       branches: Seq[ProjectionNode],
-      conn: Connection) = {
+      conn: Connection): Unit = {
     def futures(branches: Seq[ProjectionNode]): Unit = {
       branches foreach {
-        case EntityProjectionNode(field, branches)      => futures(branches)
-        case PrimitiveProjectionNode(table, field, typ) =>
-        case node @ EntityArrayProjectionNode(field,
+        case EntityProjectionNode(_, branches) => futures(branches)
+        case PrimitiveProjectionNode(_, _, _)  =>
+        case node @ EntityArrayProjectionNode(_,
                                               tabpk,
                                               colpk,
                                               subprojectbuf,
@@ -281,17 +281,9 @@ class OQL(erd: String) {
       conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
-        case EntityProjectionNode(field, branches)      => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, typ) => field -> row.get(table, field, projectmap)
-        case node @ EntityArrayProjectionNode(field,
-                                              tabpk,
-                                              colpk,
-                                              subprojectbuf,
-                                              subjoinbuf,
-                                              resource,
-                                              column,
-                                              entity,
-                                              branches) =>
+        case EntityProjectionNode(field, branches)    => field -> build(branches)
+        case PrimitiveProjectionNode(table, field, _) => field -> row.get(table, field, projectmap)
+        case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> value
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
