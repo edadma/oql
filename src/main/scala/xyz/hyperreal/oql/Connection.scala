@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import scala.scalajs.js
 

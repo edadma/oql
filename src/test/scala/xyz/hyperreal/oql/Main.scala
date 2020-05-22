@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import scala.scalajs.js
 import js.Dynamic.{global => g}
@@ -16,10 +16,13 @@ object Main extends App {
   val conn = new PostgresConnection("postgres", "docker")
   val oql = new OQL(readFile("examples/student.erd"))
 
-  oql.scalaQuery("class { name students { name } }", conn).onComplete {
+  oql.query("class { name students { name } }", conn).onComplete {
+//  val oql = new OQL(readFile("examples/star_trek.erd"))
+//
+//  oql.query("character { name }", conn).onComplete {
     case Failure(exception) => throw exception
     case Success(value) =>
-      println(value)
+      println("result", value)
       conn.close()
   }
 

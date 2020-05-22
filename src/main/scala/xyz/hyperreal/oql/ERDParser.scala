@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers

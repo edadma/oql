@@ -1,6 +1,8 @@
-name := "roql"
+name := "@vinctus/oql"
 
-version := "0.1.0-alpha.2"
+version := "0.1.0-alpha.5"
+
+description := "Object Query Language"
 
 scalaVersion := "2.13.2"
 
@@ -44,7 +46,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
 )
 
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + name.value.replace('-', '_') + ".Main" )
+mainClass in (Compile, run) := Some( "xyz.hyperreal." + (name.value indexOf '/' match {case -1 => name.value case idx => name.value.substring(idx + 1)}).replace('-', '_') + ".Main" )
 
 publishMavenStyle := true
 

@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import typings.pg.mod.{Client, ClientConfig, QueryArrayConfig}
 import typings.pg.pgStrings

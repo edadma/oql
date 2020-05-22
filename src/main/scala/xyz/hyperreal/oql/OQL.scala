@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import scala.scalajs.js
 import js.JSConverters._
@@ -15,10 +15,10 @@ class OQL(erd: String) {
 
   private val model = new ERModel(erd)
 
-  @JSExport
-  def query(sql: String, conn: Connection): js.Promise[js.Any] = scalaQuery(sql, conn).map(toJS).toJSPromise
+  @JSExport("query")
+  def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = query(sql, conn).map(toJS).toJSPromise
 
-  def scalaQuery(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
+  def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
     val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
@@ -49,9 +49,12 @@ class OQL(erd: String) {
                            graph: Seq[ProjectionNode],
                            conn: Connection): Future[List[Map[String, Any]]] = {
     val sql = new StringBuilder
+    val projects: Seq[String] = projectbuf.toList map { case (e, f) => s"$e.$f" }
 
-    sql append s"SELECT ${projectbuf map { case (e, f) => s"$e.$f" } mkString ", "}\n"
-    sql append s"  FROM $resource"
+    sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
+    sql append (projects.tail map ("       " ++ _) mkString ",\n")
+    sql append '\n'
+    sql append s"  FROM $resource\n"
 
     val where =
       if (select isDefined)
@@ -66,17 +69,8 @@ class OQL(erd: String) {
       else
         null
 
-    val joins = joinbuf.distinct
-
-    if (joins nonEmpty) {
-      val (lt, lf, rt, rta, rf) = joins.head
-
-      sql append s" JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
-
-      for ((lt, lf, rt, rta, rf) <- joins.tail)
-        sql append s"    JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
-    } else
-      sql append '\n'
+    for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
+      sql append s"  JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
 
     if (select isDefined)
       sql append s"  WHERE $where\n"
@@ -84,7 +78,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf.zipWithIndex.toMap
 
@@ -93,7 +87,8 @@ class OQL(erd: String) {
       .flatMap(result => {
         val list = result.toList
         val futurebuf = new ListBuffer[Future[List[Map[String, Any]]]]
-        val futuremap = new mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]]
+        val futuremap =
+          new mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]]
 
         list foreach (futures(_, futurebuf, futuremap, projectmap, graph, conn))
         Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, conn)))
@@ -191,7 +186,7 @@ class OQL(erd: String) {
 
         joinbuf += ((table, attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, projectbuf, joinbuf, attrlist1))
-      case (field, ObjectArrayEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
+      case (field, ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
         val projectbuf = new ListBuffer[(String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
@@ -215,7 +210,7 @@ class OQL(erd: String) {
             case _ => problem(null, s"contains more than one attribute of type '$entityname'")
           }
 
-        EntityArrayProjectionNode(
+        EntityArrayJunctionProjectionNode(
           field,
           table,
           entity.pk.get, // used to be attrEntity.pk.get
@@ -231,13 +226,29 @@ class OQL(erd: String) {
                    subjoinbuf,
                    List(junctionType))
         )
+//        EntityArrayJunctionProjectionNode(
+//          field,
+//          table,
+//          entity.pk.get, // used to be attrEntity.pk.get
+//          projectbuf,
+//          subjoinbuf,
+//          junctionType,
+//          column,
+//          junction,
+//          branches(junctionType,
+//                   junction,
+//                   ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
+//                   projectbuf,
+//                   subjoinbuf,
+//                   List(junctionType))
+//        )
     }
   }
 
   private def futures(
       row: Connection#Row,
       futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
-      futuremap: mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]],
+      futuremap: mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
       projectmap: Map[(String, String), Int],
       branches: Seq[ProjectionNode],
       conn: Connection): Unit = {
@@ -245,15 +256,15 @@ class OQL(erd: String) {
       branches foreach {
         case EntityProjectionNode(_, branches) => futures(branches)
         case PrimitiveProjectionNode(_, _, _)  =>
-        case node @ EntityArrayProjectionNode(_,
-                                              tabpk,
-                                              colpk,
-                                              subprojectbuf,
-                                              subjoinbuf,
-                                              resource,
-                                              column,
-                                              entity,
-                                              branches) =>
+        case node @ EntityArrayJunctionProjectionNode(_,
+                                                      tabpk,
+                                                      colpk,
+                                                      subprojectbuf,
+                                                      subjoinbuf,
+                                                      resource,
+                                                      column,
+                                                      entity,
+                                                      branches) =>
           val future = executeQuery(
             resource,
             Some(EqualsExpressionOQL(resource, column, row.get(tabpk, colpk, projectmap).toString)),
@@ -265,6 +276,7 @@ class OQL(erd: String) {
             branches,
             conn
           )
+
           futurebuf += future
           futuremap((row, node)) = future
       }
@@ -276,16 +288,16 @@ class OQL(erd: String) {
   private def build(
       row: Connection#Row,
       projectmap: Map[(String, String), Int],
-      futuremap: mutable.HashMap[(Connection#Row, EntityArrayProjectionNode), Future[List[Map[String, Any]]]],
+      futuremap: mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
       branches: Seq[ProjectionNode],
       conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches)    => field -> build(branches)
         case PrimitiveProjectionNode(table, field, _) => field -> row.get(table, field, projectmap)
-        case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
+        case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
           futuremap((row, node)).value match {
-            case Some(Success(value)) => field -> value
+            case Some(Success(value)) => field -> (value map (m => m.head._2))
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
           }
       }) toMap
@@ -297,15 +309,15 @@ class OQL(erd: String) {
   abstract class ProjectionNode { val field: String }
   case class PrimitiveProjectionNode(table: String, field: String, typ: EntityAttribute) extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
-  case class EntityArrayProjectionNode(field: String,
-                                       tabpk: String,
-                                       colpk: String,
-                                       subprojectbuf: ListBuffer[(String, String)],
-                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
-                                       resource: String,
-                                       column: String,
-                                       entity: Entity,
-                                       branches: Seq[ProjectionNode])
+  case class EntityArrayJunctionProjectionNode(field: String,
+                                               tabpk: String,
+                                               colpk: String,
+                                               subprojectbuf: ListBuffer[(String, String)],
+                                               subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                               resource: String,
+                                               column: String,
+                                               entity: Entity,
+                                               branches: Seq[ProjectionNode])
       extends ProjectionNode
 
 }

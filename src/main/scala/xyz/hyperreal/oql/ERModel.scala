@@ -1,4 +1,4 @@
-package xyz.hyperreal.roql
+package xyz.hyperreal.oql
 
 import scala.collection.mutable
 import scala.util.parsing.input.Position
@@ -39,7 +39,7 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      ObjectArrayEntityAttribute(column.name, t, junction.name, j)
+                      ObjectArrayJunctionEntityAttribute(column.name, t, junction.name, j)
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>
@@ -82,5 +82,8 @@ class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute
 abstract class EntityAttribute
 case class PrimitiveEntityAttribute(column: String, primitiveType: String) extends EntityAttribute
 case class ObjectEntityAttribute(column: String, entityType: String, entity: Entity) extends EntityAttribute
-case class ObjectArrayEntityAttribute(entityType: String, entity: Entity, junctionType: String, junction: Entity)
+case class ObjectArrayJunctionEntityAttribute(entityType: String,
+                                              entity: Entity,
+                                              junctionType: String,
+                                              junction: Entity)
     extends EntityAttribute
