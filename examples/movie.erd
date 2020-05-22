@@ -1,0 +1,60 @@
+entity movie {
+ *mov_id: integer
+  mov_title: text
+  mov_year: integer
+  mov_time: integer
+  mov_lang: text
+  mov_dt_rel: date
+  mov_rel_country: text
+  cast: [actor] movie_cast
+  ;ratings: [rating] rating
+  directors: [director] movie_direction
+  genres: [genre] movie_genres
+}
+
+entity reviewer {
+ *rev_id: integer
+  rev_name: text
+}
+
+entity rating {
+  mov_id: movie
+  rev_id: reviewer
+  rev_stars: decimal
+  num_o_ratings: text
+}
+
+entity actor {
+ *act_id: integer
+  act_fname: text
+  act_lname: text
+  act_gender: text
+}
+
+entity movie_cast {
+  actor (act_id): actor
+  movie (mov_id): movie
+  role: text
+}
+
+entity director {
+ *dir_id: integer
+  dir_fname: text
+  dir_lname: text
+  movies: [movie] movie_direction
+}
+
+entity movie_direction {
+  director (dir_id): director
+  movie (mov_id): movie
+}
+
+entity genre {
+ *gen_id: integer
+  gen_title: text
+}
+
+entity movie_genres {
+  movie (mov_id): movie
+  genre (gen_id): genre
+}

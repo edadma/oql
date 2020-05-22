@@ -15,8 +15,8 @@ Installation is done using the [npm install command](https://docs.npmjs.com/down
 Features
 --------
 
-- very similar to [GraphQL](https://graphql.org/)
-- takes an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
+- very similar to [GraphQL](https://graphql.org/) (for querying)
+- uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
 - works with the [PostgreSQL database system](https://www.postgresql.org/)
 - designed to work with existing databases
 

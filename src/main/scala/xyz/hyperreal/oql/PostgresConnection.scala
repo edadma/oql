@@ -6,8 +6,6 @@ import typings.pg.pgStrings
 import scala.scalajs.js
 import js.annotation.{JSExport, JSExportTopLevel}
 
-import scala.concurrent.Future
-
 @JSExportTopLevel("PostgresConnection")
 class PostgresConnection(user: String, password: String) extends Connection {
 

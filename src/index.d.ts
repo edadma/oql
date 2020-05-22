@@ -4,8 +4,12 @@ export class OQL {
   query(sql: string, conn: PostgresConnection): Promise<any>
 }
 
-export class PostgresConnection {
+export class PostgresConnection extends Connection {
   constructor(user: string, password: string)
 
-  close():void
+  close(): void
+}
+
+export abstract class Connection {
+  close(): void
 }
