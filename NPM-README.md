@@ -1,7 +1,7 @@
 OQL
 ===
 
-*Object Query Language* inspired by [GraphQL](https://graphql.org/).
+*Object Query Language* inspired by [GraphQL](https://graphql.org/)
 
 Installation
 ------------
@@ -23,9 +23,7 @@ Features
 Example
 -------
 
-### Run PostgreSQL
-
-Get PostgreSQL running in a docker container:
+Get [PostgreSQL](https://hub.docker.com/_/postgres) running in a [docker container](https://www.docker.com/resources/what-container):
 
 ```
 docker pull postgres

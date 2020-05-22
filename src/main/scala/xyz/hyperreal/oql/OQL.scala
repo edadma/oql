@@ -70,7 +70,7 @@ class OQL(erd: String) {
         null
 
     for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
-      sql append s"  JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+      sql append s"  LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
 
     if (select isDefined)
       sql append s"  WHERE $where\n"
@@ -78,17 +78,18 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
     val projectmap = projectbuf.zipWithIndex.toMap
 
     conn
       .query(sql.toString)
+      .rowSet
       .flatMap(result => {
         val list = result.toList
         val futurebuf = new ListBuffer[Future[List[Map[String, Any]]]]
         val futuremap =
-          new mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]]
+          new mutable.HashMap[(ResultRow, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]]
 
         list foreach (futures(_, futurebuf, futuremap, projectmap, graph, conn))
         Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, conn)))
@@ -246,9 +247,9 @@ class OQL(erd: String) {
   }
 
   private def futures(
-      row: Connection#Row,
+      row: ResultRow,
       futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
-      futuremap: mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
+      futuremap: mutable.HashMap[(ResultRow, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
       projectmap: Map[(String, String), Int],
       branches: Seq[ProjectionNode],
       conn: Connection): Unit = {
@@ -267,7 +268,7 @@ class OQL(erd: String) {
                                                       branches) =>
           val future = executeQuery(
             resource,
-            Some(EqualsExpressionOQL(resource, column, row.get(tabpk, colpk, projectmap).toString)),
+            Some(EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)),
             None,
             (None, None),
             entity,
@@ -286,15 +287,15 @@ class OQL(erd: String) {
   }
 
   private def build(
-      row: Connection#Row,
+      row: ResultRow,
       projectmap: Map[(String, String), Int],
-      futuremap: mutable.HashMap[(Connection#Row, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
+      futuremap: mutable.HashMap[(ResultRow, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
       branches: Seq[ProjectionNode],
       conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches)    => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, _) => field -> row.get(table, field, projectmap)
+        case PrimitiveProjectionNode(table, field, _) => field -> row(projectmap((table, field)))
         case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
