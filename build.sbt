@@ -20,9 +20,9 @@ enablePlugins(ScalaJSPlugin)
 
 enablePlugins(ScalablyTypedConverterPlugin)
 
-Test / scalaJSUseMainModuleInitializer := true
-
-Test / scalaJSUseTestModuleInitializer := false
+//Test / scalaJSUseMainModuleInitializer := true
+//
+//Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
@@ -32,7 +32,8 @@ npmDependencies in Compile ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %%% "scalatest" % "3.1.1" % "test"
+  "org.scalatest" %%% "scalatest" % "3.1.1" % "test",
+  "xyz.hyperreal" %%% "rdb-sjs" % "0.1.0-alpha.12" % "test"
 )
 
 libraryDependencies ++= Seq(

@@ -13,16 +13,14 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new PostgresConnection("postgres", "docker")
+//  val conn = new PostgresConnection("postgres", "docker")
+  val conn = new RDBConnection(readFile("examples/student.tab"))
   val oql = new OQL(readFile("examples/student.erd"))
 
   oql.query("class { name students { name } }", conn).onComplete {
-//  val oql = new OQL(readFile("examples/star_trek.erd"))
-//
-//  oql.query("character { name }", conn).onComplete {
     case Failure(exception) => throw exception
     case Success(value) =>
-      println("result", value)
+      println(value)
       conn.close()
   }
 

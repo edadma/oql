@@ -2,6 +2,7 @@ package xyz.hyperreal.oql
 
 import scala.scalajs.js
 import js.JSConverters._
+import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,6 +19,9 @@ class OQL(erd: String) {
   @JSExport("query")
   def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = query(sql, conn).map(toJS).toJSPromise
 
+  def json(sql: String, conn: Connection) =
+    JSON.stringify(toJS(query(sql, conn).value), null.asInstanceOf[js.Array[js.Any]], 2)
+
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
     val OQLQuery(resource, project, select, order, restrict) =
       OQLParser.parseQuery(sql)
@@ -28,16 +32,6 @@ class OQL(erd: String) {
 
     executeQuery(resource.name, select, order, restrict, entity, projectbuf, joinbuf, graph, conn)
   }
-
-  private def toJS(a: Any): js.Any =
-    a match {
-      case l: Seq[_] => l map toJS toJSArray
-      case m: Map[_, _] =>
-        (m map { case (k, v) => k -> toJS(v) })
-          .asInstanceOf[Map[String, Any]]
-          .toJSDictionary
-      case _ => a.asInstanceOf[js.Any]
-    }
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
@@ -70,7 +64,7 @@ class OQL(erd: String) {
         null
 
     for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
-      sql append s"  LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+      sql append s"  JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n" // todo: LEFT OUTER JOIN
 
     if (select isDefined)
       sql append s"  WHERE $where\n"
