@@ -22,55 +22,17 @@ class OQLBasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "json()" in {
-    starTrekER.json("character", starTrekDB) map { result =>
+    starTrekER.json("character <name>", starTrekDB) map { result =>
       result shouldBe
         """
         |[
         |  {
-        |    "char_id": 4,
-        |    "name": "Worf, Son of Mogh",
+        |    "char_id": 3,
+        |    "name": "Deanna Troi",
         |    "home": {
         |      "plan_id": 1,
         |      "name": "Earth",
         |      "climate": "not too bad"
-        |    },
-        |    "species": {
-        |      "spec_id": 4,
-        |      "name": "Klingon",
-        |      "lifespan": 150,
-        |      "origin": {
-        |        "plan_id": 4,
-        |        "name": "Qo'noS",
-        |        "climate": "turbulent"
-        |      }
-        |    }
-        |  },
-        |  {
-        |    "char_id": 1,
-        |    "name": "James Tiberius Kirk",
-        |    "home": {
-        |      "plan_id": 1,
-        |      "name": "Earth",
-        |      "climate": "not too bad"
-        |    },
-        |    "species": {
-        |      "spec_id": 1,
-        |      "name": "Human",
-        |      "lifespan": 71,
-        |      "origin": {
-        |        "plan_id": 1,
-        |        "name": "Earth",
-        |        "climate": "not too bad"
-        |      }
-        |    }
-        |  },
-        |  {
-        |    "char_id": 6,
-        |    "name": "Lwaxana Troi",
-        |    "home": {
-        |      "plan_id": 3,
-        |      "name": "Betazed",
-        |      "climate": "awesome weather"
         |    },
         |    "species": {
         |      "spec_id": 3,
@@ -84,31 +46,12 @@ class OQLBasicTests extends AsyncFreeSpec with Matchers {
         |    }
         |  },
         |  {
-        |    "char_id": 2,
-        |    "name": "Spock",
+        |    "char_id": 1,
+        |    "name": "James Tiberius Kirk",
         |    "home": {
         |      "plan_id": 1,
         |      "name": "Earth",
         |      "climate": "not too bad"
-        |    },
-        |    "species": {
-        |      "spec_id": 2,
-        |      "name": "Vulcan",
-        |      "lifespan": 220,
-        |      "origin": {
-        |        "plan_id": 2,
-        |        "name": "Vulcan",
-        |        "climate": "pretty hot"
-        |      }
-        |    }
-        |  },
-        |  {
-        |    "char_id": 7,
-        |    "name": "Natasha Yar",
-        |    "home": {
-        |      "plan_id": 5,
-        |      "name": "Turkana IV",
-        |      "climate": null
         |    },
         |    "species": {
         |      "spec_id": 1,
@@ -141,12 +84,12 @@ class OQLBasicTests extends AsyncFreeSpec with Matchers {
         |    }
         |  },
         |  {
-        |    "char_id": 3,
-        |    "name": "Deanna Troi",
+        |    "char_id": 6,
+        |    "name": "Lwaxana Troi",
         |    "home": {
-        |      "plan_id": 1,
-        |      "name": "Earth",
-        |      "climate": "not too bad"
+        |      "plan_id": 3,
+        |      "name": "Betazed",
+        |      "climate": "awesome weather"
         |    },
         |    "species": {
         |      "spec_id": 3,
@@ -156,6 +99,63 @@ class OQLBasicTests extends AsyncFreeSpec with Matchers {
         |        "plan_id": 3,
         |        "name": "Betazed",
         |        "climate": "awesome weather"
+        |      }
+        |    }
+        |  },
+        |  {
+        |    "char_id": 7,
+        |    "name": "Natasha Yar",
+        |    "home": {
+        |      "plan_id": 5,
+        |      "name": "Turkana IV",
+        |      "climate": null
+        |    },
+        |    "species": {
+        |      "spec_id": 1,
+        |      "name": "Human",
+        |      "lifespan": 71,
+        |      "origin": {
+        |        "plan_id": 1,
+        |        "name": "Earth",
+        |        "climate": "not too bad"
+        |      }
+        |    }
+        |  },
+        |  {
+        |    "char_id": 2,
+        |    "name": "Spock",
+        |    "home": {
+        |      "plan_id": 1,
+        |      "name": "Earth",
+        |      "climate": "not too bad"
+        |    },
+        |    "species": {
+        |      "spec_id": 2,
+        |      "name": "Vulcan",
+        |      "lifespan": 220,
+        |      "origin": {
+        |        "plan_id": 2,
+        |        "name": "Vulcan",
+        |        "climate": "pretty hot"
+        |      }
+        |    }
+        |  },
+        |  {
+        |    "char_id": 4,
+        |    "name": "Worf, Son of Mogh",
+        |    "home": {
+        |      "plan_id": 1,
+        |      "name": "Earth",
+        |      "climate": "not too bad"
+        |    },
+        |    "species": {
+        |      "spec_id": 4,
+        |      "name": "Klingon",
+        |      "lifespan": 150,
+        |      "origin": {
+        |        "plan_id": 4,
+        |        "name": "Qo'noS",
+        |        "climate": "turbulent"
         |      }
         |    }
         |  }
