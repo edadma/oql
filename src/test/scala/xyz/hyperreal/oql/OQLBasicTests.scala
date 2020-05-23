@@ -1,26 +1,30 @@
 package xyz.hyperreal.oql
 
 import org.scalatest._
-import freespec.AnyFreeSpec
+import freespec.AsyncFreeSpec
 import matchers.should.Matchers
+
+import scala.concurrent.ExecutionContext
+
 import Testing._
 
-class OQLTests extends AnyFreeSpec with Matchers {
+class OQLBasicTests extends AsyncFreeSpec with Matchers {
+  implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  "basic tests" in {
-//    starTrekER
-//      .query("character { name species.origin.name } [species.name = 'Betazoid']", starTrekDB)
-//      .value
-//      .get
-//      .asInstanceOf[Success[List[Map[String, Any]]]]
-//      .value shouldBe
-//      List(
-//        Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
-//        Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
-//      )
+  "query()" in {
+    starTrekER.query("character { name species.origin.name } [species.name = 'Betazoid']", starTrekDB) map { result =>
+      result shouldBe
+        List(
+          Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
+          Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
+        )
+    }
+  }
 
-    starTrekER.json("character", starTrekDB) shouldBe
-      """
+  "json()" in {
+    starTrekER.json("character", starTrekDB) map { result =>
+      result shouldBe
+        """
         |[
         |  {
         |    "char_id": 4,
@@ -157,6 +161,7 @@ class OQLTests extends AnyFreeSpec with Matchers {
         |  }
         |]
       """.trim.stripMargin
+    }
   }
 
 }

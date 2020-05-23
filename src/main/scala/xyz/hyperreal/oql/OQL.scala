@@ -20,7 +20,7 @@ class OQL(erd: String) {
   def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = query(sql, conn).map(toJS).toJSPromise
 
   def json(sql: String, conn: Connection) =
-    JSON.stringify(toJS(query(sql, conn).value), null.asInstanceOf[js.Array[js.Any]], 2)
+    query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
     val OQLQuery(resource, project, select, order, restrict) =
@@ -64,7 +64,7 @@ class OQL(erd: String) {
         null
 
     for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
-      sql append s"  JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n" // todo: LEFT OUTER JOIN
+      sql append s"  LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
 
     if (select isDefined)
       sql append s"  WHERE $where\n"

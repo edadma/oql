@@ -17,7 +17,7 @@ object Main extends App {
   val conn = new RDBConnection(readFile("examples/student.tab"))
   val oql = new OQL(readFile("examples/student.erd"))
 
-  oql.query("class { name students { name } }", conn).onComplete {
+  oql.json("class { name students { name } }", conn).onComplete {
     case Failure(exception) => throw exception
     case Success(value) =>
       println(value)
