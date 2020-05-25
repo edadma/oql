@@ -23,19 +23,20 @@ class OQL(erd: String) {
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val OQLQuery(resource, project, select, order, restrict) =
+    val OQLQuery(resource, project, select, order, group, restrict) =
       OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
 
-    executeQuery(resource.name, select, order, restrict, entity, projectbuf, joinbuf, graph, conn)
+    executeQuery(resource.name, select, order, group, restrict, entity, projectbuf, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
                            order: Option[List[(ExpressionOQL, Boolean)]],
+                           group: Option[List[VariableExpressionOQL]],
                            restrict: (Option[Int], Option[Int]),
                            entity: Entity,
                            projectbuf: ListBuffer[(String, String)],
@@ -55,6 +56,11 @@ class OQL(erd: String) {
         expression(resource, entity, select.get, joinbuf)
       else
         null
+    val groupby =
+      if (group isDefined)
+        group.get map (v => expression(resource, entity, v, joinbuf)) mkString ", "
+      else
+        null
     val orderby =
       if (order isDefined)
         order.get map {
@@ -68,6 +74,9 @@ class OQL(erd: String) {
 
     if (select isDefined)
       sql append s"  WHERE $where\n"
+
+    if (group isDefined)
+      sql append s"  GROUP BY $groupby\n"
 
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
@@ -263,6 +272,7 @@ class OQL(erd: String) {
           val future = executeQuery(
             resource,
             Some(EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)),
+            None,
             None,
             (None, None),
             entity,

@@ -8,6 +8,7 @@ case class OQLQuery(resource: Ident,
                     project: ProjectExpressionOQL,
                     select: Option[ExpressionOQL],
                     order: Option[List[(ExpressionOQL, Boolean)]],
+                    group: Option[List[VariableExpressionOQL]],
                     restrict: (Option[Int], Option[Int]))
 
 abstract class ExpressionOQL extends OQLAST with Positional
