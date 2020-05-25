@@ -82,7 +82,7 @@ class OQLParser extends RegexParsers {
       comparisonExpression
 
   def comparisonExpression =
-    primaryExpression ~ ("<" | ">" | "<=" | ">=" | "=" | "!=") ~ primaryExpression ^^ {
+    primaryExpression ~ ("<" | ">" | "<=" | ">=" | "=" | "!=" | ("LIKE" | "like") | (("NOT" | "not") ~ ("LIKE" | "like") ^^^ "NOT LIKE")) ~ primaryExpression ^^ {
       case l ~ o ~ r => InfixExpressionOQL(l, o, r)
     } |
       primaryExpression

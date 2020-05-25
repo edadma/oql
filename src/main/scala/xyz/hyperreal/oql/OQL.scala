@@ -101,10 +101,10 @@ class OQL(erd: String) {
         case EqualsExpressionOQL(table, column, value) => buf append s"$table.$column = $value"
         case InfixExpressionOQL(left, op, right) =>
           expression(left)
-          buf append s" $op "
+          buf append s" ${op.toUpperCase} "
           expression(right)
         case PrefixExpressionOQL(op, expr) =>
-          buf append s" $op"
+          buf append s" ${op.toUpperCase}"
           expression(expr)
         case FloatLiteralOQL(n)         => buf append n
         case IntegerLiteralOQL(n)       => buf append n
