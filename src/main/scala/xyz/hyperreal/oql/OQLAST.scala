@@ -25,4 +25,4 @@ abstract class ProjectExpressionOQL
 case class ProjectAttributesOQL(attrs: List[AttributeOQL]) extends ProjectExpressionOQL
 case object ProjectAllOQL extends ProjectExpressionOQL
 
-case class AttributeOQL(attr: Ident, project: ProjectExpressionOQL)
+case class AttributeOQL(agg: Option[Ident], attr: Ident, project: ProjectExpressionOQL)

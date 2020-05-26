@@ -26,7 +26,7 @@ class OQL(erd: String) {
     val OQLQuery(resource, project, select, order, group, restrict) =
       OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
-    val projectbuf = new ListBuffer[(String, String)]
+    val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
 
@@ -39,12 +39,15 @@ class OQL(erd: String) {
                            group: Option[List[VariableExpressionOQL]],
                            restrict: (Option[Int], Option[Int]),
                            entity: Entity,
-                           projectbuf: ListBuffer[(String, String)],
+                           projectbuf: ListBuffer[(Option[String], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode],
                            conn: Connection): Future[List[Map[String, Any]]] = {
     val sql = new StringBuilder
-    val projects: Seq[String] = projectbuf.toList map { case (e, f) => s"$e.$f" }
+    val projects: Seq[String] = projectbuf.toList map {
+      case (None, e, f)    => s"$e.$f"
+      case (Some(a), e, f) => s"$a($e.$f)"
+    }
 
     sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
@@ -86,7 +89,7 @@ class OQL(erd: String) {
 
     print(sql)
 
-    val projectmap = projectbuf.zipWithIndex.toMap
+    val projectmap = projectbuf.map { case (_, t, f) => (t, f) }.zipWithIndex.toMap
 
     conn
       .query(sql.toString)
@@ -162,18 +165,18 @@ class OQL(erd: String) {
   private def branches(entityname: String,
                        entity: Entity,
                        project: ProjectExpressionOQL,
-                       projectbuf: ListBuffer[(String, String)],
+                       projectbuf: ListBuffer[(Option[String], String, String)],
                        joinbuf: ListBuffer[(String, String, String, String, String)],
                        attrlist: List[String]): Seq[ProjectionNode] = {
     val attrs =
       if (project == ProjectAllOQL) {
-        entity.attributes map { case (k, v) => (k, v, ProjectAllOQL) } toList
+        entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL) } toList
       } else {
         project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
           entity.attributes get attr.attr.name match {
             case None =>
               problem(attr.attr.pos, s"unknown attribute: '${attr.attr.name}'")
-            case Some(typ) => (attr.attr.name, typ, attr.project)
+            case Some(typ) => (attr.agg map (_.name), attr.attr.name, typ, attr.project)
           })
       }
     val table = attrlist mkString "$"
@@ -182,10 +185,10 @@ class OQL(erd: String) {
 //      projectbuf += table -> entity.pk.get
 
     attrs map {
-      case (field, attr: PrimitiveEntityAttribute, _) =>
-        projectbuf += (table -> field)
+      case (agg, field, attr: PrimitiveEntityAttribute, _) =>
+        projectbuf += ((agg, table, field))
         PrimitiveProjectionNode(table, field, attr)
-      case (field, attr: ObjectEntityAttribute, project) =>
+      case (_, field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
@@ -193,8 +196,8 @@ class OQL(erd: String) {
 
         joinbuf += ((table, attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, projectbuf, joinbuf, attrlist1))
-      case (field, ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
-        val projectbuf = new ListBuffer[(String, String)]
+      case (_, field, ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
+        val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
           a =>
@@ -228,7 +231,7 @@ class OQL(erd: String) {
           junction,
           branches(junctionType,
                    junction,
-                   ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
+                   ProjectAttributesOQL(List(AttributeOQL(None, Ident(junctionAttr), project))),
                    projectbuf,
                    subjoinbuf,
                    List(junctionType))
@@ -320,7 +323,7 @@ class OQL(erd: String) {
   case class EntityArrayJunctionProjectionNode(field: String,
                                                tabpk: String,
                                                colpk: String,
-                                               subprojectbuf: ListBuffer[(String, String)],
+                                               subprojectbuf: ListBuffer[(Option[String], String, String)],
                                                subjoinbuf: ListBuffer[(String, String, String, String, String)],
                                                resource: String,
                                                column: String,
