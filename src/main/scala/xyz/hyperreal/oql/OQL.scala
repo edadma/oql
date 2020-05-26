@@ -187,8 +187,11 @@ class OQL(erd: String) {
       }
     val table = attrlist mkString "$"
 
-//    if (entity.pk.isDefined && !attrs.exists(_._1 == entity.pk.get))
-//      projectbuf += table -> entity.pk.get
+    if (attrs.exists {
+          case (_, _, _: ObjectArrayJunctionEntityAttribute, _) => true
+          case _                                                => false
+        } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
+      projectbuf += ((None, table, entity.pk.get))
 
     attrs map {
       case (agg, field, attr: PrimitiveEntityAttribute, _) =>
