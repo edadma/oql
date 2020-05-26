@@ -48,7 +48,10 @@ class OQL(erd: String) {
 
     sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
-    sql append '\n'
+
+    if (projects.tail nonEmpty)
+      sql append '\n'
+
     sql append s"  FROM $resource\n"
 
     val where =
