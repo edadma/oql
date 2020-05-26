@@ -81,7 +81,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf.zipWithIndex.toMap
 
@@ -145,7 +145,7 @@ class OQL(erd: String) {
               if (tail == Nil)
                 problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
               else {
-                val attrlist1 = column :: attrlist
+                val attrlist1 = attr.name :: attrlist // was column :: attrlist
 
                 joinbuf += ((attrlist mkString "$", column, entityType, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
@@ -175,8 +175,8 @@ class OQL(erd: String) {
       }
     val table = attrlist mkString "$"
 
-    if (entity.pk.isDefined && !attrs.exists(_._1 == entity.pk.get))
-      projectbuf += table -> entity.pk.get
+//    if (entity.pk.isDefined && !attrs.exists(_._1 == entity.pk.get))
+//      projectbuf += table -> entity.pk.get
 
     attrs map {
       case (field, attr: PrimitiveEntityAttribute, _) =>
