@@ -23,7 +23,7 @@ class OQL(erd: String) {
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val OQLQuery(resource, project, select, group, order, restrict) = OQLParser.parseQuery(sql)
+    val QueryOQL(resource, project, select, group, order, restrict) = OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -173,15 +173,25 @@ class OQL(erd: String) {
                        projectbuf: ListBuffer[(Option[String], String, String)],
                        joinbuf: ListBuffer[(String, String, String, String, String)],
                        attrlist: List[String]): Seq[ProjectionNode] = {
+    def attrType(attr: Ident) =
+      entity.attributes get attr.name match {
+        case None      => problem(attr.pos, s"unknown attribute: '${attr.name}'")
+        case Some(typ) => typ
+      }
+
     val attrs =
       if (project == ProjectAllOQL) {
         entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL) } toList
       } else {
         project.asInstanceOf[ProjectAttributesOQL].attrs map {
-          case AttributeOQL(agg, attr, project) =>
-            entity.attributes get attr.name match {
-              case None      => problem(attr.pos, s"unknown attribute: '${attr.name}'")
-              case Some(typ) => (agg map (_.name), attr.name, typ, project)
+          case AggregateAttributeOQL(agg, attr)                        => (Some(agg.name), attr.name, attrType(attr), ProjectAllOQL)
+          case QueryOQL(attr, project, None, None, None, (None, None)) => (None, attr.name, attrType(attr), project)
+          case QueryOQL(source, project, select, group, order, restrict) =>
+            attrType(source) match {
+              case typ: ObjectArrayJunctionEntityAttribute =>
+                (None, source.name, attrType(source), project)
+              case _ =>
+                problem(source.pos, s"'${source.name}' is not an array type attribute")
             }
         }
       }
@@ -238,12 +248,14 @@ class OQL(erd: String) {
           junctionType,
           column,
           junction,
-          branches(junctionType,
-                   junction,
-                   ProjectAttributesOQL(List(AttributeOQL(None, Ident(junctionAttr), project))),
-                   projectbuf,
-                   subjoinbuf,
-                   List(junctionType))
+          branches(
+            junctionType,
+            junction,
+            ProjectAttributesOQL(List(QueryOQL(Ident(junctionAttr), project, None, None, None, (None, None)))),
+            projectbuf,
+            subjoinbuf,
+            List(junctionType)
+          )
         )
 //        EntityArrayJunctionProjectionNode(
 //          field,
