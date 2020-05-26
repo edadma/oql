@@ -87,9 +87,15 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
-    val projectmap = projectbuf.map { case (_, t, f) => (t, f) }.zipWithIndex.toMap
+    val projectmap = projectbuf
+      .map {
+        case (None, t, f)    => (t, f)
+        case (Some(a), t, f) => (t, s"${a}_$f")
+      }
+      .zipWithIndex
+      .toMap
 
     conn
       .query(sql.toString)
@@ -187,7 +193,7 @@ class OQL(erd: String) {
     attrs map {
       case (agg, field, attr: PrimitiveEntityAttribute, _) =>
         projectbuf += ((agg, table, field))
-        PrimitiveProjectionNode(table, field, attr)
+        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field), table, field, attr)
       case (_, field, attr: ObjectEntityAttribute, project) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key")
@@ -265,7 +271,7 @@ class OQL(erd: String) {
     def futures(branches: Seq[ProjectionNode]): Unit = {
       branches foreach {
         case EntityProjectionNode(_, branches) => futures(branches)
-        case PrimitiveProjectionNode(_, _, _)  =>
+        case _: PrimitiveProjectionNode        =>
         case node @ EntityArrayJunctionProjectionNode(_,
                                                       tabpk,
                                                       colpk,
@@ -304,8 +310,9 @@ class OQL(erd: String) {
       conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
-        case EntityProjectionNode(field, branches)    => field -> build(branches)
-        case PrimitiveProjectionNode(table, field, _) => field -> row(projectmap((table, field)))
+        case EntityProjectionNode(field, branches) => field -> build(branches)
+        case PrimitiveProjectionNode(name, table, field, _) =>
+          name -> row(projectmap((table, name))) // used to be row(projectmap((table, field)))
         case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
@@ -318,7 +325,8 @@ class OQL(erd: String) {
   }
 
   abstract class ProjectionNode { val field: String }
-  case class PrimitiveProjectionNode(table: String, field: String, typ: EntityAttribute) extends ProjectionNode
+  case class PrimitiveProjectionNode(name: String, table: String, field: String, typ: EntityAttribute)
+      extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
   case class EntityArrayJunctionProjectionNode(field: String,
                                                tabpk: String,
