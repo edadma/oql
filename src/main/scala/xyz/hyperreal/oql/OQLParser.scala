@@ -49,14 +49,15 @@ class OQLParser extends RegexParsers {
     "{" ~> rep1(attributeProject) <~ "}" ^^ ProjectAttributesOQL |
       "." ~> attributeProject ^^ (p => ProjectAttributesOQL(List(p)))
 
-  def attributeProject =
+  def attributeProject: Parser[ProjectExpressionOQL] =
     ident ~ "(" ~ ident ~ ")" ^^ {
       case a ~ _ ~ i ~ _ => AttributeOQL(Some(a), i, ProjectAllOQL)
     } |
       ident ~ opt(project) ^^ {
         case i ~ None    => AttributeOQL(None, i, ProjectAllOQL)
         case i ~ Some(p) => AttributeOQL(None, i, p)
-      }
+      } |
+      query
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
 

@@ -23,8 +23,7 @@ class OQL(erd: String) {
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val OQLQuery(resource, project, select, group, order, restrict) =
-      OQLParser.parseQuery(sql)
+    val OQLQuery(resource, project, select, group, order, restrict) = OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -178,12 +177,13 @@ class OQL(erd: String) {
       if (project == ProjectAllOQL) {
         entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL) } toList
       } else {
-        project.asInstanceOf[ProjectAttributesOQL].attrs map (attr =>
-          entity.attributes get attr.attr.name match {
-            case None =>
-              problem(attr.attr.pos, s"unknown attribute: '${attr.attr.name}'")
-            case Some(typ) => (attr.agg map (_.name), attr.attr.name, typ, attr.project)
-          })
+        project.asInstanceOf[ProjectAttributesOQL].attrs map {
+          case AttributeOQL(agg, attr, project) =>
+            entity.attributes get attr.name match {
+              case None      => problem(attr.pos, s"unknown attribute: '${attr.name}'")
+              case Some(typ) => (agg map (_.name), attr.name, typ, project)
+            }
+        }
       }
     val table = attrlist mkString "$"
 
