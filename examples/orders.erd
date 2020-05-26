@@ -1,0 +1,16 @@
+entity agents {
+ *agent_code: text
+  agent_name: text
+  working_area: text
+  commission: decimal
+  phone_no: text
+}
+
+entity orders {
+ *ord_num: integer
+  ord_amount: decimal
+  advance_amount: decimal
+  ord_date: text
+  cust_code: text
+  agent (agent_code): agents
+}

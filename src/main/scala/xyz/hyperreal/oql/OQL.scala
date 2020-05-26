@@ -23,7 +23,7 @@ class OQL(erd: String) {
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val OQLQuery(resource, project, select, order, group, restrict) =
+    val OQLQuery(resource, project, select, group, order, restrict) =
       OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]

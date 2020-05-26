@@ -40,9 +40,9 @@ class OQLParser extends RegexParsers {
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
   def query: Parser[OQLQuery] =
-    ident ~ opt(project) ~ opt(select) ~ opt(order) ~ opt(group) ~ opt(restrict) ^^ {
-      case e ~ p ~ s ~ o ~ g ~ r =>
-        OQLQuery(e, if (p isDefined) p.get else ProjectAllOQL, s, o, g, if (r isDefined) r.get else (None, None))
+    ident ~ opt(project) ~ opt(select) ~ opt(group) ~ opt(order) ~ opt(restrict) ^^ {
+      case e ~ p ~ s ~ g ~ o ~ r =>
+        OQLQuery(e, if (p isDefined) p.get else ProjectAllOQL, s, g, o, if (r isDefined) r.get else (None, None))
     }
 
   def project: Parser[ProjectExpressionOQL] =

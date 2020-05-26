@@ -17,7 +17,8 @@ package object oql {
 
   def toJS(a: Any): js.Any =
     a match {
-      case l: Seq[_] => l map toJS toJSArray
+      case d: BigDecimal => d.toDouble
+      case l: Seq[_]     => l map toJS toJSArray
       case m: Map[_, _] =>
         (m map { case (k, v) => k -> toJS(v) })
           .asInstanceOf[Map[String, Any]]

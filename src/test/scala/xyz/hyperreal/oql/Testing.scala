@@ -2,6 +2,58 @@ package xyz.hyperreal.oql
 
 object Testing {
 
+  val studentDB =
+    new RDBConnection(
+      """
+        |student
+        | id: integer, pk  name: text
+        | 1                John
+        | 2                Debbie
+        |
+        |class
+        | id: integer, pk      name: text
+        | 1                English
+        | 2                Maths
+        | 3                Spanish
+        | 4                Biology
+        | 5                Science
+        | 6                Programming
+        | 7                Law
+        | 8                Commerce
+        | 9                Physical Education
+        |
+        |enrollment
+        | studentid: integer, fk, student, id  classid: integer, fk, class, id
+        | 1                                    3
+        | 1                                    5
+        | 1                                    9
+        | 2                                    1
+        | 2                                    4
+        | 2                                    5
+        | 2                                    9
+        |""".stripMargin
+    )
+  val studentER =
+    new OQL(
+      """
+        |entity class {
+        | *id: integer
+        |  name: text
+        |  students: [student] enrollment
+        |}
+        |
+        |entity student {
+        | *id: integer
+        |  name: text
+        |  classes: [class] enrollment
+        |}
+        |
+        |entity enrollment {
+        |  student (studentid): student
+        |  class (classid): class
+        |}
+        |""".stripMargin
+    )
   val starTrekDB =
     new RDBConnection(
       """
