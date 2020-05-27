@@ -29,13 +29,13 @@ class OQL(erd: String) {
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name))
 
-    executeQuery(resource.name, select, order, group, restrict, entity, projectbuf, joinbuf, graph, conn)
+    executeQuery(resource.name, select, group, order, restrict, entity, projectbuf, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
-                           order: Option[List[(ExpressionOQL, Boolean)]],
                            group: Option[List[VariableExpressionOQL]],
+                           order: Option[List[(ExpressionOQL, Boolean)]],
                            restrict: (Option[Int], Option[Int]),
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[String], String, String)],
@@ -181,15 +181,20 @@ class OQL(erd: String) {
 
     val attrs =
       if (project == ProjectAllOQL) {
-        entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL) } toList
+        entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL, null) } toList
       } else {
         project.asInstanceOf[ProjectAttributesOQL].attrs map {
-          case AggregateAttributeOQL(agg, attr)                        => (Some(agg.name), attr.name, attrType(attr), ProjectAllOQL)
-          case QueryOQL(attr, project, None, None, None, (None, None)) => (None, attr.name, attrType(attr), project)
-          case QueryOQL(source, project, select, group, order, restrict) =>
+          case AggregateAttributeOQL(agg, attr) =>
+            attrType(attr) match {
+              case typ: PrimitiveEntityAttribute => (Some(agg.name), attr.name, typ, ProjectAllOQL, null)
+              case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
+            }
+          case query @ QueryOQL(attr, project, None, None, None, (None, None)) =>
+            (None, attr.name, attrType(attr), project, query)
+          case query @ QueryOQL(source, project, _, _, _, _) =>
             attrType(source) match {
               case typ: ObjectArrayJunctionEntityAttribute =>
-                (None, source.name, attrType(source), project)
+                (None, source.name, typ, project, query)
               case _ =>
                 problem(source.pos, s"'${source.name}' is not an array type attribute")
             }
@@ -198,16 +203,16 @@ class OQL(erd: String) {
     val table = attrlist mkString "$"
 
     if (attrs.exists {
-          case (_, _, _: ObjectArrayJunctionEntityAttribute, _) => true
-          case _                                                => false
+          case (_, _, _: ObjectArrayJunctionEntityAttribute, _, _) => true
+          case _                                                   => false
         } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
       projectbuf += ((None, table, entity.pk.get))
 
     attrs map {
-      case (agg, field, attr: PrimitiveEntityAttribute, _) =>
+      case (agg, field, attr: PrimitiveEntityAttribute, _, _) =>
         projectbuf += ((agg, table, field))
         PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field), table, field, attr)
-      case (_, field, attr: ObjectEntityAttribute, project) =>
+      case (_, field, attr: ObjectEntityAttribute, project, _) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.entityType}' is referenced as a type but has no primary key")
 
@@ -215,7 +220,11 @@ class OQL(erd: String) {
 
         joinbuf += ((table, attr.column, attr.entityType, attrlist1 mkString "$", attr.entity.pk.get))
         EntityProjectionNode(field, branches(attr.entityType, attr.entity, project, projectbuf, joinbuf, attrlist1))
-      case (_, field, ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction), project) =>
+      case (_,
+            field,
+            ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction),
+            project,
+            query) =>
         val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
@@ -251,11 +260,21 @@ class OQL(erd: String) {
           branches(
             junctionType,
             junction,
-            ProjectAttributesOQL(List(QueryOQL(Ident(junctionAttr), project, None, None, None, (None, None)))),
+            ProjectAttributesOQL(
+              List(
+                QueryOQL(
+                  Ident(junctionAttr),
+                  project,
+                  None,
+                  None,
+                  None,
+                  (None, None)
+                ))),
             projectbuf,
             subjoinbuf,
             List(junctionType)
-          )
+          ),
+          query
         )
 //        EntityArrayJunctionProjectionNode(
 //          field,
@@ -295,13 +314,16 @@ class OQL(erd: String) {
                                                       resource,
                                                       column,
                                                       entity,
-                                                      branches) =>
+                                                      branches,
+                                                      query) =>
+          val pkwhere = EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)
+          println(query)
           val future = executeQuery(
             resource,
-            Some(EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)),
-            None,
-            None,
-            (None, None),
+            Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+            query.group,
+            query.order,
+            query.restrict,
             entity,
             subprojectbuf,
             subjoinbuf,
@@ -328,7 +350,7 @@ class OQL(erd: String) {
         case EntityProjectionNode(field, branches) => field -> build(branches)
         case PrimitiveProjectionNode(name, table, field, _) =>
           name -> row(projectmap((table, name))) // used to be row(projectmap((table, field)))
-        case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches) =>
+        case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
@@ -351,7 +373,8 @@ class OQL(erd: String) {
                                                resource: String,
                                                column: String,
                                                entity: Entity,
-                                               branches: Seq[ProjectionNode])
+                                               branches: Seq[ProjectionNode],
+                                               query: QueryOQL)
       extends ProjectionNode
 
 }
