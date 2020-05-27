@@ -39,7 +39,7 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      ObjectArrayJunctionEntityAttribute(column.name, t, junction.name, j)
+                      ObjectArrayJunctionEntityAttribute(column.name, t, junction.name, j) // todo: shouldn't this be 'typ.name' instead of 'column.name'? and if so, does 'column.name' still need to be present?
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>
@@ -48,7 +48,7 @@ class ERModel(defn: String) {
                 case ArrayTypeERD(typ) =>
                   entityMap get typ.name match {
                     case Some(t) =>
-                      ObjectArrayEntityAttribute(column.name, t)
+                      ObjectArrayEntityAttribute(typ.name, t)
                     case None =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                   }
@@ -83,3 +83,5 @@ class ERModel(defn: String) {
     get(table, pos).attributes.toList
 
 }
+
+// todo: check validity of entity types

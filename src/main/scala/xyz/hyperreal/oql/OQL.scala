@@ -86,7 +86,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf
       .map {
@@ -285,6 +285,7 @@ class OQL(erd: String) {
       case (_, field, ObjectArrayEntityAttribute(entityType, attrEntity), project, query) =>
         val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
+        println()
         val es = attrEntity.attributes.toList.filter(
           a =>
             a._2
@@ -295,7 +296,7 @@ class OQL(erd: String) {
             case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
           }
-
+        println(field, entityType)
         EntityArrayProjectionNode(
           field,
           table,
@@ -318,6 +319,12 @@ class OQL(erd: String) {
     }
   }
 
+  private def render(a: Any) =
+    a match {
+      case s: String => s"'$s'"
+      case _         => a.toString
+    }
+
   private def futures(row: ResultRow,
                       futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
                       futuremap: mutable.HashMap[(ResultRow, ProjectionNode), Future[List[Map[String, Any]]]],
@@ -338,7 +345,7 @@ class OQL(erd: String) {
                                                       entity,
                                                       nodes,
                                                       query) =>
-          val pkwhere = EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)
+          val pkwhere = EqualsExpressionOQL(resource, column, render(row(projectmap((tabpk, colpk)))))
           val future = executeQuery(
             resource,
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
@@ -364,7 +371,7 @@ class OQL(erd: String) {
                                               entity,
                                               branches,
                                               query) =>
-          val pkwhere = EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)
+          val pkwhere = EqualsExpressionOQL(resource, column, render(row(projectmap((tabpk, colpk)))))
           val future = executeQuery(
             resource,
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
@@ -397,6 +404,11 @@ class OQL(erd: String) {
         case PrimitiveProjectionNode(name, table, field, _) =>
           name -> row(projectmap((table, name))) // used to be row(projectmap((table, field)))
         case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
+          futuremap((row, node)).value match {
+            case Some(Success(value)) => field -> (value map (m => m.head._2))
+            case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
+          }
+        case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")

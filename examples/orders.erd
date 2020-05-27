@@ -13,5 +13,5 @@ entity order {
   advance_amount: decimal
   ord_date: text
   cust_code: text
-  agent (agent_code): agents
+  agent (agent_code): agent
 }

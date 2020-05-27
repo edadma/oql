@@ -1,4 +1,4 @@
-agents
+agent
  agent_code: text, pk  agent_name: text  working_area: text  commission: currency  phone_no: text
  A007                  Ramasundar        Bangalore           0.15                  077-25814763   
  A003                  Alex              London              0.13                  075-12458969   
@@ -13,8 +13,8 @@ agents
  A004                  Ivan              Torento             0.15                  008-22544166   
  A009                  Benjamin          Hampshair           0.11                  008-22536178   
 
-orders
- ord_num: integer, pk  ord_amount: currency  advance_amount: currency  ord_date: text  cust_code: text  agent_code: text, fk, agents, agent_code
+order
+ ord_num: integer, pk  ord_amount: currency  advance_amount: currency  ord_date: text  cust_code: text  agent_code: text, fk, agent, agent_code
  200114                3500                  2000                      15-AUG-08       C00002           A008                                     
  200122                2500                  400                       16-SEP-08       C00003           A004                                     
  200118                500                   100                       20-JUL-08       C00023           A006                                     
