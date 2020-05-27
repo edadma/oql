@@ -12,6 +12,11 @@ entity order {
   ord_amount: decimal
   advance_amount: decimal
   ord_date: text
-  cust_code: text
+  customer (cust_code): customer
   agent (agent_code): agent
+}
+
+entity customer {
+ *cust_code: text
+  name: text
 }
