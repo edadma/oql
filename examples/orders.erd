@@ -1,12 +1,13 @@
-entity agents {
+entity agent {
  *agent_code: text
   agent_name: text
   working_area: text
   commission: decimal
   phone_no: text
+  orders: [order]
 }
 
-entity orders {
+entity order {
  *ord_num: integer
   ord_amount: decimal
   advance_amount: decimal

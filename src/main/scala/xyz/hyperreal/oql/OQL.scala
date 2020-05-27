@@ -198,7 +198,7 @@ class OQL(erd: String) {
             (None, attr.name, attrType(attr), project, query)
           case query @ QueryOQL(source, project, _, _, _, _) =>
             attrType(source) match {
-              case typ: ObjectArrayJunctionEntityAttribute =>
+              case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
                 (None, source.name, typ, project, query)
               case _ =>
                 problem(source.pos, s"'${source.name}' is not an array type attribute")
@@ -207,9 +207,10 @@ class OQL(erd: String) {
       }
     val table = attrlist mkString "$"
 
+    // add the primary key to projectbuf if an array type attribute is being projected
     if (attrs.exists {
-          case (_, _, _: ObjectArrayJunctionEntityAttribute, _, _) => true
-          case _                                                   => false
+          case (_, _, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute, _, _) => true
+          case _                                                                                   => false
         } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
       projectbuf += ((None, table, entity.pk.get))
 
@@ -281,6 +282,58 @@ class OQL(erd: String) {
           ),
           query
         )
+//      case (_, field, ObjectArrayEntityAttribute(entityType, attrEntity), project, query) =>
+//        val projectbuf = new ListBuffer[(Option[String], String, String)]
+//        val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
+//        val ts = junction.attributes.toList.filter(
+//          a =>
+//            a._2
+//              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == attrEntity)
+//        val junctionAttr =
+//          ts.length match {
+//            case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
+//            case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
+//            case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
+//          }
+//        val es = junction.attributes.toList.filter(
+//          a =>
+//            a._2
+//              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+//        val column =
+//          es.length match {
+//            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+//            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+//            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+//          }
+//
+//        EntityArrayProjectionNode(
+//          field,
+//          table,
+//          entity.pk.get, // used to be attrEntity.pk.get
+//          projectbuf,
+//          subjoinbuf,
+//          junctionType,
+//          column,
+//          junction,
+//          branches(
+//            junctionType,
+//            junction,
+//            ProjectAttributesOQL(
+//              List(
+//                QueryOQL(
+//                  Ident(junctionAttr),
+//                  project,
+//                  None,
+//                  None,
+//                  None,
+//                  (None, None)
+//                ))),
+//            projectbuf,
+//            subjoinbuf,
+//            List(junctionType)
+//          ),
+//          query
+//        )
     }
   }
 
@@ -289,12 +342,12 @@ class OQL(erd: String) {
       futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
       futuremap: mutable.HashMap[(ResultRow, EntityArrayJunctionProjectionNode), Future[List[Map[String, Any]]]],
       projectmap: Map[(String, String), Int],
-      branches: Seq[ProjectionNode],
+      nodes: Seq[ProjectionNode],
       conn: Connection): Unit = {
-    def futures(branches: Seq[ProjectionNode]): Unit = {
-      branches foreach {
-        case EntityProjectionNode(_, branches) => futures(branches)
-        case _: PrimitiveProjectionNode        =>
+    def futures(nodes: Seq[ProjectionNode]): Unit = {
+      nodes foreach {
+        case _: PrimitiveProjectionNode     =>
+        case EntityProjectionNode(_, nodes) => futures(nodes)
         case node @ EntityArrayJunctionProjectionNode(_,
                                                       tabpk,
                                                       colpk,
@@ -303,10 +356,9 @@ class OQL(erd: String) {
                                                       resource,
                                                       column,
                                                       entity,
-                                                      branches,
+                                                      nodes,
                                                       query) =>
           val pkwhere = EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)
-          println(query)
           val future = executeQuery(
             resource,
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
@@ -316,16 +368,42 @@ class OQL(erd: String) {
             entity,
             subprojectbuf,
             subjoinbuf,
-            branches,
+            nodes,
             conn
           )
 
           futurebuf += future
           futuremap((row, node)) = future
+//        case node @ EntityArrayProjectionNode(_,
+//                                              tabpk,
+//                                              colpk,
+//                                              subprojectbuf,
+//                                              subjoinbuf,
+//                                              resource,
+//                                              column,
+//                                              entity,
+//                                              branches,
+//                                              query) =>
+//          val pkwhere = EqualsExpressionOQL(resource, column, row(projectmap((tabpk, colpk))).toString)
+//          val future = executeQuery(
+//            resource,
+//            Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+//            query.group,
+//            query.order,
+//            query.restrict,
+//            entity,
+//            subprojectbuf,
+//            subjoinbuf,
+//            branches,
+//            conn
+//          )
+//
+//          futurebuf += future
+//          futuremap((row, node)) = future
       }
     }
 
-    futures(branches)
+    futures(nodes)
   }
 
   private def build(
