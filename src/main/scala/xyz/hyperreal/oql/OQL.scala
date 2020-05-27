@@ -152,16 +152,21 @@ class OQL(erd: String) {
             case None =>
               problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
             case Some(PrimitiveEntityAttribute(column, _)) =>
+              if (tail != Nil)
+                problem(attr.pos, s"'${attr.pos}' is a primitive type and so has no components")
+
               s"${attrlist mkString "$"}.$column"
             case Some(ObjectEntityAttribute(column, entityType, entity)) =>
               if (tail == Nil)
                 problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
               else {
-                val attrlist1 = attr.name :: attrlist // was column :: attrlist
+                val attrlist1 = attr.name :: attrlist
 
                 joinbuf += ((attrlist mkString "$", column, entityType, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
               }
+            case Some(_: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute) =>
+              problem(attr.pos, s"attribute '${attr.name}' is an array type and may not be referenced")
           }
       }
 
@@ -340,6 +345,17 @@ class OQL(erd: String) {
                                                column: String,
                                                entity: Entity,
                                                branches: Seq[ProjectionNode])
+      extends ProjectionNode
+  case class EntityArrayProjectionNode(field: String,
+                                       tabpk: String,
+                                       colpk: String,
+                                       subprojectbuf: ListBuffer[(Option[String], String, String)],
+                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                       resource: String,
+                                       column: String,
+                                       entity: Entity,
+                                       branches: Seq[ProjectionNode],
+                                       query: QueryOQL)
       extends ProjectionNode
 
 }

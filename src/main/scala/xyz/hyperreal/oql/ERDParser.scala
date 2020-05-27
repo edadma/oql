@@ -90,6 +90,9 @@ class ERDParser extends RegexParsers {
     ident ^^ SimpleTypeERD |
       ("[" ~> ident <~ "]") ~ ident ^^ {
         case e ~ j => JunctionArrayTypeERD(e, j)
+      } |
+      ("[" ~> ident <~ "]") ^^ {
+        case e => ArrayTypeERD(e)
       }
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =

@@ -45,6 +45,13 @@ class ERModel(defn: String) {
                     case (_, None) =>
                       problem(junction.pos, s"not an entity: ${junction.name}")
                   }
+                case ArrayTypeERD(typ) =>
+                  entityMap get typ.name match {
+                    case Some(t) =>
+                      ObjectArrayEntityAttribute(column.name, t)
+                    case None =>
+                      problem(typ.pos, s"not an entity: ${typ.name}")
+                  }
               }
 
             attrs += (attr.name -> fieldtype)
@@ -76,14 +83,3 @@ class ERModel(defn: String) {
     get(table, pos).attributes.toList
 
 }
-
-class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute])
-
-abstract class EntityAttribute
-case class PrimitiveEntityAttribute(column: String, primitiveType: String) extends EntityAttribute
-case class ObjectEntityAttribute(column: String, entityType: String, entity: Entity) extends EntityAttribute
-case class ObjectArrayJunctionEntityAttribute(entityType: String,
-                                              entity: Entity,
-                                              junctionType: String,
-                                              junction: Entity)
-    extends EntityAttribute
