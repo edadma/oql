@@ -6,7 +6,7 @@ import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
 
 object OQLParser {
 
-  def parseQuery(query: String): OQLQuery = {
+  def parseQuery(query: String): QueryOQL = {
     val p = new OQLParser
 
     p.parseFromString(query, p.query)
@@ -39,24 +39,21 @@ class OQLParser extends RegexParsers {
   def ident: Parser[Ident] =
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
-  def query: Parser[OQLQuery] =
+  def query: Parser[QueryOQL] =
     ident ~ opt(project) ~ opt(select) ~ opt(group) ~ opt(order) ~ opt(restrict) ^^ {
       case e ~ p ~ s ~ g ~ o ~ r =>
-        OQLQuery(e, if (p isDefined) p.get else ProjectAllOQL, s, g, o, if (r isDefined) r.get else (None, None))
+        QueryOQL(e, if (p isDefined) p.get else ProjectAllOQL, s, g, o, if (r isDefined) r.get else (None, None))
     }
 
   def project: Parser[ProjectExpressionOQL] =
     "{" ~> rep1(attributeProject) <~ "}" ^^ ProjectAttributesOQL |
       "." ~> attributeProject ^^ (p => ProjectAttributesOQL(List(p)))
 
-  def attributeProject =
+  def attributeProject: Parser[ProjectExpressionOQL] =
     ident ~ "(" ~ ident ~ ")" ^^ {
-      case a ~ _ ~ i ~ _ => AttributeOQL(Some(a), i, ProjectAllOQL)
+      case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
     } |
-      ident ~ opt(project) ^^ {
-        case i ~ None    => AttributeOQL(None, i, ProjectAllOQL)
-        case i ~ Some(p) => AttributeOQL(None, i, p)
-      }
+      query
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
