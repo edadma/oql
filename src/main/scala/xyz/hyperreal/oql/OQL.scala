@@ -86,7 +86,7 @@ class OQL(erd: String) {
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
 
-    print(sql)
+    //print(sql)
 
     val projectmap = projectbuf
       .map {
@@ -285,7 +285,6 @@ class OQL(erd: String) {
       case (_, field, ObjectArrayEntityAttribute(entityType, attrEntity), project, query) =>
         val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
-        println()
         val es = attrEntity.attributes.toList.filter(
           a =>
             a._2
@@ -296,7 +295,6 @@ class OQL(erd: String) {
             case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
           }
-        println(field, entityType)
         EntityArrayProjectionNode(
           field,
           table,
@@ -369,7 +367,7 @@ class OQL(erd: String) {
                                               resource,
                                               column,
                                               entity,
-                                              branches,
+                                              nodes,
                                               query) =>
           val pkwhere = EqualsExpressionOQL(resource, column, render(row(projectmap((tabpk, colpk)))))
           val future = executeQuery(
@@ -381,7 +379,7 @@ class OQL(erd: String) {
             entity,
             subprojectbuf,
             subjoinbuf,
-            branches,
+            nodes,
             conn
           )
 
@@ -410,7 +408,7 @@ class OQL(erd: String) {
           }
         case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
-            case Some(Success(value)) => field -> (value map (m => m.head._2))
+            case Some(Success(value)) => field -> value
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
           }
       }) toMap
