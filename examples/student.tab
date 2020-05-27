@@ -1,7 +1,12 @@
+laptop
+ id: integer, pk  make: text  model: text 
+ 1                lenovo      thinkpad    
+ 2                asus        rog         
+
 student
- id: integer, pk  name: text 
- 1                John       
- 2                Debbie     
+ id: integer, pk  name: text  laptop: integer, fk, laptop, id 
+ 1                John        1                               
+ 2                Debbie      2                               
 
 class
  id: integer, pk      name: text     

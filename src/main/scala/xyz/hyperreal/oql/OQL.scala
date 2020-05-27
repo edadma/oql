@@ -180,7 +180,7 @@ class OQL(erd: String) {
                        attrlist: List[String]): Seq[ProjectionNode] = {
     def attrType(attr: Ident) =
       entity.attributes get attr.name match {
-        case None      => problem(attr.pos, s"unknown attribute: '${attr.name}'")
+        case None      => problem(attr.pos, s"entity '$entityname' does not have attribute: '${attr.name}'")
         case Some(typ) => typ
       }
 

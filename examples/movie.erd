@@ -6,10 +6,10 @@ entity movie {
   mov_lang: text
   mov_dt_rel: date
   mov_rel_country: text
-  cast: [actor] movie_cast
-  ;ratings: [rating] rating
-  directors: [director] movie_direction
-  genres: [genre] movie_genres
+  cast: [actor] (movie_cast)
+  ratings: [rating]
+  directors: [director] (movie_direction)
+  genres: [genre] (movie_genres)
 }
 
 entity reviewer {
@@ -41,7 +41,7 @@ entity director {
  *dir_id: integer
   dir_fname: text
   dir_lname: text
-  movies: [movie] movie_direction
+  movies: [movie] (movie_direction)
 }
 
 entity movie_direction {

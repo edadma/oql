@@ -88,7 +88,7 @@ class ERDParser extends RegexParsers {
 
   def typeSpec: Parser[TypeSpecifierERD] =
     ident ^^ SimpleTypeERD |
-      ("[" ~> ident <~ "]") ~ ident ^^ {
+      ("[" ~> ident <~ "]") ~ ("(" ~> ident <~ ")") ^^ {
         case e ~ j => JunctionArrayTypeERD(e, j)
       } |
       ("[" ~> ident <~ "]") ^^ {
