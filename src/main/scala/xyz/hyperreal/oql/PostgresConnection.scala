@@ -25,8 +25,3 @@ class PostgresConnection(user: String, password: String) extends Connection {
   def close(): Unit = client.end
 
 }
-
-// Alison COVID testing
-// 514 293 1536
-// 514 267 7912
-// 5800 N ask for testing

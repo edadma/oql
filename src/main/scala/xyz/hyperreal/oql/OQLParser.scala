@@ -53,10 +53,6 @@ class OQLParser extends RegexParsers {
     ident ~ "(" ~ ident ~ ")" ^^ {
       case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
     } |
-//      ident ~ opt(project) ^^ {
-//        case i ~ None    => AttributeOQL(None, i, ProjectAllOQL)
-//        case i ~ Some(p) => AttributeOQL(None, i, p)
-//      } |
       query
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL

@@ -276,22 +276,6 @@ class OQL(erd: String) {
           ),
           query
         )
-//        EntityArrayJunctionProjectionNode(
-//          field,
-//          table,
-//          entity.pk.get, // used to be attrEntity.pk.get
-//          projectbuf,
-//          subjoinbuf,
-//          junctionType,
-//          column,
-//          junction,
-//          branches(junctionType,
-//                   junction,
-//                   ProjectAttributesOQL(List(AttributeOQL(Ident(junctionAttr), project))),
-//                   projectbuf,
-//                   subjoinbuf,
-//                   List(junctionType))
-//        )
     }
   }
 
