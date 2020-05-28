@@ -24,7 +24,7 @@ object Main extends App {
 //  oql.json("enrollment { student { name count(name) } } (student.name) <student.name>", conn).onComplete {
 //  oql.json("class { name students { name laptop { make model } } } [name = 'Science']", conn).onComplete {
   oql
-    .json("agent { agent_code orders } [agent_code < 'A002']", conn)
+    .json("agent { agent_code orders { ord_num } } [agent_code < 'A002']", conn)
     .onComplete {
 //  oql
 //    .json("movie { mov_title directors { dir_fname } } [mov_id < 903]", conn).onComplete {

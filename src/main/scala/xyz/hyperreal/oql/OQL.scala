@@ -126,11 +126,30 @@ class OQL(erd: String) {
         case PrefixExpressionOQL(op, expr) =>
           buf append s" ${op.toUpperCase}"
           expression(expr)
-        case FloatLiteralOQL(n)         => buf append n
-        case IntegerLiteralOQL(n)       => buf append n
-        case StringLiteralOQL(s)        => buf append s"'$s'"
-        case GroupedExpressionOQL(expr) => buf append s"($expr)"
+        case FloatLiteralOQL(n)   => buf append n
+        case IntegerLiteralOQL(n) => buf append n
+        case StringLiteralOQL(s)  => buf append s"'$s'"
+        case GroupedExpressionOQL(expr) =>
+          buf += '('
+          expression(expr)
+          buf += ')'
         case VariableExpressionOQL(ids) => buf append reference(entityname, entity, ids, joinbuf)
+        case CaseExpressionOQL(whens, els) =>
+          buf ++= "CASE"
+
+          for ((c, r) <- whens) {
+            buf ++= " WHEN "
+            expression(c)
+            buf ++= " THEN "
+            expression(r)
+          }
+
+          els foreach (e => {
+            buf ++= " ELSE "
+            expression(e)
+          })
+
+          buf ++= " END"
       }
 
     expression(expr)
@@ -176,7 +195,7 @@ class OQL(erd: String) {
       node: List[(String, EntityAttribute)] => ProjectionNode) =
     circlist.find { case (_, a) => a == attr } match {
       case None         => node((field, attr) :: circlist)
-      case Some((f, a)) => StringNode(f, s"circularity starting with field '$f' of type '${a.typ}'")
+      case Some((f, a)) => sys.error(s"circularity from field '$f' of type '${a.typ}'")
     }
 
   private def branches(entityname: String,
@@ -348,8 +367,8 @@ class OQL(erd: String) {
                       conn: Connection): Unit = {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
-        case _: PrimitiveProjectionNode | _: StringNode =>
-        case EntityProjectionNode(_, nodes)             => futures(nodes)
+        case _: PrimitiveProjectionNode     =>
+        case EntityProjectionNode(_, nodes) => futures(nodes)
         case node @ EntityArrayJunctionProjectionNode(_,
                                                       tabpk,
                                                       colpk,
@@ -415,7 +434,6 @@ class OQL(erd: String) {
                     conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
-        case StringNode(field, s)                  => field -> s
         case EntityProjectionNode(field, branches) => field -> build(branches)
         case PrimitiveProjectionNode(name, table, _, _) =>
           name -> row(projectmap((table, name))) // used to be row(projectmap((table, field)))
@@ -436,7 +454,6 @@ class OQL(erd: String) {
   }
 
   abstract class ProjectionNode { val field: String }
-  case class StringNode(field: String, s: String) extends ProjectionNode
   case class PrimitiveProjectionNode(name: String, table: String, field: String, typ: EntityAttribute)
       extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode

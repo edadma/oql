@@ -92,7 +92,18 @@ class OQLParser extends RegexParsers {
     number |
       string |
       variable |
+      caseExpression |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
+
+  def caseExpression =
+    ("CASE" | "case") ~ rep1(when) ~ opt(("ELSE" | "else") ~> expression) ~ ("END" | "end") ^^ {
+      case _ ~ ws ~ e ~ _ => CaseExpressionOQL(ws, e)
+    }
+
+  def when: Parser[(ExpressionOQL, ExpressionOQL)] =
+    ("WHEN" | "when") ~ logicalExpression ~ ("THEN" | "then") ~ expression ^^ {
+      case _ ~ c ~ _ ~ r => (c, r)
+    }
 
   def select: Parser[ExpressionOQL] = "[" ~> logicalExpression <~ "]"
 
