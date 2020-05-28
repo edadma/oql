@@ -67,7 +67,7 @@ class ERModel(defn: String) {
 
         entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
         entityMap(entity.name).attributes = attrs
-      case TypeBlockERD(name, underlying, condition) =>
+//      case TypeBlockERD(name, underlying, condition) =>
     }
 
     entityMap.toMap
