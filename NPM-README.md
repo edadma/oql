@@ -3,6 +3,18 @@ OQL
 
 *Object Query Language* inspired by [GraphQL](https://graphql.org/)
 
+Overview
+--------
+
+*OQL* (Object Query Language) is a language for querying a relational database. The query syntax is inspired by GraphQL, but is not identical.  *OQL* only provides support for data retrieval and not mutations of any kind.
+
+Some features of *OQL* include:
+
+- very similar to [GraphQL](https://graphql.org/) (for querying)
+- uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
+- works with the [PostgreSQL database system](https://www.postgresql.org/)
+- designed to work with existing databases
+
 Installation
 ------------
 
@@ -12,13 +24,25 @@ Installation is done using the [npm install command](https://docs.npmjs.com/down
 
 `$ npm install @vinctus/oql`
 
-Features
---------
+API
+---
 
-- very similar to [GraphQL](https://graphql.org/) (for querying)
-- uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
-- works with the [PostgreSQL database system](https://www.postgresql.org/)
-- designed to work with existing databases
+The following TypeScript snippet provides an overview of the API.
+
+```typescript
+import { OQL, PostgresConnection } from '@vinctus/oql'
+
+const conn = new PostgresConnection( <database username>, <database password>)
+const oql = new OQL( <entity-relationship description> )
+
+oql.query('class { name students.name }', conn).then((result: any) => <handle result> )
+```
+
+`<database username>` and `<database password>` are the username and password of the Postgres database you are querying.
+
+`<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  Primary keys of relevant tables should always be included, even if you're not interested in retrieving them.
+
+`<handle result>` is your result array handling code.  The `result` object will predictably by structured according to the query.
 
 Example
 -------
