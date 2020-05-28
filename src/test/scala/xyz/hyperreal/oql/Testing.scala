@@ -39,13 +39,13 @@ object Testing {
         |entity class {
         | *id: integer
         |  name: text
-        |  students: [student] enrollment
+        |  students: [student] (enrollment)
         |}
         |
         |entity student {
         | *id: integer
         |  name: text
-        |  classes: [class] enrollment
+        |  classes: [class] (enrollment)
         |}
         |
         |entity enrollment {
