@@ -1,12 +1,7 @@
-laptop
- id: integer, pk  make: text  model: text 
- 1                lenovo      thinkpad    
- 2                asus        rog         
-
 student
- id: integer, pk  name: text  laptop: integer, fk, laptop, id 
- 1                John        1                               
- 2                Debbie      2                               
+ id: integer, pk  name: text 
+ 1                John       
+ 2                Debbie     
 
 class
  id: integer, pk      name: text     
@@ -21,11 +16,11 @@ class
  9                Physical Education 
 
 enrollment
- studentid: integer, fk, student, id  classid: integer, fk, class, id 
- 1                                    3                               
- 1                                    5                               
- 1                                    9                               
- 2                                    1                               
- 2                                    4                               
- 2                                    5                               
- 2                                    9                               
+ studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text 
+ 1                                    3                                2019           fall            B+          
+ 1                                    5                                2018           winter          A           
+ 1                                    9                                2019           summer          F           
+ 2                                    1                                2018           fall            A+          
+ 2                                    4                                2019           winter          B-          
+ 2                                    5                                2018           summer          A-          
+ 2                                    9                                2019           fall            B+          

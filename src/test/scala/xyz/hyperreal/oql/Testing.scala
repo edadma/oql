@@ -142,14 +142,14 @@ object Testing {
         | 9                Physical Education
         |
         |enrollment
-        | studentid: integer, fk, student, id  classid: integer, fk, class, id
-        | 1                                    3
-        | 1                                    5
-        | 1                                    9
-        | 2                                    1
-        | 2                                    4
-        | 2                                    5
-        | 2                                    9
+        | studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text
+        | 1                                    3                                2019           fall            B+
+        | 1                                    5                                2018           winter          A
+        | 1                                    9                                2019           summer          F
+        | 2                                    1                                2018           fall            A+
+        | 2                                    4                                2019           winter          B-
+        | 2                                    5                                2018           summer          A-
+        | 2                                    9                                2019           fall            B+
         |""".stripMargin
     )
   val studentER =
@@ -170,6 +170,9 @@ object Testing {
         |entity enrollment {
         |  student (studentid): student
         |  class (classid): class
+        |  year: integer
+        |  semester: text
+        |  grade: text
         |}
         |""".stripMargin
     )

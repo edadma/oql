@@ -4,20 +4,17 @@ entity class {
   students: [student] (enrollment)
 }
 
-entity laptop {
- *id: integer
-  make: text
-  model: text
-}
-
 entity student {
  *id: integer
   name: text
-  laptop: laptop
   classes: [class] (enrollment)
+  enrollment: [enrollment]
 }
 
 entity enrollment {
   student (studentid): student
   class (classid): class
+  year: integer
+  semester: text
+  grade: text
 }
