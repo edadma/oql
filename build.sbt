@@ -8,7 +8,7 @@ scalaVersion := "2.13.2"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
-organization := "xyz.hyperreal"
+organization := "com.vinctus"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -47,7 +47,11 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
 )
 
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + (name.value indexOf '/' match {case -1 => name.value case idx => name.value.substring(idx + 1)}).replace('-', '_') + ".Main" )
+mainClass in (Compile, run) := Some( "xyz.hyperreal." + "asdf" + ".Main" )
+
+lazy val packageName = SettingKey[String]("packageName", "package name")
+
+packageName := (name.value indexOf '/' match {case -1 => name.value case idx => name.value.substring(idx + 1)}).replace('-', '_')
 
 publishMavenStyle := true
 
@@ -57,12 +61,12 @@ pomIncludeRepository := { _ => false }
 
 licenses := Seq("ISC" -> url("https://opensource.org/licenses/ISC"))
 
-homepage := Some(url("https://github.com/edadma/" + name.value))
+homepage := Some(url("https://github.com/vinctustech/" + packageName.value))
 
 pomExtra :=
   <scm>
-    <url>git@github.com:edadma/{name.value}.git</url>
-    <connection>scm:git:git@github.com:edadma/{name.value}.git</connection>
+    <url>git@github.com:vinctustech/{packageName.value}.git</url>
+    <connection>scm:git:git@github.com:vinctustech/{packageName.value}.git</connection>
   </scm>
   <developers>
     <developer>
