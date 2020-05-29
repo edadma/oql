@@ -10,7 +10,7 @@ class ERModel(defn: String) {
     val entityMap = new mutable.HashMap[String, Entity]
 
     erDefinition.blocks foreach {
-      case EntityBlockERD(entity, _) =>
+      case EntityBlockERD(entity, _, _) =>
         if (entityMap contains entity.name)
           problem(entity.pos, s"entity '${entity.name}' already defined")
         else
@@ -19,11 +19,11 @@ class ERModel(defn: String) {
     }
 
     erDefinition.blocks foreach {
-      case EntityBlockERD(entity, fields) =>
+      case EntityBlockERD(entity, actual, fields) =>
         var epk: String = null
         var attrs = Map.empty[String, EntityAttribute]
 
-        for (EntityFieldERD(attr, column, typ, pk) <- fields) {
+        for (EntityAttributeERD(attr, column, typ, pk) <- fields) {
           if (attrs contains attr.name)
             problem(attr.pos, s"attribute '${attr.name}' already exists for this entity'")
           else {
@@ -39,7 +39,7 @@ class ERModel(defn: String) {
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>
-                      ObjectArrayJunctionEntityAttribute(column.name, t, junction.name, j) // todo: shouldn't this be 'typ.name' instead of 'column.name'? and if so, does 'column.name' still need to be present?
+                      ObjectArrayJunctionEntityAttribute(typ.name, t, junction.name, j)
                     case (None, _) =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None) =>

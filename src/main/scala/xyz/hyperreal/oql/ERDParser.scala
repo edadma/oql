@@ -76,14 +76,15 @@ class ERDParser extends RegexParsers {
   def primaryCondition: Parser[ExpressionERD] = variable | number
 
   def entityBlock: Parser[EntityBlockERD] =
-    "entity" ~ ident ~ "{" ~ rep1(field) ~ "}" ^^ {
-      case _ ~ n ~ _ ~ fs ~ _ => EntityBlockERD(n, fs)
+    "entity" ~ ident ~ opt("(" ~> ident <~ ")") ~ "{" ~ rep1(field) ~ "}" ^^ {
+      case _ ~ n ~ a ~ _ ~ fs ~ _ =>
+        EntityBlockERD(n, if (a isDefined) a.get else n, fs)
     }
 
-  def field: Parser[EntityFieldERD] =
+  def field: Parser[EntityAttributeERD] =
     opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ^^ {
       case pk ~ n ~ a ~ _ ~ t =>
-        EntityFieldERD(n, if (a isDefined) a.get else n, t, pk isDefined)
+        EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined)
     }
 
   def typeSpec: Parser[TypeSpecifierERD] =
