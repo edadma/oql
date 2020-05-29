@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 
 import Testing._
 
-class OQLGroupTests extends AsyncFreeSpec with Matchers {
+class GroupTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "grouped" in {

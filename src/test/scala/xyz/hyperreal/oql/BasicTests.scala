@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 
 import Testing._
 
-class OQLBasicTests extends AsyncFreeSpec with Matchers {
+class BasicTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "query" in {
