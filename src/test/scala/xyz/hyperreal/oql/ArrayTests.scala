@@ -40,37 +40,10 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-many" in {
-    studentER.json("enrollment { student.name class.name grade } <grade>", studentDB) map { result =>
+    studentER.json("enrollment { student.name class.name grade } <grade> |2, 3|", studentDB) map { result =>
       result shouldBe
         """
           |[
-          |  {
-          |    "student": {
-          |      "name": "John"
-          |    },
-          |    "class": {
-          |      "name": "Science"
-          |    },
-          |    "grade": "A"
-          |  },
-          |  {
-          |    "student": {
-          |      "name": "Debbie"
-          |    },
-          |    "class": {
-          |      "name": "English"
-          |    },
-          |    "grade": "A+"
-          |  },
-          |  {
-          |    "student": {
-          |      "name": "Debbie"
-          |    },
-          |    "class": {
-          |      "name": "Science"
-          |    },
-          |    "grade": "A-"
-          |  },
           |  {
           |    "student": {
           |      "name": "John"
@@ -88,24 +61,6 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
           |      "name": "Physical Education"
           |    },
           |    "grade": "B+"
-          |  },
-          |  {
-          |    "student": {
-          |      "name": "Debbie"
-          |    },
-          |    "class": {
-          |      "name": "Biology"
-          |    },
-          |    "grade": "B-"
-          |  },
-          |  {
-          |    "student": {
-          |      "name": "John"
-          |    },
-          |    "class": {
-          |      "name": "Physical Education"
-          |    },
-          |    "grade": "F"
           |  }
           |]
       """.trim.stripMargin

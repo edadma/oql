@@ -22,7 +22,7 @@ object Main extends App {
   val oql = new OQL(readFile("examples/student.erd"))
 
 //  oql.json("enrollment { student { name count(name) } } (student.name) <student.name>", conn).onComplete {
-  oql.json("enrollment { student.name class.name grade } <grade> |2|", conn).onComplete {
+  oql.json("enrollment { student.name class.name grade } <grade> |2, 3|", conn).onComplete {
 //  oql.json("class { name students { name } } [name ~ 'S%']", conn).onComplete {
 //  oql
 //    .json("agent { agent_code orders { ord_num customer.name } } [agent_code = 'A003']", conn)
