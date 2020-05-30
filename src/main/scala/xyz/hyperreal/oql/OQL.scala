@@ -23,20 +23,21 @@ class OQL(erd: String) {
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
-    val QueryOQL(resource, project, select, group, order, restrict) = OQLParser.parseQuery(sql)
+    val QueryOQL(resource, project, select, group, order, limit, offset) = OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name), Nil)
 
-    executeQuery(resource.name, select, group, order, restrict, entity, projectbuf, joinbuf, graph, conn)
+    executeQuery(resource.name, select, group, order, limit, offset, entity, projectbuf, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
                            group: Option[List[VariableExpressionOQL]],
                            order: Option[List[(ExpressionOQL, Boolean)]],
-                           restrict: (Option[Int], Option[Int]),
+                           limit: Option[Int],
+                           offset: Option[Int],
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[String], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
@@ -75,7 +76,7 @@ class OQL(erd: String) {
         null
 
     for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
-      sql append s"  LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+      sql append s"    LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
 
     if (select isDefined)
       sql append s"  WHERE $where\n"
@@ -85,6 +86,13 @@ class OQL(erd: String) {
 
     if (order isDefined)
       sql append s"  ORDER BY $orderby\n"
+
+    (limit, offset) match {
+      case (None, None)       =>
+      case (Some(l), None)    => sql append s"  LIMIT $l"
+      case (Some(l), Some(o)) => sql append s"  LIMIT $l OFFSET $o"
+      case (None, Some(o))    => sql append s"  OFFSET $o"
+    }
 
     //print(sql)
 
@@ -221,9 +229,9 @@ class OQL(erd: String) {
               case typ: PrimitiveEntityAttribute => (Some(agg.name), attr.name, typ, ProjectAllOQL, null)
               case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
             }
-          case query @ QueryOQL(attr, project, None, None, None, (None, None)) =>
+          case query @ QueryOQL(attr, project, None, None, None, None, None) =>
             (None, attr.name, attrType(attr), project, query)
-          case query @ QueryOQL(source, project, _, _, _, _) =>
+          case query @ QueryOQL(source, project, _, _, _, _, _) =>
             attrType(source) match {
               case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
                 (None, source.name, typ, project, query)
@@ -305,7 +313,8 @@ class OQL(erd: String) {
                       None,
                       None,
                       None,
-                      (None, None)
+                      None,
+                      None
                     ))),
                 projectbuf,
                 subjoinbuf,
@@ -385,7 +394,8 @@ class OQL(erd: String) {
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
             query.group,
             query.order,
-            query.restrict,
+            query.limit,
+            query.offset,
             entity,
             subprojectbuf,
             subjoinbuf,
@@ -411,7 +421,8 @@ class OQL(erd: String) {
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
             query.group,
             query.order,
-            query.restrict,
+            query.limit,
+            query.offset,
             entity,
             subprojectbuf,
             subjoinbuf,

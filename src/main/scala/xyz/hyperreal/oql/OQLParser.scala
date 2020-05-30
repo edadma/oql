@@ -42,7 +42,13 @@ class OQLParser extends RegexParsers {
   def query: Parser[QueryOQL] =
     ident ~ opt(project) ~ opt(select) ~ opt(group) ~ opt(order) ~ opt(restrict) ^^ {
       case e ~ p ~ s ~ g ~ o ~ r =>
-        QueryOQL(e, if (p isDefined) p.get else ProjectAllOQL, s, g, o, if (r isDefined) r.get else (None, None))
+        QueryOQL(e,
+                 if (p isDefined) p.get else ProjectAllOQL,
+                 s,
+                 g,
+                 o,
+                 if (r isDefined) r.get._1 else None,
+                 if (r isDefined) r.get._2 else None)
     }
 
   def project: Parser[ProjectExpressionOQL] =
@@ -117,10 +123,10 @@ class OQLParser extends RegexParsers {
   def group: Parser[List[VariableExpressionOQL]] = "(" ~> rep1sep(variable, ",") <~ ")"
 
   def restrict: Parser[(Option[Int], Option[Int])] =
-    "|" ~> (integer ~ "," ~ opt(integer)) <~ "|" ^^ {
-      case b ~ _ ~ e => (Some(b.n.toInt), e map (_.n.toInt))
+    "|" ~> (integer ~ opt("," ~> integer)) <~ "|" ^^ {
+      case l ~ o => (Some(l.n.toInt), o map (_.n.toInt))
     } |
-      "|" ~> "," ~> integer <~ "|" ^^ (e => (None, Some(e.n.toInt)))
+      "|" ~> "," ~> integer <~ "|" ^^ (o => (None, Some(o.n.toInt)))
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {

@@ -13,7 +13,8 @@ case class QueryOQL(source: Ident,
                     select: Option[ExpressionOQL],
                     group: Option[List[VariableExpressionOQL]],
                     order: Option[List[(ExpressionOQL, Boolean)]],
-                    restrict: (Option[Int], Option[Int]))
+                    limit: Option[Int],
+                    offset: Option[Int])
     extends ProjectExpressionOQL
 
 abstract class ExpressionOQL extends OQLAST with Positional
