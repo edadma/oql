@@ -102,25 +102,29 @@ Create the following TypeScript source:
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
 const conn = new PostgresConnection('postgres', 'docker')
-const oql = new OQL(`
-  entity class {
-   *id: integer
-    name: text
-    students: [student] (enrollment)
-  }
+const oql = 
+  new OQL(`
+    entity class {
+     *id: integer
+      name: text
+      students: [student] (enrollment)
+    }
 
-  entity student {
-   *id: integer
-    name (stu_name): text
-    classes: [class] (enrollment)
-  }
+    entity student {
+     *id: integer
+      name (stu_name): text
+      classes: [class] (enrollment)
+    }
   
-  entity enrollment (student_class) {
-    student (studentid): student
-    class (classid): class
-  }`)
+    entity enrollment (student_class) {
+      student (studentid): student
+      class (classid): class
+    }
+  `)
 
-oql.query('class { name students.name }', conn).then((res: any) => console.log(JSON.stringify(res, null, 2)))
+oql
+  .query('class { name students.name }', conn)
+  .then((res: any) => console.log(JSON.stringify(res, null, 2)))
 ```
 
 You should see the following output:

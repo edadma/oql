@@ -12,12 +12,13 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "query" in {
-    starTrekER.query("character { name species.origin.name } [species.name = 'Betazoid']", starTrekDB) map { result =>
-      result shouldBe
-        List(
-          Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
-          Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
-        )
+    starTrekER.query("character { name species.origin.name } [species.name = 'Betazoid'] <name>", starTrekDB) map {
+      result =>
+        result shouldBe
+          List(
+            Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
+            Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
+          )
     }
   }
 
@@ -164,6 +165,35 @@ class BasicTests extends AsyncFreeSpec with Matchers {
     }
   }
 
+  "deep many-to-one selection" in {
+    starTrekER.json("character [species.origin.name = 'Vulcan']", starTrekDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "char_id": 2,
+          |    "name": "Spock",
+          |    "home": {
+          |      "plan_id": 1,
+          |      "name": "Earth",
+          |      "climate": "not too bad"
+          |    },
+          |    "species": {
+          |      "spec_id": 2,
+          |      "name": "Vulcan",
+          |      "lifespan": 220,
+          |      "origin": {
+          |        "plan_id": 2,
+          |        "name": "Vulcan",
+          |        "climate": "pretty hot"
+          |      }
+          |    }
+          |  }
+          |]
+      """.trim.stripMargin
+    }
+  }
+
   "ordered resource selection" in {
     starTrekER.json("character [char_id < 4] <name>", starTrekDB) map { result =>
       result shouldBe
@@ -223,6 +253,35 @@ class BasicTests extends AsyncFreeSpec with Matchers {
           |        "plan_id": 2,
           |        "name": "Vulcan",
           |        "climate": "pretty hot"
+          |      }
+          |    }
+          |  }
+          |]
+      """.trim.stripMargin
+    }
+  }
+
+  "single selection" in {
+    starTrekER.json("character [char_id = 3]", starTrekDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "char_id": 3,
+          |    "name": "Deanna Troi",
+          |    "home": {
+          |      "plan_id": 1,
+          |      "name": "Earth",
+          |      "climate": "not too bad"
+          |    },
+          |    "species": {
+          |      "spec_id": 3,
+          |      "name": "Betazoid",
+          |      "lifespan": 120,
+          |      "origin": {
+          |        "plan_id": 3,
+          |        "name": "Betazed",
+          |        "climate": "awesome weather"
           |      }
           |    }
           |  }

@@ -68,18 +68,10 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-many" in {
-    studentER.json("class { name students { name } } [name ~ 'S%']", studentDB) map { result =>
+    studentER.json("class { name students { name } } [name ~ 'S%'] <name>", studentDB) map { result =>
       result shouldBe
         """
           |[
-          |  {
-          |    "name": "Spanish",
-          |    "students": [
-          |      {
-          |        "name": "John"
-          |      }
-          |    ]
-          |  },
           |  {
           |    "name": "Science",
           |    "students": [
@@ -88,6 +80,14 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
           |      },
           |      {
           |        "name": "Debbie"
+          |      }
+          |    ]
+          |  },
+          |  {
+          |    "name": "Spanish",
+          |    "students": [
+          |      {
+          |        "name": "John"
           |      }
           |    ]
           |  }
