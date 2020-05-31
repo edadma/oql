@@ -14,29 +14,16 @@ object Main extends App {
   }
 
 //  val conn = new PostgresConnection("postgres", "docker")
-//  val conn = new RDBConnection(readFile("examples/orders.tab"))
-//  val oql = new OQL(readFile("examples/orders.erd"))
-//  val conn = new RDBConnection(readFile("examples/movie.tab"))
-//  val oql = new OQL(readFile("examples/movie.erd"))
-  val conn = new RDBConnection(readFile("examples/student.tab"))
-  val oql = new OQL(readFile("examples/student.erd"))
-//  val conn = new RDBConnection(readFile("examples/employees.tab"))
-//  val oql = new OQL(readFile("examples/employees.erd"))
+  val conn = new RDBConnection(readFile("examples/movie.tab"))
+  val oql = new OQL(readFile("examples/movie.erd"))
 
-//  oql.json("enrollment { student { name } } <student.name>", conn).onComplete {
-  oql.json("enrollment { student.name class.name grade } <grade> |2, 3|", conn).onComplete {
-//  oql
-//    .json("enrollment { student { name count(name) } } [student.name = 'John'] (student.name) <student.name>", conn)
-//    .onComplete {
-//  oql
-//    .json("agent { agent_code orders { ord_num customer.name } } [agent_code = 'A003']", conn)
-//    .onComplete {
-//  oql
-//    .json("movie { mov_title directors { dir_fname } } [mov_id < 903]", conn).onComplete {
-    case Failure(exception) => throw exception
-    case Success(value) =>
-      println(value)
-      conn.close()
-  }
+  oql
+    .json("movie { mov_title directors { dir_fname } } [mov_id < 903]", conn)
+    .onComplete {
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value)
+        conn.close()
+    }
 
 }

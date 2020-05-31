@@ -20,7 +20,7 @@ entity reviewer {
 entity rating {
   mov_id: movie
   rev_id: reviewer
-  rev_stars: decimal
+  rev_stars: number
   num_o_ratings: text
 }
 
