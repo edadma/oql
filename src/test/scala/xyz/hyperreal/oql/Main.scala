@@ -26,16 +26,19 @@ object Main extends App {
 //  oql.json("employee { emp_name manager.emp_name } <emp_name> |3|", conn).onComplete {
 //  oql.json("enrollment { student { name } } <student.name>", conn).onComplete {
 //  oql.json("enrollment { student.name class.name grade } <grade> |2, 3|", conn).onComplete {
-  oql.json("class { name students { name } } [name ~ 'S%']", conn).onComplete {
+  oql
+    .json("enrollment { student { name count(name) } } [student.name = 'John'] (student.name) <student.name>", conn)
+    .onComplete {
+//  oql.json("class { name students { name } } [name ~ 'S%']", conn).onComplete {
 //  oql
 //    .json("agent { agent_code orders { ord_num customer.name } } [agent_code = 'A003']", conn)
 //    .onComplete {
 //  oql
 //    .json("movie { mov_title directors { dir_fname } } [mov_id < 903]", conn).onComplete {
-    case Failure(exception) => throw exception
-    case Success(value) =>
-      println(value)
-      conn.close()
-  }
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value)
+        conn.close()
+    }
 
 }

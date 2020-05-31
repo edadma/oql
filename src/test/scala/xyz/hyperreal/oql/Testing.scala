@@ -182,7 +182,7 @@ object Testing {
     new RDBConnection(
       """
         |student
-        | id: integer, pk  name: text
+        | id: integer, pk  stu_name: text
         | 1                John
         | 2                Debbie
         |
@@ -220,7 +220,7 @@ object Testing {
         |
         |entity student {
         | *id: integer
-        |  name: text
+        |  name (stu_name): text
         |  classes: [class] (enrollment)
         |}
         |

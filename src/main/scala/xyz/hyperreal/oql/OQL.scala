@@ -251,8 +251,12 @@ class OQL(erd: String) {
 
     attrs map {
       case (agg, field, attr: PrimitiveEntityAttribute, _, _) =>
-        projectbuf += ((agg, table, field))
-        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field), table, field, attr)
+        projectbuf += ((agg, table, attr.column))
+        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
+                                agg.map(a => s"${a}_${attr.column}").getOrElse(attr.column),
+                                table,
+                                field,
+                                attr)
       case (_, field, attr: ObjectEntityAttribute, project, _) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.typ}' is referenced as a type but has no primary key")
@@ -446,8 +450,8 @@ class OQL(erd: String) {
     def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches) => field -> build(branches)
-        case PrimitiveProjectionNode(name, table, _, _) =>
-          name -> row(projectmap((table, name))) // used to be row(projectmap((table, field)))
+        case PrimitiveProjectionNode(prop, column, table, _, _) =>
+          prop -> row(projectmap((table, column))) // used to be row(projectmap((table, name)))
         case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
@@ -465,7 +469,7 @@ class OQL(erd: String) {
   }
 
   abstract class ProjectionNode { val field: String }
-  case class PrimitiveProjectionNode(name: String, table: String, field: String, typ: EntityAttribute)
+  case class PrimitiveProjectionNode(name: String, column: String, table: String, field: String, attr: EntityAttribute)
       extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
   case class EntityArrayJunctionProjectionNode(field: String,

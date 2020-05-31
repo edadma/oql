@@ -1,7 +1,7 @@
 student
- id: integer, pk  name: text 
- 1                John       
- 2                Debbie     
+ id: integer, pk  stu_name: text 
+ 1                John           
+ 2                Debbie         
 
 class
  id: integer, pk      name: text     

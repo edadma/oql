@@ -6,7 +6,7 @@ entity class {
 
 entity student {
  *id: integer
-  name: text
+  name (stu_name): text
   classes: [class] (enrollment)
   enrollment: [enrollment]
 }
