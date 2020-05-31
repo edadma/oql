@@ -188,7 +188,6 @@ class OQL(erd: String) {
               else {
                 val attrlist1 = attr.name :: attrlist
 
-                println(attr.name)
                 joinbuf += ((attrlist mkString "$", column, entityType, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
               }
@@ -389,7 +388,7 @@ class OQL(erd: String) {
                                                       entity,
                                                       nodes,
                                                       query) =>
-          val pkwhere = EqualsExpressionOQL(resource, column, render(row(projectmap((tabpk, colpk)))))
+          val pkwhere = EqualsExpressionOQL(entity.table, column, render(row(projectmap((tabpk, colpk)))))
           val future = executeQuery(
             resource,
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
@@ -416,7 +415,7 @@ class OQL(erd: String) {
                                               entity,
                                               nodes,
                                               query) =>
-          val pkwhere = EqualsExpressionOQL(resource, column, render(row(projectmap((tabpk, colpk)))))
+          val pkwhere = EqualsExpressionOQL(entity.table, column, render(row(projectmap((tabpk, colpk)))))
           val future = executeQuery(
             resource,
             Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),

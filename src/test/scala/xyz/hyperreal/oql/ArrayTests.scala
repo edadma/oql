@@ -39,7 +39,7 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
     }
   }
 
-  "many-to-many" in {
+  "many-to-one" in {
     studentER.json("enrollment { student.name class.name grade } <grade> |2, 3|", studentDB) map { result =>
       result shouldBe
         """
@@ -61,6 +61,35 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
           |      "name": "Physical Education"
           |    },
           |    "grade": "B+"
+          |  }
+          |]
+      """.trim.stripMargin
+    }
+  }
+
+  "many-to-many" in {
+    studentER.json("class { name students { name } } [name ~ 'S%']", studentDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "name": "Spanish",
+          |    "students": [
+          |      {
+          |        "name": "John"
+          |      }
+          |    ]
+          |  },
+          |  {
+          |    "name": "Science",
+          |    "students": [
+          |      {
+          |        "name": "John"
+          |      },
+          |      {
+          |        "name": "Debbie"
+          |      }
+          |    ]
           |  }
           |]
       """.trim.stripMargin

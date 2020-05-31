@@ -73,7 +73,7 @@ CREATE TABLE class (
   name TEXT
 );
 
-CREATE TABLE enrollment (
+CREATE TABLE student_class (
   studentid INTEGER REFERENCES student,
   classid INTEGER REFERENCES class
 );
