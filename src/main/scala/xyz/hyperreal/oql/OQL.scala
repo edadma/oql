@@ -188,6 +188,7 @@ class OQL(erd: String) {
               else {
                 val attrlist1 = attr.name :: attrlist
 
+                println(attr.name)
                 joinbuf += ((attrlist mkString "$", column, entityType, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
               }
@@ -196,7 +197,7 @@ class OQL(erd: String) {
           }
       }
 
-    reference(entityname, entity, ids, List(entityname))
+    reference(entityname, entity, ids, List(entity.table))
   }
 
   private def entityNode(field: String, attr: EntityAttribute, circlist: List[(String, EntityAttribute)])(
