@@ -35,12 +35,14 @@ import { OQL, PostgresConnection } from '@vinctus/oql'
 const conn = new PostgresConnection( <database username>, <database password>)
 const oql = new OQL( <entity-relationship description> )
 
-oql.query('class { name students.name }', conn).then((result: any) => <handle result> )
+oql.query(<query>, conn).then((result: any) => <handle result> )
 ```
 
 `<database username>` and `<database password>` are the username and password of the Postgres database you are querying.
 
 `<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  Primary keys of relevant tables should always be included, even if you're not interested in retrieving them.
+
+`<query>` is the OQL query string.
 
 `<handle result>` is your result array handling code.  The `result` object will predictably by structured according to the query.
 
@@ -65,7 +67,7 @@ CREATE DATABASE student;
 
 CREATE TABLE student (
   id SERIAL PRIMARY KEY,
-  name TEXT
+  stu_name TEXT
 );
 
 CREATE TABLE class (
@@ -78,7 +80,7 @@ CREATE TABLE student_class (
   classid INTEGER REFERENCES class
 );
 
-INSERT INTO student (name) VALUES
+INSERT INTO student (stu_name) VALUES
   ('John'),
   ('Debbie');
 
@@ -109,7 +111,7 @@ const oql = new OQL(`
 
   entity student {
    *id: integer
-    name: text
+    name (stu_name): text
     classes: [class] (enrollment)
   }
   
