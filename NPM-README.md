@@ -87,7 +87,7 @@ INSERT INTO class (name) VALUES
   ('Maths'),
   ('Spanish');
 
-INSERT INTO enrollment (studentid, classid) VALUES
+INSERT INTO student_class (studentid, classid) VALUES
   (1, 3),
   (1, 1),
   (2, 1),
@@ -113,7 +113,7 @@ const oql = new OQL(`
     classes: [class] (enrollment)
   }
   
-  entity enrollment {
+  entity enrollment (student_class) {
     student (studentid): student
     class (classid): class
   }`)
