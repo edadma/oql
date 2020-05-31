@@ -27,7 +27,7 @@ class OQL(erd: String) {
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
-    val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(resource.name), Nil)
+    val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(entity.table), Nil)
 
     executeQuery(resource.name, select, group, order, limit, offset, entity, projectbuf, joinbuf, graph, conn)
   }
@@ -55,7 +55,7 @@ class OQL(erd: String) {
     if (projects.tail nonEmpty)
       sql append '\n'
 
-    sql append s"  FROM $resource\n"
+    sql append s"  FROM ${entity.table}\n"
 
     val where =
       if (select isDefined)
@@ -199,11 +199,11 @@ class OQL(erd: String) {
     reference(entityname, entity, ids, List(entityname))
   }
 
-  private def circular(field: String, attr: EntityAttribute, circlist: List[(String, EntityAttribute)])(
+  private def entityNode(field: String, attr: EntityAttribute, circlist: List[(String, EntityAttribute)])(
       node: List[(String, EntityAttribute)] => ProjectionNode) =
     circlist.find { case (_, a) => a == attr } match {
       case None         => node((field, attr) :: circlist)
-      case Some((f, a)) => sys.error(s"circularity from field '$f' of type '${a.typ}'")
+      case Some((f, a)) => sys.error(s"circularity from attribute '$f' of type '${a.typ}'")
     }
 
   private def branches(entityname: String,
@@ -261,7 +261,7 @@ class OQL(erd: String) {
 
         joinbuf += ((table, attr.column, attr.typ, attrlist1 mkString "$", attr.entity.pk.get))
 
-        circular(field, attr, circlist)(c =>
+        entityNode(field, attr, circlist)(c =>
           EntityProjectionNode(field, branches(attr.typ, attr.entity, project, projectbuf, joinbuf, attrlist1, c)))
       case (_,
             field,
@@ -291,7 +291,7 @@ class OQL(erd: String) {
             case _ => problem(null, s"contains more than one attribute of type '$entityname'")
           }
 
-        circular(field, attr, circlist)(
+        entityNode(field, attr, circlist)(
           c =>
             EntityArrayJunctionProjectionNode(
               field,
@@ -318,7 +318,7 @@ class OQL(erd: String) {
                     ))),
                 projectbuf,
                 subjoinbuf,
-                List(junctionType),
+                List(junction.table),
                 c
               ),
               query
@@ -337,7 +337,7 @@ class OQL(erd: String) {
             case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
           }
 
-        circular(field, attr, circlist)(
+        entityNode(field, attr, circlist)(
           c =>
             EntityArrayProjectionNode(
               field,
@@ -354,7 +354,7 @@ class OQL(erd: String) {
                 project,
                 projectbuf,
                 subjoinbuf,
-                List(entityType),
+                List(attrEntity.table),
                 c
               ),
               query

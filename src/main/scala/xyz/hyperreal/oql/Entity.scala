@@ -1,6 +1,6 @@
 package xyz.hyperreal.oql
 
-class Entity(var pk: Option[String], var attributes: Map[String, EntityAttribute])
+class Entity(var table: String, var pk: Option[String], var attributes: Map[String, EntityAttribute])
 
 abstract class EntityAttribute { val typ: String }
 case class PrimitiveEntityAttribute(column: String, typ: String) extends EntityAttribute

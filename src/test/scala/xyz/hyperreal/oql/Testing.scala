@@ -198,7 +198,7 @@ object Testing {
         | 8                Commerce
         | 9                Physical Education
         |
-        |enrollment
+        |student_class
         | studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text
         | 1                                    3                                2019           fall            B+
         | 1                                    5                                2018           winter          A
@@ -224,7 +224,7 @@ object Testing {
         |  classes: [class] (enrollment)
         |}
         |
-        |entity enrollment {
+        |entity enrollment (student_class) {
         |  student (studentid): student
         |  class (classid): class
         |  year: integer

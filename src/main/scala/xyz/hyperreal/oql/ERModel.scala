@@ -14,7 +14,7 @@ class ERModel(defn: String) {
         if (entityMap contains entity.name)
           problem(entity.pos, s"entity '${entity.name}' already defined")
         else
-          entityMap(entity.name) = new Entity(null, null)
+          entityMap(entity.name) = new Entity(null, null, null)
       case _ =>
     }
 
@@ -65,6 +65,7 @@ class ERModel(defn: String) {
           }
         }
 
+        entityMap(entity.name).table = actual.name
         entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
         entityMap(entity.name).attributes = attrs
 //      case TypeBlockERD(name, underlying, condition) =>

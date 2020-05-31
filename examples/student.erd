@@ -11,7 +11,7 @@ entity student {
   enrollment: [enrollment]
 }
 
-entity enrollment {
+entity enrollment (student_class) {
   student (studentid): student
   class (classid): class
   year: integer

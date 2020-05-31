@@ -18,13 +18,13 @@ object Main extends App {
 //  val oql = new OQL(readFile("examples/orders.erd"))
 //  val conn = new RDBConnection(readFile("examples/movie.tab"))
 //  val oql = new OQL(readFile("examples/movie.erd"))
-//  val conn = new RDBConnection(readFile("examples/student.tab"))
-//  val oql = new OQL(readFile("examples/student.erd"))
-  val conn = new RDBConnection(readFile("examples/employees.tab"))
-  val oql = new OQL(readFile("examples/employees.erd"))
+  val conn = new RDBConnection(readFile("examples/student.tab"))
+  val oql = new OQL(readFile("examples/student.erd"))
+//  val conn = new RDBConnection(readFile("examples/employees.tab"))
+//  val oql = new OQL(readFile("examples/employees.erd"))
 
-  oql.json("employee { emp_name manager.emp_name } <emp_name> |3|", conn).onComplete {
-//  oql.json("enrollment { student { name count(name) } } (student.name) <student.name>", conn).onComplete {
+//  oql.json("employee { emp_name manager.emp_name } <emp_name> |3|", conn).onComplete {
+  oql.json("enrollment { student { name } } <student.name>", conn).onComplete {
 //  oql.json("enrollment { student.name class.name grade } <grade> |2, 3|", conn).onComplete {
 //  oql.json("class { name students { name } } [name ~ 'S%']", conn).onComplete {
 //  oql

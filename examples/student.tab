@@ -15,7 +15,7 @@ class
  8                Commerce           
  9                Physical Education 
 
-enrollment
+student_class
  studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text 
  1                                    3                                2019           fall            B+          
  1                                    5                                2018           winter          A           
