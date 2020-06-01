@@ -89,11 +89,16 @@ class OQLParser extends RegexParsers {
       comparisonExpression
 
   def comparisonExpression: Parser[ExpressionOQL] =
-    primaryExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like") | (("NOT" | "not") ~ ("LIKE" | "like")) ^^^ "NOT LIKE") ~ primaryExpression ^^ {
+    primaryExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ primaryExpression ^^ {
       case l ~ o ~ r => InfixExpressionOQL(l, o, r)
     } |
       primaryExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
         case l ~ o => PostfixExpressionOQL(l, o)
+      } |
+      primaryExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ ("(" ~> rep1sep(
+        expression,
+        ",") <~ ")") ^^ {
+        case e ~ o ~ l => InExpressionOQL(e, o, l)
       } |
       primaryExpression
 

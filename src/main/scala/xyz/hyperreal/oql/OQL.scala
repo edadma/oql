@@ -137,6 +137,17 @@ class OQL(erd: String) {
         case PostfixExpressionOQL(expr, op) =>
           expression(expr)
           buf append s" ${op.toUpperCase}"
+        case InExpressionOQL(expr, op, list) =>
+          expression(expr)
+          buf ++= s" $op ("
+          expression(list.head)
+
+          for (e <- list.tail) {
+            buf ++= ", "
+            expression(e)
+          }
+
+          buf += ')'
         case FloatLiteralOQL(n)   => buf append n
         case IntegerLiteralOQL(n) => buf append n
         case StringLiteralOQL(s)  => buf append s"'$s'"

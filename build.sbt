@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.0-alpha.24"
+version := "0.1.0-alpha.25"
 
 description := "Object Query Language"
 
@@ -33,7 +33,7 @@ npmDependencies in Compile ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scalatest" %%% "scalatest" % "3.1.1" % "test",
-  "xyz.hyperreal" %%% "rdb-sjs" % "0.1.0-alpha.21" % "test"
+  "xyz.hyperreal" %%% "rdb-sjs" % "0.1.0-alpha.23" % "test"
 )
 
 libraryDependencies ++= Seq(

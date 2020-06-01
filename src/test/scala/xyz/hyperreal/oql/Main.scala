@@ -18,7 +18,7 @@ object Main extends App {
   val oql = new OQL(readFile("examples/movie.erd"))
 
   oql
-    .json("movie { mov_title mov_dt_rel } [904 < mov_id AND mov_id < 908 AND mov_dt_rel IS NOT NULL]", conn)
+    .json("movie { mov_title mov_dt_rel } [mov_id IN (904)]", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>
