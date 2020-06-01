@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.0-alpha.23"
+version := "0.1.0-alpha.24"
 
 description := "Object Query Language"
 
@@ -45,6 +45,7 @@ libraryDependencies ++= Seq(
 //)
 
 libraryDependencies ++= Seq(
+  "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
 )
 
 mainClass in (Compile, run) := Some( "xyz.hyperreal." + "asdf" + ".Main" )

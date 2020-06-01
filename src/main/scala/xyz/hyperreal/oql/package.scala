@@ -1,8 +1,9 @@
 package xyz.hyperreal
 
+import java.time.LocalDate
+
 import scala.scalajs.js
 import js.JSConverters._
-
 import scala.util.parsing.input.Position
 
 package object oql {
@@ -17,6 +18,10 @@ package object oql {
 
   def toJS(a: Any): js.Any =
     a match {
+      case date: LocalDate =>
+        val jsdate = new js.Date(date.getYear, date.getMonthValue - 1, date.getDayOfMonth)
+
+        jsdate
       case d: BigDecimal => d.toDouble
       case l: Seq[_]     => l map toJS toJSArray
       case m: Map[_, _] =>

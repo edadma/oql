@@ -132,8 +132,11 @@ class OQL(erd: String) {
           buf append s" ${op.toUpperCase} "
           expression(right)
         case PrefixExpressionOQL(op, expr) =>
-          buf append s" ${op.toUpperCase}"
+          buf append s"${op.toUpperCase} "
           expression(expr)
+        case PostfixExpressionOQL(expr, op) =>
+          expression(expr)
+          buf append s" ${op.toUpperCase}"
         case FloatLiteralOQL(n)   => buf append n
         case IntegerLiteralOQL(n) => buf append n
         case StringLiteralOQL(s)  => buf append s"'$s'"
