@@ -48,7 +48,7 @@ libraryDependencies ++= Seq(
   "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
 )
 
-mainClass in (Compile, run) := Some( "xyz.hyperreal." + "asdf" + ".Main" )
+mainClass in (Compile, run) := Some( "com.vinctus." + "oql" + ".Main" )
 
 lazy val packageName = SettingKey[String]("packageName", "package name")
 
