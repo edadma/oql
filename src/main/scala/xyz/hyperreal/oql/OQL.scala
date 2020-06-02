@@ -208,9 +208,9 @@ class OQL(erd: String) {
               if (tail == Nil)
                 problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
               else {
-                val attrlist1 = attr.name :: attrlist
+                val attrlist1 = entity.table :: attrlist
 
-                joinbuf += ((attrlist mkString "$", column, entityType, attrlist1 mkString "$", entity.pk.get))
+                joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
               }
             case Some(_: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute) =>
@@ -283,9 +283,9 @@ class OQL(erd: String) {
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.typ}' is referenced as a type but has no primary key")
 
-        val attrlist1 = field :: attrlist
+        val attrlist1 = attr.entity.table :: attrlist
 
-        joinbuf += ((table, attr.column, attr.typ, attrlist1 mkString "$", attr.entity.pk.get))
+        joinbuf += ((table, attr.column, attr.entity.table, attrlist1 mkString "$", attr.entity.pk.get))
 
         entityNode(field, attr, circlist)(c =>
           EntityProjectionNode(field, branches(attr.typ, attr.entity, project, projectbuf, joinbuf, attrlist1, c)))

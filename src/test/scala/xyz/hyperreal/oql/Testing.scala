@@ -181,7 +181,7 @@ object Testing {
   val studentDB =
     new RDBConnection(
       """
-        |student
+        |students
         | id: integer, pk  stu_name: text
         | 1                John
         | 2                Debbie
@@ -199,7 +199,7 @@ object Testing {
         | 9                Physical Education
         |
         |student_class
-        | studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text
+        | studentid: integer, fk, students, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text
         | 1                                    3                                2019           fall            B+
         | 1                                    5                                2018           winter          A
         | 1                                    9                                2019           summer          F
@@ -218,7 +218,7 @@ object Testing {
         |  students: [student] (enrollment)
         |}
         |
-        |entity student {
+        |entity student (students) {
         | *id: integer
         |  name (stu_name): text
         |  classes: [class] (enrollment)

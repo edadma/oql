@@ -14,11 +14,11 @@ object Main extends App {
   }
 
 //  val conn = new PostgresConnection("postgres", "docker")
-  val conn = new RDBConnection(readFile("examples/movie.tab"))
-  val oql = new OQL(readFile("examples/movie.erd"))
+  val conn = new RDBConnection(readFile("examples/student.tab"))
+  val oql = new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("movie { mov_title mov_dt_rel } [lower(mov_title) like '%the%']", conn)
+    .json("enrollment { student { name count(name) } } (student.name)", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

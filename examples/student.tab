@@ -1,4 +1,4 @@
-student
+students
  id: integer, pk  stu_name: text 
  1                John           
  2                Debbie         
@@ -16,11 +16,11 @@ class
  9                Physical Education 
 
 student_class
- studentid: integer, fk, student, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text 
- 1                                    3                                2019           fall            B+          
- 1                                    5                                2018           winter          A           
- 1                                    9                                2019           summer          F           
- 2                                    1                                2018           fall            A+          
- 2                                    4                                2019           winter          B-          
- 2                                    5                                2018           summer          A-          
- 2                                    9                                2019           fall            B+          
+ studentid: integer, fk, students, id  classid: integer, fk, class, id  year: integer  semester: text  grade: text 
+ 1                                     3                                2019           fall            B+          
+ 1                                     5                                2018           winter          A           
+ 1                                     9                                2019           summer          F           
+ 2                                     1                                2018           fall            A+          
+ 2                                     4                                2019           winter          B-          
+ 2                                     5                                2018           summer          A-          
+ 2                                     9                                2019           fall            B+          
