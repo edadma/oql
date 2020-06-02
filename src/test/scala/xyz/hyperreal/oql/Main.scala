@@ -18,7 +18,7 @@ object Main extends App {
   val oql = new OQL(readFile("examples/movie.erd"))
 
   oql
-    .json("movie { mov_title mov_dt_rel } [mov_id IN (904)]", conn)
+    .json("movie { mov_title mov_dt_rel } [lower(mov_title) like '%the%']", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

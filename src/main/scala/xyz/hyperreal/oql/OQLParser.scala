@@ -63,7 +63,7 @@ class OQLParser extends RegexParsers {
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
-  def expression: Parser[ExpressionOQL] = primaryExpression
+  def expression: Parser[ExpressionOQL] = applyExpression
 
   def logicalExpression: Parser[ExpressionOQL] =
     orExpression
@@ -89,17 +89,23 @@ class OQLParser extends RegexParsers {
       comparisonExpression
 
   def comparisonExpression: Parser[ExpressionOQL] =
-    primaryExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ primaryExpression ^^ {
+    applyExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ applyExpression ^^ {
       case l ~ o ~ r => InfixExpressionOQL(l, o, r)
     } |
-      primaryExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
+      applyExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
         case l ~ o => PostfixExpressionOQL(l, o)
       } |
-      primaryExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ ("(" ~> rep1sep(
-        expression,
-        ",") <~ ")") ^^ {
+      applyExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ expressions ^^ {
         case e ~ o ~ l => InExpressionOQL(e, o, l)
       } |
+      applyExpression
+
+  def expressions: Parser[List[ExpressionOQL]] = "(" ~> rep1sep(expression, ",") <~ ")"
+
+  def applyExpression =
+    ident ~ expressions ^^ {
+      case i ~ es => ApplyExpressionOQL(i, es)
+    } |
       primaryExpression
 
   def primaryExpression: Parser[ExpressionOQL] =

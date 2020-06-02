@@ -86,3 +86,5 @@ class ERModel(defn: String) {
 }
 
 // todo: check validity of entity types
+// todo: implement boolean type; should be able to write 'a = true'
+// todo: implement timestamp (without timezone); should be able to write 't <= timestamp'

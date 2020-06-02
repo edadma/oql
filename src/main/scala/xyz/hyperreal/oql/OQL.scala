@@ -124,6 +124,18 @@ class OQL(erd: String) {
                          joinbuf: ListBuffer[(String, String, String, String, String)]) = {
     val buf = new StringBuilder
 
+    def expressions(list: List[ExpressionOQL]): Unit = {
+      buf += '('
+      expression(list.head)
+
+      for (e <- list.tail) {
+        buf ++= ", "
+        expression(e)
+      }
+
+      buf += ')'
+    }
+
     def expression(expr: ExpressionOQL): Unit =
       expr match {
         case EqualsExpressionOQL(table, column, value) => buf append s"$table.$column = $value"
@@ -139,15 +151,8 @@ class OQL(erd: String) {
           buf append s" ${op.toUpperCase}"
         case InExpressionOQL(expr, op, list) =>
           expression(expr)
-          buf ++= s" $op ("
-          expression(list.head)
-
-          for (e <- list.tail) {
-            buf ++= ", "
-            expression(e)
-          }
-
-          buf += ')'
+          buf ++= s" $op "
+          expressions(list)
         case FloatLiteralOQL(n)   => buf append n
         case IntegerLiteralOQL(n) => buf append n
         case StringLiteralOQL(s)  => buf append s"'$s'"
@@ -155,6 +160,9 @@ class OQL(erd: String) {
           buf += '('
           expression(expr)
           buf += ')'
+        case ApplyExpressionOQL(func, args) =>
+          buf ++= func.name
+          expressions(args)
         case VariableExpressionOQL(ids) => buf append reference(entityname, entity, ids, joinbuf)
         case CaseExpressionOQL(whens, els) =>
           buf ++= "CASE"

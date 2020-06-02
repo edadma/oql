@@ -20,6 +20,7 @@ case class QueryOQL(source: Ident,
 abstract class ExpressionOQL extends OQLAST with Positional
 case class EqualsExpressionOQL(table: String, column: String, value: String) extends ExpressionOQL
 case class VariableExpressionOQL(ids: List[Ident]) extends ExpressionOQL
+case class ApplyExpressionOQL(func: Ident, args: List[ExpressionOQL]) extends ExpressionOQL
 case class CaseExpressionOQL(whens: List[(ExpressionOQL, ExpressionOQL)], els: Option[ExpressionOQL])
     extends ExpressionOQL
 case class InfixExpressionOQL(left: ExpressionOQL, op: String, right: ExpressionOQL) extends ExpressionOQL
