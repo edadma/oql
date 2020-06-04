@@ -37,7 +37,7 @@ class OQLParser extends RegexParsers {
         ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLiteralOQL)
 
   def ident: Parser[Ident] =
-    positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
+    positioned("""[a-zA-Z_$][a-zA-Z0-9_$]*""".r ^^ Ident)
 
   def query: Parser[QueryOQL] =
     ident ~ opt(project) ~ opt(select) ~ opt(group) ~ opt(order) ~ opt(restrict) ^^ {
@@ -111,6 +111,7 @@ class OQLParser extends RegexParsers {
   def primaryExpression: Parser[ExpressionOQL] =
     number |
       string |
+      rep1sep(ident, ".") <~ "#" ^^ ReferenceExpressionOQL |
       variable |
       caseExpression |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL

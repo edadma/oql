@@ -18,7 +18,7 @@ object Main extends App {
   val oql = new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("enrollment { student { name count(name) } } (student.name)", conn)
+    .json("enrollment { student { name count(name) } } [student# = 1] (student.name)", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

@@ -1,5 +1,6 @@
 package xyz.hyperreal.oql
 
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 import scala.util.parsing.input.Position
 
@@ -21,7 +22,7 @@ class ERModel(defn: String) {
     erDefinition.blocks foreach {
       case EntityBlockERD(entity, actual, fields) =>
         var epk: String = null
-        var attrs = Map.empty[String, EntityAttribute]
+        val attrs = mutable.LinkedHashMap.empty[String, EntityAttribute]
 
         for (EntityAttributeERD(attr, column, typ, pk) <- fields) {
           if (attrs contains attr.name)
@@ -67,7 +68,7 @@ class ERModel(defn: String) {
 
         entityMap(entity.name).table = actual.name
         entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
-        entityMap(entity.name).attributes = attrs
+        entityMap(entity.name).attributes = attrs.to(ListMap)
 //      case TypeBlockERD(name, underlying, condition) =>
     }
 

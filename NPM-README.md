@@ -65,7 +65,7 @@ Create a simple database by copy-pasting the following (yes, all in one shot) at
 ```sql
 CREATE DATABASE student;
 
-CREATE TABLE student (
+CREATE TABLE students (
   id SERIAL PRIMARY KEY,
   stu_name TEXT
 );
@@ -76,7 +76,7 @@ CREATE TABLE class (
 );
 
 CREATE TABLE student_class (
-  studentid INTEGER REFERENCES student,
+  studentid INTEGER REFERENCES students,
   classid INTEGER REFERENCES class
 );
 
@@ -110,7 +110,7 @@ const oql =
       students: [student] (enrollment)
     }
 
-    entity student {
+    entity student (students) {
      *id: integer
       name (stu_name): text
       classes: [class] (enrollment)

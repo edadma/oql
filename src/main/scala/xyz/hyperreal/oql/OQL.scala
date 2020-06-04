@@ -4,7 +4,7 @@ import scala.scalajs.js
 import js.JSConverters._
 import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
-
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
@@ -22,7 +22,7 @@ class OQL(erd: String) {
   def json(sql: String, conn: Connection): Future[String] =
     query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
-  def query(sql: String, conn: Connection): Future[List[Map[String, Any]]] = {
+  def query(sql: String, conn: Connection): Future[List[ListMap[String, Any]]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = OQLParser.parseQuery(sql)
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
@@ -42,7 +42,7 @@ class OQL(erd: String) {
                            projectbuf: ListBuffer[(Option[String], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode],
-                           conn: Connection): Future[List[Map[String, Any]]] = {
+                           conn: Connection): Future[List[ListMap[String, Any]]] = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f)    => s"$e.$f"
@@ -109,9 +109,9 @@ class OQL(erd: String) {
       .rowSet
       .flatMap(result => {
         val list = result.toList
-        val futurebuf = new ListBuffer[Future[List[Map[String, Any]]]]
+        val futurebuf = new ListBuffer[Future[List[ListMap[String, Any]]]]
         val futuremap =
-          new mutable.HashMap[(ResultRow, ProjectionNode), Future[List[Map[String, Any]]]]
+          new mutable.HashMap[(ResultRow, ProjectionNode), Future[List[ListMap[String, Any]]]]
 
         list foreach (futures(_, futurebuf, futuremap, projectmap, graph, conn))
         Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, conn)))
@@ -163,7 +163,8 @@ class OQL(erd: String) {
         case ApplyExpressionOQL(func, args) =>
           buf ++= func.name
           expressions(args)
-        case VariableExpressionOQL(ids) => buf append reference(entityname, entity, ids, joinbuf)
+        case VariableExpressionOQL(ids)  => buf append reference(entityname, entity, ids, ref = false, joinbuf)
+        case ReferenceExpressionOQL(ids) => buf append reference(entityname, entity, ids, ref = true, joinbuf)
         case CaseExpressionOQL(whens, els) =>
           buf ++= "CASE"
 
@@ -190,6 +191,7 @@ class OQL(erd: String) {
       entityname: String,
       entity: Entity,
       ids: List[Ident],
+      ref: Boolean,
       joinbuf: ListBuffer[(String, String, String, String, String)],
   ) = {
     @scala.annotation.tailrec
@@ -205,9 +207,12 @@ class OQL(erd: String) {
 
               s"${attrlist mkString "$"}.$column"
             case Some(ObjectEntityAttribute(column, entityType, entity)) =>
-              if (tail == Nil)
-                problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
-              else {
+              if (tail == Nil) {
+                if (ref)
+                  s"${attrlist mkString "$"}.$column"
+                else
+                  problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
+              } else {
                 val attrlist1 = entity.table :: attrlist
 
                 joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
@@ -395,8 +400,8 @@ class OQL(erd: String) {
     }
 
   private def futures(row: ResultRow,
-                      futurebuf: ListBuffer[Future[List[Map[String, Any]]]],
-                      futuremap: mutable.HashMap[(ResultRow, ProjectionNode), Future[List[Map[String, Any]]]],
+                      futurebuf: ListBuffer[Future[List[ListMap[String, Any]]]],
+                      futuremap: mutable.HashMap[(ResultRow, ProjectionNode), Future[List[ListMap[String, Any]]]],
                       projectmap: Map[(String, String), Int],
                       nodes: Seq[ProjectionNode],
                       conn: Connection): Unit = {
@@ -466,10 +471,10 @@ class OQL(erd: String) {
 
   private def build(row: ResultRow,
                     projectmap: Map[(String, String), Int],
-                    futuremap: mutable.HashMap[(ResultRow, ProjectionNode), Future[List[Map[String, Any]]]],
+                    futuremap: mutable.HashMap[(ResultRow, ProjectionNode), Future[List[ListMap[String, Any]]]],
                     branches: Seq[ProjectionNode],
                     conn: Connection) = {
-    def build(branches: Seq[ProjectionNode]): Map[String, Any] = {
+    def build(branches: Seq[ProjectionNode]): ListMap[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches) => field -> build(branches)
         case PrimitiveProjectionNode(prop, column, table, _, _) =>
@@ -484,7 +489,7 @@ class OQL(erd: String) {
             case Some(Success(value)) => field -> value
             case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
           }
-      }) toMap
+      }).to(ListMap)
     }
 
     build(branches)

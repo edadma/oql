@@ -1,6 +1,8 @@
 package xyz.hyperreal.oql
 
-class Entity(var table: String, var pk: Option[String], var attributes: Map[String, EntityAttribute])
+import scala.collection.immutable.ListMap
+
+class Entity(var table: String, var pk: Option[String], var attributes: ListMap[String, EntityAttribute])
 
 abstract class EntityAttribute { val typ: String }
 case class PrimitiveEntityAttribute(column: String, typ: String) extends EntityAttribute
