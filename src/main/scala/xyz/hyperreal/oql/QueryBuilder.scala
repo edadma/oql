@@ -66,7 +66,7 @@ class QueryBuilder(oql: OQL) {
 
     select =
       if (select isDefined)
-        Some(InfixExpressionOQL(select.get, "AND", s))
+        Some(InfixExpressionOQL(GroupedExpressionOQL(select.get), "AND", GroupedExpressionOQL(s)))
       else
         Some(s)
 
