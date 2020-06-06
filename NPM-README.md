@@ -52,13 +52,17 @@ Example
 Get [PostgreSQL](https://hub.docker.com/_/postgres) running in a [docker container](https://www.docker.com/resources/what-container):
 
 ```
-docker pull postgres
-docker run --rm --name pg-docker -e POSTGRES_PASSWORD=docker -d -p 5432:5432 postgres
+sudo docker pull postgres
+sudo docker run --rm --name pg-docker -e POSTGRES_PASSWORD=docker -d -p 5432:5432 postgres
 ```
 
 Run the [PostgreSQL terminal](https://www.postgresql.org/docs/9.3/app-psql.html) to create a database:
 
 `psql -h localhost -U postgres -d postgres`
+
+which can be installed if necessary with the command 
+
+`sudo apt-get install postgresql-client`
 
 Create a simple database by copy-pasting the following (yes, all in one shot) at the `psql` prompt:
 
@@ -80,7 +84,7 @@ CREATE TABLE student_class (
   classid INTEGER REFERENCES class
 );
 
-INSERT INTO student (stu_name) VALUES
+INSERT INTO students (stu_name) VALUES
   ('John'),
   ('Debbie');
 

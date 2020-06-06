@@ -5,11 +5,11 @@ import js.JSConverters._
 import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
 import scala.collection.immutable.ListMap
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("OQL")
 class OQL(erd: String) {
@@ -17,13 +17,17 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   @JSExport("query")
-  def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = query(sql, conn).map(toJS).toJSPromise
+  def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(query(sql, conn))
 
-  def json(sql: String, conn: Connection): Future[String] =
-    query(sql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+  def jsQuery(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromise(query(q, conn))
 
-  def query(sql: String, conn: Connection): Future[List[ListMap[String, Any]]] = {
-    val QueryOQL(resource, project, select, group, order, limit, offset) = OQLParser.parseQuery(sql)
+  def json(oql: String, conn: Connection): Future[String] =
+    query(oql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+
+  def query(oql: String, conn: Connection): Future[List[ListMap[String, Any]]] = query(OQLParser.parseQuery(oql), conn)
+
+  def query(q: QueryOQL, conn: Connection): Future[List[ListMap[String, Any]]] = {
+    val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -197,6 +201,7 @@ class OQL(erd: String) {
     @scala.annotation.tailrec
     def reference(entityname: String, entity: Entity, ids: List[Ident], attrlist: List[String]): String =
       ids match {
+        case Nil => sys.error("reference: problem")
         case attr :: tail =>
           entity.attributes get attr.name match {
             case None =>
@@ -482,12 +487,12 @@ class OQL(erd: String) {
         case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
-            case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
+            case a                    => sys.error(s"failed to execute query: $a")
           }
         case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> value
-            case None                 => sys.error(s"failed to execute query: $field, $tabpk, $colpk, $branches")
+            case a                    => sys.error(s"failed to execute query: $a")
           }
       }).to(ListMap)
     }

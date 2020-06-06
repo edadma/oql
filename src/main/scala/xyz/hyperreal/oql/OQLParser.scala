@@ -12,6 +12,24 @@ object OQLParser {
     p.parseFromString(query, p.query)
   }
 
+  def parseSelect(s: String): ExpressionOQL = {
+    val p = new OQLParser
+
+    p.parseFromString(s, p.logicalExpression)
+  }
+
+  def parseGroup(s: String): Seq[VariableExpressionOQL] = {
+    val p = new OQLParser
+
+    p.parseFromString(s, p.variables)
+  }
+
+  def parseOrder(s: String): Seq[(ExpressionOQL, Boolean)] = {
+    val p = new OQLParser
+
+    p.parseFromString(s, p.orderExpressions)
+  }
+
 }
 
 class OQLParser extends RegexParsers {
@@ -128,14 +146,18 @@ class OQLParser extends RegexParsers {
 
   def select: Parser[ExpressionOQL] = "[" ~> logicalExpression <~ "]"
 
-  def order: Parser[List[(ExpressionOQL, Boolean)]] = "<" ~> rep1sep(orderExpression, ",") <~ ">"
+  def order: Parser[List[(ExpressionOQL, Boolean)]] = "<" ~> orderExpressions <~ ">"
+
+  def orderExpressions: Parser[List[(ExpressionOQL, Boolean)]] = rep1sep(orderExpression, ",")
 
   def orderExpression: Parser[(ExpressionOQL, Boolean)] = expression ~ opt("/" | "\\") ^^ {
     case e ~ (Some("/") | None) => (e, true)
     case e ~ _                  => (e, false)
   }
 
-  def group: Parser[List[VariableExpressionOQL]] = "(" ~> rep1sep(variable, ",") <~ ")"
+  def group: Parser[List[VariableExpressionOQL]] = "(" ~> variables <~ ")"
+
+  def variables: Parser[List[VariableExpressionOQL]] = rep1sep(variable, ",")
 
   def restrict: Parser[(Option[Int], Option[Int])] =
     "|" ~> (integer ~ opt("," ~> integer)) <~ "|" ^^ {
