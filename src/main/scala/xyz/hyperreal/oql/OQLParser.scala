@@ -12,6 +12,24 @@ object OQLParser {
     p.parseFromString(query, p.query)
   }
 
+  def parseSelect(query: String): ExpressionOQL = {
+    val p = new OQLParser
+
+    p.parseFromString(query, p.select)
+  }
+
+  def parseGroup(query: String): Seq[VariableExpressionOQL] = {
+    val p = new OQLParser
+
+    p.parseFromString(query, p.group)
+  }
+
+  def parseOrder(query: String): Seq[(ExpressionOQL, Boolean)] = {
+    val p = new OQLParser
+
+    p.parseFromString(query, p.order)
+  }
+
 }
 
 class OQLParser extends RegexParsers {
