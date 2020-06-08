@@ -4,15 +4,13 @@ import java.time.LocalDate
 
 import scala.scalajs.js
 import js.JSConverters._
-import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.parsing.input.Position
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.Promise
 
 package object oql {
 
-  def toPromise(result: Future[List[ListMap[String, Any]]]): Promise[js.Any] = result map toJS toJSPromise
+  def toPromise[T](result: Future[T]): js.Promise[js.Any] = result map toJS toJSPromise
 
   def problem(pos: Position, error: String): Nothing =
     if (pos eq null)

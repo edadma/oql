@@ -2,8 +2,11 @@ package xyz.hyperreal.oql
 
 import scala.scalajs.js
 import js.annotation.{JSExport, JSExportTopLevel}
+import js.JSConverters._
+
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("QueryBuilder")
 class QueryBuilder(oql: OQL) {
@@ -41,6 +44,10 @@ class QueryBuilder(oql: OQL) {
 
     source = q.source
     project = q.project
+    group = None
+    order = None
+    select = None
+    limit = None
 
     if (q.select isDefined)
       select = q.select
@@ -79,9 +86,26 @@ class QueryBuilder(oql: OQL) {
     this
   }
 
+  @JSExport
+  def limit(a: Int): QueryBuilder = {
+    limit = Some(a)
+    this
+  }
+
+  @JSExport
+  def offset(a: Int): QueryBuilder = {
+    offset = Some(a)
+    this
+  }
+
   @JSExport("execute")
   def jsExecute(conn: Connection): js.Promise[js.Any] = oql.jsQuery(mkQuery, conn)
 
+  @JSExport("count")
+  def jsCount(conn: Connection): js.Promise[Int] = count(conn).toJSPromise
+
   def execute(conn: Connection): Future[List[ListMap[String, Any]]] = oql.query(mkQuery, conn)
+
+  def count(conn: Connection): Future[Int] = execute(conn) map (_.length)
 
 }

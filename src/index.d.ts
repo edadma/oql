@@ -11,7 +11,13 @@ export class QueryBuilder {
 
   orderBy(attribute: string, ascending: boolean): QueryBuilder
 
+  limit(a: number): QueryBuilder
+
+  offset(a: number): QueryBuilder
+
   execute(conn: Connection): Promise<any>
+
+  count(conn: Connection): Promise<number>
 }
 
 export class OQL {

@@ -1,7 +1,6 @@
 package xyz.hyperreal.oql
 
 import scala.scalajs.js
-import js.JSConverters._
 import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
 import scala.collection.immutable.ListMap
