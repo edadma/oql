@@ -22,64 +22,32 @@ class QueryBuilder private (oql: OQL, q: QueryOQL) {
   def project(resource: String, attributes: String*): QueryBuilder =
     new QueryBuilder(
       oql,
-      QueryOQL(
-        Ident(resource),
-        ProjectAttributesOQL(attributes map (a => QueryOQL(Ident(a), ProjectAllOQL, None, None, None, None, None))),
-        q.select,
-        q.group,
-        q.order,
-        q.limit,
-        q.offset
-      )
+      q.copy(source = Ident(resource),
+             project = ProjectAttributesOQL(
+               attributes map (a => QueryOQL(Ident(a), ProjectAllOQL, None, None, None, None, None))))
     )
 
   @JSExport
-  def query(oql: String): QueryBuilder = {
-    val q = OQLParser.parseQuery(oql)
+  def query(q: String): QueryBuilder = new QueryBuilder(oql, OQLParser.parseQuery(q))
 
-    source = q.source
-    project = q.project
-    group = None
-    order = None
-    select = None
-    limit = None
+  @JSExport
+  def select(s: String): QueryBuilder = {
+    val sel = OQLParser.parseSelect(s)
 
-    if (q.select isDefined)
-      select = q.select
-
-    if (q.group isDefined)
-      group = q.group
-
-    if (q.order isDefined)
-      order = q.order
-
-    if (q.limit isDefined)
-      limit = q.limit
-
-    if (q.offset isDefined)
-      offset = q.offset
-
-    this
+    new QueryBuilder(
+      oql,
+      q.copy(
+        select =
+          if (q.select isDefined)
+            Some(InfixExpressionOQL(GroupedExpressionOQL(q.select.get), "AND", GroupedExpressionOQL(sel)))
+          else
+            Some(sel))
+    )
   }
 
   @JSExport
-  def select(oql: String): QueryBuilder = {
-    val s = OQLParser.parseSelect(oql)
-
-    select =
-      if (select isDefined)
-        Some(InfixExpressionOQL(GroupedExpressionOQL(select.get), "AND", GroupedExpressionOQL(s)))
-      else
-        Some(s)
-
-    this
-  }
-
-  @JSExport
-  def orderBy(attribute: String, ascending: Boolean): QueryBuilder = {
-    order = Some(List((VariableExpressionOQL(List(Ident(attribute))), ascending)))
-    this
-  }
+  def orderBy(attribute: String, ascending: Boolean): QueryBuilder =
+    new QueryBuilder(oql, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), ascending)))))
 
   @JSExport
   def limit(a: Int): QueryBuilder = {
