@@ -9,34 +9,29 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("QueryBuilder")
-class QueryBuilder(oql: OQL) {
-  private var source: Ident = _
-  private var project: ProjectExpressionOQL = ProjectAllOQL
-  private var select: Option[ExpressionOQL] = None
-  private var group: Option[List[VariableExpressionOQL]] = None
-  private var order: Option[List[(ExpressionOQL, Boolean)]] = None
-  private var limit: Option[Int] = None
-  private var offset: Option[Int] = None
+class QueryBuilder private (oql: OQL, q: QueryOQL) {
+  def this(oql: OQL) = this(oql, QueryOQL(null, ProjectAllOQL, None, None, None, None, None))
 
-  private def mkQuery =
-    if (source ne null)
-      QueryOQL(source, project, select, group, order, limit, offset)
-    else
-      sys.error("QueryBuilder: no resource was given")
+  private def check = sys.error("QueryBuilder: no resource was given")
 
   @JSExport
-  def projectResource(resource: String): QueryBuilder = {
-    source = Ident(resource)
-    this
-  }
+  def projectResource(resource: String): QueryBuilder =
+    new QueryBuilder(oql, QueryOQL(Ident(resource), q.project, q.select, q.group, q.order, q.limit, q.offset))
 
   @JSExport
-  def project(resource: String, attributes: String*): QueryBuilder = {
-    source = Ident(resource)
-    project = ProjectAttributesOQL(
-      attributes map (a => QueryOQL(Ident(a), ProjectAllOQL, None, None, None, None, None)))
-    this
-  }
+  def project(resource: String, attributes: String*): QueryBuilder =
+    new QueryBuilder(
+      oql,
+      QueryOQL(
+        Ident(resource),
+        ProjectAttributesOQL(attributes map (a => QueryOQL(Ident(a), ProjectAllOQL, None, None, None, None, None))),
+        q.select,
+        q.group,
+        q.order,
+        q.limit,
+        q.offset
+      )
+    )
 
   @JSExport
   def query(oql: String): QueryBuilder = {
