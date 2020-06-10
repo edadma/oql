@@ -1,4 +1,4 @@
-package xyz.hyperreal
+package com.vinctus
 
 import java.time.LocalDate
 

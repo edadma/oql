@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package com.vinctus.oql
 
 import typings.pg.mod.{Client, ClientConfig, QueryArrayConfig}
 import typings.pg.pgStrings

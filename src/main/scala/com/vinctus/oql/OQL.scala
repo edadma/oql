@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package com.vinctus.oql
 
 import scala.scalajs.js
 import js.JSON
@@ -14,6 +14,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class OQL(erd: String) {
 
   private val model = new ERModel(erd)
+
+  @JSExport
+  def queryBuilder = new QueryBuilder(this, QueryOQL(null, ProjectAllOQL, None, None, None, None, None))
 
   @JSExport("query")
   def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(query(sql, conn))

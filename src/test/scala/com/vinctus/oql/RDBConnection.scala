@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package com.vinctus.oql
 
 import xyz.hyperreal.rdb_sjs
 import xyz.hyperreal.rdb_sjs.RelationResult

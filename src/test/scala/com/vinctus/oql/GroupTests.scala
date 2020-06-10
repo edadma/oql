@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package com.vinctus.oql
 
 import org.scalatest._
 import freespec.AsyncFreeSpec

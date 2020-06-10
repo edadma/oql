@@ -1,4 +1,4 @@
-package xyz.hyperreal.oql
+package com.vinctus.oql
 
 import scala.collection.immutable.ListMap
 import scala.collection.mutable

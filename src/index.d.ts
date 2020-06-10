@@ -1,6 +1,4 @@
 export class QueryBuilder {
-  constructor(oql: OQL)
-
   projectResource(resource: string): QueryBuilder
 
   project(resource: string, ...attributes: string[]): QueryBuilder
@@ -9,7 +7,7 @@ export class QueryBuilder {
 
   select(oql: string): QueryBuilder
 
-  orderBy(attribute: string, ascending: boolean): QueryBuilder
+  order(attribute: string, ascending: boolean): QueryBuilder
 
   limit(a: number): QueryBuilder
 
@@ -22,6 +20,8 @@ export class QueryBuilder {
 
 export class OQL {
   constructor(erd: string)
+
+  queryBuilder(): QueryBuilder
 
   query(sql: string, conn: PostgresConnection): Promise<any>
 }
