@@ -113,11 +113,14 @@ andExpression = notExpression { ("AND" | "and") notExpression } .
 notExpression = ("NOT" | "not") comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
-                         (("NOT" | "not") ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
-                     | applyExpression ((("IS" | "is") ("NULL" | "null")) | (("IS" | "is") ("NOT" | "not")
-                         ("NULL" | "null")))
-                     | applyExpression (("IN" | "in") | (("NOT" | "not") ("IN" | "in"))) expressions
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" |
+                         "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
+                         (("NOT" | "not") ("LIKE" | "like" | "ILIKE" |
+                         "ilike")) applyExpression
+                     | applyExpression ((("IS" | "is") ("NULL" | "null")) |
+                         (("IS" | "is") ("NOT" | "not") ("NULL" | "null")))
+                     | applyExpression (("IN" | "in") | (("NOT" | "not")
+                         ("IN" | "in"))) expressions
                      | applyExpression .
 
 expressions = "(" expression { "," expression } ")" .
@@ -132,7 +135,8 @@ primaryExpression = number
                   | caseExpression
                   | "(" logicalExpression ")" .
 
-caseExpression = ("CASE" | "case") when+ [ ("ELSE" | "else") expression ] ("END" | "end") .
+caseExpression = ("CASE" | "case") when+ [ ("ELSE" | "else") expression ]
+                   ("END" | "end") .
 
 when = ("WHEN" | "when") logicalExpression ("THEN" | "then") expression .
 
