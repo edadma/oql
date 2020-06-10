@@ -53,6 +53,7 @@ class ERModel(defn: String) {
                     case None =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                   }
+                case LiteralTypeERD(value) => LiteralEntityAttribute(eval(value))
               }
 
             attrs += (attr.name -> fieldtype)
@@ -74,6 +75,18 @@ class ERModel(defn: String) {
 
     entityMap.toMap
   }
+
+  def eval(expr: ExpressionERD): Any =
+    expr match {
+      case NullLiteralERD             => null
+      case FloatLiteralERD(n)         => n.toDouble
+      case StringLiteralERD(s)        => s
+      case IntegerLiteralERD(n)       => n.toDouble
+      case BooleanLiteralERD("true")  => true
+      case BooleanLiteralERD("false") => false
+      case ArrayLiteralERD(elems)     => elems map eval
+      case ObjectLiteralERD(membs)    => membs map { case (k, v) => (eval(k), eval(v)) } to ListMap
+    }
 
   def get(table: String, pos: Position): Entity =
     entities get table match {

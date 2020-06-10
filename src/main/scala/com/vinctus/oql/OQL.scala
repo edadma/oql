@@ -208,6 +208,7 @@ class OQL(erd: String) {
           entity.attributes get attr.name match {
             case None =>
               problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+            case Some(LiteralEntityAttribute(value)) => problem(attr.pos, "literals are not yet supported here")
             case Some(PrimitiveEntityAttribute(column, _)) =>
               if (tail != Nil)
                 problem(attr.pos, s"'${attr.pos}' is a primitive type and so has no components")

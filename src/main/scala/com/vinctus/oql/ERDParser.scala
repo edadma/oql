@@ -34,6 +34,8 @@ class ERDParser extends RegexParsers {
       (("'" ~> """[^'\n]*""".r <~ "'") |
         ("\"" ~> """[^"\n]*""".r <~ "\"")) ^^ StringLiteralERD)
 
+  def boolean: Parser[BooleanLiteralERD] = positioned(("true" | "false") ^^ BooleanLiteralERD)
+
   def ident: Parser[Ident] =
     positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
 
@@ -85,16 +87,25 @@ class ERDParser extends RegexParsers {
     opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ^^ {
       case pk ~ n ~ a ~ _ ~ t =>
         EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined)
-    }
+    } |
+      ident ~ "=" ~ jsonLiteral ^^ {
+        case n ~ _ ~ v =>
+      }
+
+  def jsonLiteral: Parser[ExpressionERD] = number | string | boolean | "null" ^^^ NullLiteralERD | array | jsonObject
+
+  def array: Parser[ArrayLiteralERD] = "[" ~> repsep(jsonLiteral, ",") <~ "]" ^^ ArrayLiteralERD
+
+  def jsonObject: Parser[ObjectLiteralERD] = "{" ~> repsep(pair, ",") <~ "}" ^^ ObjectLiteralERD
+
+  def pair: Parser[(StringLiteralERD, ExpressionERD)] = string ~ ":" ~ jsonLiteral ^^ { case k ~ _ ~ v => k -> v }
 
   def typeSpec: Parser[TypeSpecifierERD] =
     ident ^^ SimpleTypeERD |
       ("[" ~> ident <~ "]") ~ ("(" ~> ident <~ ")") ^^ {
         case e ~ j => JunctionArrayTypeERD(e, j)
       } |
-      ("[" ~> ident <~ "]") ^^ {
-        case e => ArrayTypeERD(e)
-      }
+      ("[" ~> ident <~ "]") ^^ ArrayTypeERD
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {
