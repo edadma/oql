@@ -6,6 +6,10 @@
   - [Overview](#overview)
   - [Installation](#installation)
   - [API](#api)
+    - [Database Description Language](#database-description-language)
+      - [Syntax](#syntax)
+    - [Query Language](#query-language)
+      - [Syntax](#syntax-1)
   - [Example](#example)
   - [License](#license)
 
