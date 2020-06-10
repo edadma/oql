@@ -1,7 +1,7 @@
 package com.vinctus.oql
 
 import scala.scalajs.js
-import js.annotation.{JSExport, JSExportTopLevel}
+import js.annotation.JSExport
 import js.JSConverters._
 import js.JSON
 import scala.collection.immutable.ListMap
@@ -10,6 +10,51 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class QueryBuilder private[oql] (private val oql: OQL, q: QueryOQL) {
   private def check = if (q.source eq null) sys.error("QueryBuilder: no resource was given") else this
+
+  private class DoNothingQueryBuilder extends QueryBuilder(oql, q) {
+    private def na = sys.error("not applicable")
+
+    @JSExport("cond")
+    override def jsCond(v: Any): QueryBuilder = na
+
+    override def cond(b: Boolean): QueryBuilder = na
+
+    @JSExport("count")
+    override def jsCount(conn: Connection): js.Promise[Int] = na
+
+    @JSExport("execute")
+    override def jsExecute(conn: Connection): js.Promise[js.Any] = na
+
+    override def execute(conn: Connection): Future[List[ListMap[String, Any]]] = na
+
+    override def count(conn: Connection): Future[Int] = na
+
+    @JSExport
+    override def limit(a: Int): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def offset(a: Int): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def order(attribute: String, ascending: Boolean): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def project(resource: String, attributes: String*): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def projectResource(resource: String): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def query(q: String): QueryBuilder = QueryBuilder.this
+
+    @JSExport
+    override def select(s: String): QueryBuilder = QueryBuilder.this
+  }
+
+  @JSExport("cond")
+  def jsCond(v: Any): QueryBuilder = cond(v != () && v != null && v != false && v != 0 && v != "")
+
+  def cond(b: Boolean): QueryBuilder = if (b) this else new DoNothingQueryBuilder
 
   @JSExport
   def projectResource(resource: String): QueryBuilder =

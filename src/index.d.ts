@@ -1,4 +1,7 @@
 export class QueryBuilder {
+
+  cond(v: any): QueryBuilder
+
   projectResource(resource: string): QueryBuilder
 
   project(resource: string, ...attributes: string[]): QueryBuilder
