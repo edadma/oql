@@ -59,13 +59,13 @@ oql.query(<query>, conn).then((result: any) => <handle result> )
 
 `<handle result>` is your result array handling code.  The `result` object will predictably by structured according to the query.
 
-## Database Description Language
+### Database Description Language
 
 An "Entity-Relationship" style language is used to describe the database.  Only the portions of the database the OQL is being applied to need to be described.
 
-### Syntax
+#### Syntax
 
-The syntax of the data description language is given using a kind of enhanced Wirth Syntax Notation.  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
+The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
 
 ```
 model = entity+ .
@@ -87,6 +87,69 @@ primitiveType = "text"
               | "timestamp" .
 
 entityType = identifier .
+```
+
+### Query Language
+
+#### Syntax
+
+```
+query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ]
+
+project = "{" attributeProject+ "}"
+        | "." attributeProject .
+
+attributeProject = identifier "(" identifier ")"
+                 | query .
+
+select = "[" logicalExpression "]" .
+
+logicalExpression = orExpression .
+
+orExpression = andExpression { ("OR" | "or") andExpression } .
+
+andExpression = notExpression { ("AND" | "and") notExpression } .
+
+notExpression = ("NOT" | "not") comparisonExpression
+              | comparisonExpression .
+
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
+                         (("NOT" | "not") ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
+                     | applyExpression ((("IS" | "is") ("NULL" | "null")) | (("IS" | "is") ("NOT" | "not")
+                         ("NULL" | "null")))
+                     | applyExpression (("IN" | "in") | (("NOT" | "not") ("IN" | "in"))) expressions
+                     | applyExpression .
+
+expressions = "(" expression { "," expression } ")" .
+
+applyExpression = identifier expressions
+                | primaryExpression .
+
+primaryExpression = number
+                  | string
+                  | identifier { "." identifier } "#"
+                  | variable
+                  | caseExpression
+                  | "(" logicalExpression ")" .
+
+caseExpression = ("CASE" | "case") when+ [ ("ELSE" | "else") expression ] ("END" | "end") .
+
+when = ("WHEN" | "when") logicalExpression ("THEN" | "then") expression .
+
+expression = applyExpression .
+
+order = "<" orderExpressions ">" .
+
+orderExpressions = orderExpression { "," orderExpression } .
+
+orderExpression = expression [ "/" | "\\" ] .
+
+group = "(" variables ")" .
+
+variables = variable { "," variable } .
+
+restrict = "|" integer [ "," integer ] "|"
+         | "|" "," integer "|" .
 ```
 
 Example

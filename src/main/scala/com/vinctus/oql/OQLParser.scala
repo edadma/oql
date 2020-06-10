@@ -95,7 +95,7 @@ class OQLParser extends RegexParsers {
     }
 
   def andExpression: Parser[ExpressionOQL] =
-    comparisonExpression ~ rep(("AND" | "and") ~> comparisonExpression) ^^ {
+    notExpression ~ rep(("AND" | "and") ~> notExpression) ^^ {
       case expr ~ list =>
         list.foldLeft(expr) {
           case (l, r) => InfixExpressionOQL(l, "AND", r)
