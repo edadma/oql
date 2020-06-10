@@ -37,45 +37,45 @@ class ERDParser extends RegexParsers {
   def boolean: Parser[BooleanLiteralERD] = positioned(("true" | "false") ^^ BooleanLiteralERD)
 
   def ident: Parser[Ident] =
-    positioned("""[a-zA-Z_#$][a-zA-Z0-9_#$]*""".r ^^ Ident)
+    positioned("""[a-zA-Z_$][a-zA-Z0-9_$]*""".r ^^ Ident)
 
   def variable: Parser[VariableExpressionERD] = ident ^^ VariableExpressionERD
 
   def definition: Parser[ERDefinitionERD] = rep1(block) ^^ ERDefinitionERD
 
-  def block: Parser[BlockERD] = typeBlock | entityBlock
+  def block: Parser[BlockERD] = /*typeBlock |*/ entityBlock
 
-  def typeBlock: Parser[TypeBlockERD] =
-    "type" ~> ident ~ "=" ~ ident ~ ":" ~ condition ^^ {
-      case n ~ _ ~ u ~ _ ~ c => TypeBlockERD(n, u, c)
-    }
-
-  def condition: Parser[ExpressionERD] = boolCondition
-
-  def boolCondition: Parser[ExpressionERD] =
-    orCondition ~ rep("and" ~> orCondition) ^^ {
-      case first ~ rest =>
-        rest.foldLeft(first) { case (l, r) => AndExpressionERD(l, r) }
-    }
-
-  def orCondition: Parser[ExpressionERD] =
-    compCondition ~ rep("or" ~> compCondition) ^^ {
-      case first ~ rest =>
-        rest.foldLeft(first) { case (l, r) => OrExpressionERD(l, r) }
-    }
-
-  def compCondition: Parser[ExpressionERD] =
-    positioned(notCondition ~ rep(("<" | "<=") ~ notCondition) ^^ {
-      case first ~ Nil => first
-      case first ~ rest =>
-        ComparisonExpressionERD(first, rest map { case c ~ r => (c, r) })
-    })
-
-  def notCondition: Parser[ExpressionERD] =
-    positioned("not" ~> primaryCondition ^^ NotExpressionERD) |
-      primaryCondition
-
-  def primaryCondition: Parser[ExpressionERD] = variable | number
+//  def typeBlock: Parser[TypeBlockERD] =
+//    "type" ~> ident ~ "=" ~ ident ~ ":" ~ condition ^^ {
+//      case n ~ _ ~ u ~ _ ~ c => TypeBlockERD(n, u, c)
+//    }
+//
+//  def condition: Parser[ExpressionERD] = boolCondition
+//
+//  def boolCondition: Parser[ExpressionERD] =
+//    orCondition ~ rep("and" ~> orCondition) ^^ {
+//      case first ~ rest =>
+//        rest.foldLeft(first) { case (l, r) => AndExpressionERD(l, r) }
+//    }
+//
+//  def orCondition: Parser[ExpressionERD] =
+//    compCondition ~ rep("or" ~> compCondition) ^^ {
+//      case first ~ rest =>
+//        rest.foldLeft(first) { case (l, r) => OrExpressionERD(l, r) }
+//    }
+//
+//  def compCondition: Parser[ExpressionERD] =
+//    positioned(notCondition ~ rep(("<" | "<=") ~ notCondition) ^^ {
+//      case first ~ Nil => first
+//      case first ~ rest =>
+//        ComparisonExpressionERD(first, rest map { case c ~ r => (c, r) })
+//    })
+//
+//  def notCondition: Parser[ExpressionERD] =
+//    positioned("not" ~> primaryCondition ^^ NotExpressionERD) |
+//      primaryCondition
+//
+//  def primaryCondition: Parser[ExpressionERD] = variable | number
 
   def entityBlock: Parser[EntityBlockERD] =
     "entity" ~ ident ~ opt("(" ~> ident <~ ")") ~ "{" ~ rep1(field) ~ "}" ^^ {
@@ -89,7 +89,7 @@ class ERDParser extends RegexParsers {
         EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined)
     } |
       ident ~ "=" ~ jsonLiteral ^^ {
-        case n ~ _ ~ v =>
+        case n ~ _ ~ v => EntityAttributeERD(n, n, LiteralTypeERD(v), pk = false)
       }
 
   def jsonLiteral: Parser[ExpressionERD] = number | string | boolean | "null" ^^^ NullLiteralERD | array | jsonObject

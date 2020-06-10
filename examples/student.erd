@@ -7,6 +7,7 @@ entity class {
 entity student (students) {
  *id: integer
   name (stu_name): text
+  comments = ['asdf', 'poop']
   classes: [class] (enrollment)
   enrollment: [enrollment]
 }

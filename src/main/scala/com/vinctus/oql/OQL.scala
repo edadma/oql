@@ -208,7 +208,7 @@ class OQL(erd: String) {
           entity.attributes get attr.name match {
             case None =>
               problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
-            case Some(LiteralEntityAttribute(value)) => problem(attr.pos, "literals are not yet supported here")
+            case Some(LiteralEntityAttribute(_)) => problem(attr.pos, "literals are not yet supported here")
             case Some(PrimitiveEntityAttribute(column, _)) =>
               if (tail != Nil)
                 problem(attr.pos, s"'${attr.pos}' is a primitive type and so has no components")
@@ -285,6 +285,7 @@ class OQL(erd: String) {
       projectbuf += ((None, table, entity.pk.get))
 
     attrs map {
+      case (_, field, attr: LiteralEntityAttribute, _, _) => LiteralProjectionNode(field, attr.value)
       case (agg, field, attr: PrimitiveEntityAttribute, _, _) =>
         projectbuf += ((agg, table, attr.column))
         PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
@@ -415,8 +416,8 @@ class OQL(erd: String) {
                       conn: Connection): Unit = {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
-        case _: PrimitiveProjectionNode     =>
-        case EntityProjectionNode(_, nodes) => futures(nodes)
+        case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
+        case EntityProjectionNode(_, nodes)                        => futures(nodes)
         case node @ EntityArrayJunctionProjectionNode(_,
                                                       tabpk,
                                                       colpk,
@@ -485,14 +486,15 @@ class OQL(erd: String) {
     def build(branches: Seq[ProjectionNode]): ListMap[String, Any] = {
       (branches map {
         case EntityProjectionNode(field, branches) => field -> build(branches)
+        case LiteralProjectionNode(field, value)   => field -> value
         case PrimitiveProjectionNode(prop, column, table, _, _) =>
-          prop -> row(projectmap((table, column))) // used to be row(projectmap((table, name)))
-        case node @ EntityArrayJunctionProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
+          prop -> row(projectmap((table, column)))
+        case node @ EntityArrayJunctionProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
             case a                    => sys.error(s"failed to execute query: $a")
           }
-        case node @ EntityArrayProjectionNode(field, tabpk, colpk, _, _, _, _, _, branches, _) =>
+        case node @ EntityArrayProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
           futuremap((row, node)).value match {
             case Some(Success(value)) => field -> value
             case a                    => sys.error(s"failed to execute query: $a")
@@ -504,6 +506,7 @@ class OQL(erd: String) {
   }
 
   abstract class ProjectionNode { val field: String }
+  case class LiteralProjectionNode(field: String, value: Any) extends ProjectionNode
   case class PrimitiveProjectionNode(name: String, column: String, table: String, field: String, attr: EntityAttribute)
       extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode

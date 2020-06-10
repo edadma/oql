@@ -19,14 +19,14 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database. The query syntax is inspired by GraphQL, but is not identical.  *OQL* only provides support for data retrieval and not mutations of any kind.
+*OQL* (Object Query Language) is a language for querying a relational database.  The query syntax is inspired by GraphQL, but is not identical.  Some capabilities that GraphQL doesn't have been added, and some capabilities of GraphQL are done differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
 
 Some features of *OQL* include:
 
 - very similar to [GraphQL](https://graphql.org/) (for querying)
 - uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
 - works with the [PostgreSQL database system](https://www.postgresql.org/)
-- designed to work with existing databases
+- designed to work with existing databases without having to change the database at all
 
 Installation
 ------------
@@ -58,6 +58,36 @@ oql.query(<query>, conn).then((result: any) => <handle result> )
 `<query>` is the OQL query string.
 
 `<handle result>` is your result array handling code.  The `result` object will predictably by structured according to the query.
+
+## Database Description Language
+
+An "Entity-Relationship" style language is used to describe the database.  Only the portions of the database the OQL is being applied to need to be described.
+
+### Syntax
+
+The syntax of the data description language is given using a kind of enhanced Wirth Syntax Notation.  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
+
+```
+model = entity+ .
+
+entity = "entity" "{" attribute+ "}" .
+
+attribute = identifier ":" type
+          | identifier "=" json .
+
+type = primitiveType
+     | entityType
+     | "[" entityType "]"
+     | "[" entityType "]" "(" entityType ")" .
+
+primitiveType = "text"
+              | "integer"
+              | "double"
+              | "bigint"
+              | "timestamp" .
+
+entityType = identifier .
+```
 
 Example
 -------
