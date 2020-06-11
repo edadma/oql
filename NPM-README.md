@@ -119,13 +119,11 @@ andExpression = notExpression { ("AND" | "and") notExpression } .
 notExpression = ("NOT" | "not") comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
-                         (("NOT" | "not") ("LIKE" | "like" | "ILIKE" |
-                         "ilike")) applyExpression
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" |
+                         "ilike") | (("NOT" | "not") ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
                      | applyExpression ((("IS" | "is") ("NULL" | "null")) |
                          (("IS" | "is") ("NOT" | "not") ("NULL" | "null")))
-                     | applyExpression (("IN" | "in") | (("NOT" | "not")
-                         ("IN" | "in"))) expressions
+                     | applyExpression (("IN" | "in") | (("NOT" | "not") ("IN" | "in"))) expressions
                      | applyExpression .
 
 expressions = "(" expression { "," expression } ")" .
