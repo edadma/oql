@@ -95,7 +95,7 @@ entityType = identifier .
 
 ### Query Language
 
-The query language is inspired by GraphQL.  Exactly the data that is needed can be requested, while avoiding circularity.
+The query language is inspired by GraphQL.  Exactly the data that is needed is requested, so as to avoiding circularity.
 
 #### Syntax
 
@@ -119,8 +119,7 @@ andExpression = notExpression { ("AND" | "and") notExpression } .
 notExpression = ("NOT" | "not") comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" |
-                         "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") |
                          (("NOT" | "not") ("LIKE" | "like" | "ILIKE" |
                          "ilike")) applyExpression
                      | applyExpression ((("IS" | "is") ("NULL" | "null")) |
