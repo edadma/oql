@@ -10,7 +10,9 @@
       - [Syntax](#syntax)
     - [Query Language](#query-language)
       - [Syntax](#syntax-1)
-  - [Example (many-to-many)](#example-many-to-many)
+  - [Examples](#examples)
+    - [Example (many-to-one)](#example-many-to-one)
+    - [Example (many-to-many)](#example-many-to-many)
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
