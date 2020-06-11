@@ -97,26 +97,26 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-one self-join" in {
-    employeesER.json("employee { emp_name manager.emp_name } <emp_name> |3|", employeesDB) map { result =>
+    employeesER.json("employee { name manager.name } <name> |3|", employeesDB) map { result =>
       result shouldBe
         """
           |[
           |  {
-          |    "emp_name": "ADELYN",
+          |    "name": "ADELYN",
           |    "manager": {
-          |      "emp_name": "BLAZE"
+          |      "name": "BLAZE"
           |    }
           |  },
           |  {
-          |    "emp_name": "ADNRES",
+          |    "name": "ADNRES",
           |    "manager": {
-          |      "emp_name": "SCARLET"
+          |      "name": "SCARLET"
           |    }
           |  },
           |  {
-          |    "emp_name": "BLAZE",
+          |    "name": "BLAZE",
           |    "manager": {
-          |      "emp_name": "KAYLING"
+          |      "name": "KAYLING"
           |    }
           |  }
           |]
