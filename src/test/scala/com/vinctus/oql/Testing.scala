@@ -13,7 +13,7 @@ object Testing {
         | 4001                 PRODUCTION      BRISBANE           
         |
         |employee
-        | emp_id: integer, pk  emp_name: text  job_title: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: text  dep_id: integer, fk, department, dep_id
+        | emp_id: integer, pk  emp_name: text  job_title: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: currency  dep_id: integer, fk, department, dep_id
         | 68319                KAYLING         PRESIDENT        null                                       1991-11-18       6000.00           null              1001
         | 66928                BLAZE           MANAGER          68319                                      1991-05-01       2750.00           null              3001
         | 67832                CLARE           MANAGER          68319                                      1991-06-09       2550.00           null              1001
@@ -44,6 +44,10 @@ object Testing {
         |  name (emp_name): text
         |  job_title: text
         |  manager (manager_id): employee
+        |  hire_date: date
+        |  salary: currency
+        |  commission: currency
+        |  department (dep_id): department
         |}
         |
         |entity department {
