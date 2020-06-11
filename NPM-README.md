@@ -119,8 +119,10 @@ andExpression = notExpression { ("AND" | "and") notExpression } .
 notExpression = ("NOT" | "not") comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" |
-                         "ilike") | (("NOT" | "not") ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | (["NOT" | "not"]
+                         ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
+                     | applyExpression [ "NOT" | "not" ] ("BETWEEN" | "between") applyExpression
+                         ("AND" | "and") applyExpression
                      | applyExpression ((("IS" | "is") ("NULL" | "null")) |
                          (("IS" | "is") ("NOT" | "not") ("NULL" | "null")))
                      | applyExpression (("IN" | "in") | (("NOT" | "not") ("IN" | "in"))) expressions
@@ -158,6 +160,11 @@ variables = variable { "," variable } .
 restrict = "|" integer [ "," integer ] "|"
          | "|" "," integer "|" .
 ```
+
+Example (many-to-one)
+---------------------
+
+This example presents a very simple "employee" database where employees have a manager and a department (among other things), so that the employees and their managers are in a *many-to-one* relationship, which also requires that the employee table to joined to itself.  Employees and departments are also in a *many-to-one* relationship.
 
 Example (many-to-many)
 ----------------------
