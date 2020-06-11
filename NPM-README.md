@@ -10,7 +10,7 @@
       - [Syntax](#syntax)
     - [Query Language](#query-language)
       - [Syntax](#syntax-1)
-  - [Example](#example)
+  - [Example (many-to-many)](#example-many-to-many)
   - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -95,6 +95,8 @@ entityType = identifier .
 
 ### Query Language
 
+The query language is inspired by GraphQL.  Exactly the data that is needed can be requested, while avoiding circularity.
+
 #### Syntax
 
 ```
@@ -160,8 +162,10 @@ restrict = "|" integer [ "," integer ] "|"
          | "|" "," integer "|" .
 ```
 
-Example
--------
+Example (many-to-many)
+----------------------
+
+This example presents a very simple "student" database where students are enrolled in classes, so that the students and classes are in a *many-to-many* relationship.  The example has tables and fields that are intentionally poorly named so as to demonstrate the aliasing features of the database description language.
 
 Get [PostgreSQL](https://hub.docker.com/_/postgres) running in a [docker container](https://www.docker.com/resources/what-container):
 
@@ -214,7 +218,7 @@ INSERT INTO student_class (studentid, classid) VALUES
   (2, 2);
 ```
 
-Create the following TypeScript source:
+Run the following TypeScript program:
 
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
@@ -278,6 +282,8 @@ You should see the following output:
   }
 ]
 ```
+
+The query `class { name students.name }` in the above example program is asking for the names of the students enrolled in each class.  In standard GraphQL, the query would have been `{ class { name students { name } } }`, which we feel is more verbose than it needs to be.  The use of dot notation as in `students.name` is semantically equivalent to `students { name }`. 
 
 License
 -------
