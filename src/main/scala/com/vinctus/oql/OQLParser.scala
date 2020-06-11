@@ -110,6 +110,10 @@ class OQLParser extends RegexParsers {
     applyExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ applyExpression ^^ {
       case l ~ o ~ r => InfixExpressionOQL(l, o, r)
     } |
+      applyExpression ~ opt("NOT" | "not") ~ ("BETWEEN" | "between") ~ applyExpression ~ ("AND" | "and") ~ applyExpression ^^ {
+        case a ~ None ~ _ ~ b ~ _ ~ c    => BetweenExpressionOQL(a, "BETWEEN", b, c)
+        case a ~ Some(_) ~ _ ~ b ~ _ ~ c => BetweenExpressionOQL(a, "NOT BETWEEN", b, c)
+      } |
       applyExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
         case l ~ o => PostfixExpressionOQL(l, o)
       } |

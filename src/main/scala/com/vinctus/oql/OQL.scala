@@ -159,6 +159,12 @@ class OQL(erd: String) {
           expression(expr)
           buf ++= s" $op "
           expressions(list)
+        case BetweenExpressionOQL(expr, op, lower, upper) =>
+          expression(expr)
+          buf ++= s" $op "
+          expression(lower)
+          buf ++= " AND "
+          expression(upper)
         case FloatLiteralOQL(n)   => buf append n
         case IntegerLiteralOQL(n) => buf append n
         case StringLiteralOQL(s)  => buf append s"'$s'"

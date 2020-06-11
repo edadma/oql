@@ -28,6 +28,8 @@ case class InfixExpressionOQL(left: ExpressionOQL, op: String, right: Expression
 case class PrefixExpressionOQL(op: String, expr: ExpressionOQL) extends ExpressionOQL
 case class PostfixExpressionOQL(expr: ExpressionOQL, op: String) extends ExpressionOQL
 case class InExpressionOQL(expr: ExpressionOQL, op: String, list: List[ExpressionOQL]) extends ExpressionOQL
+case class BetweenExpressionOQL(expr: ExpressionOQL, op: String, lower: ExpressionOQL, upper: ExpressionOQL)
+    extends ExpressionOQL
 case class GroupedExpressionOQL(expr: ExpressionOQL) extends ExpressionOQL
 case class FloatLiteralOQL(n: String) extends ExpressionOQL
 case class IntegerLiteralOQL(n: String) extends ExpressionOQL

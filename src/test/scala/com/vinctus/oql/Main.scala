@@ -5,6 +5,8 @@ import js.Dynamic.{global => g}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
+import Testing._
+
 object Main extends App {
 
   private val fs = g.require("fs")
@@ -14,11 +16,13 @@ object Main extends App {
   }
 
 //  val conn = new PostgresConnection("postgres", "docker")
-  val conn = new RDBConnection(readFile("examples/student.tab"))
-  val oql = new OQL(readFile("examples/student.erd"))
+  val conn = ordersDB //new RDBConnection(readFile("examples/student.tab"))
+  val oql = ordersER //new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("enrollment { student { name comments count(name) } } [student# = 1] (student.name)", conn)
+    .json(
+      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
+      conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>
