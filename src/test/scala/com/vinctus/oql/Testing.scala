@@ -13,21 +13,21 @@ object Testing {
         | 4001                 PRODUCTION      BRISBANE           
         |
         |employee
-        | emp_id: integer, pk  emp_name: text  job_name: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: text  dep_id: integer, fk, department, dep_id 
-        | 68319                KAYLING         PRESIDENT       null                                       1991-11-18       6000.00           null              1001                                    
-        | 66928                BLAZE           MANAGER         68319                                      1991-05-01       2750.00           null              3001                                    
-        | 67832                CLARE           MANAGER         68319                                      1991-06-09       2550.00           null              1001                                    
-        | 65646                JONAS           MANAGER         68319                                      1991-04-02       2957.00           null              2001                                    
-        | 67858                SCARLET         ANALYST         65646                                      1997-04-19       3100.00           null              2001                                    
-        | 69062                FRANK           ANALYST         65646                                      1991-12-03       3100.00           null              2001                                    
-        | 63679                SANDRINE        CLERK           69062                                      1990-12-18       900.00            null              2001                                    
-        | 64989                ADELYN          SALESMAN        66928                                      1991-02-20       1700.00           400.00            3001                                    
-        | 65271                WADE            SALESMAN        66928                                      1991-02-22       1350.00           600.00            3001                                    
-        | 66564                MADDEN          SALESMAN        66928                                      1991-09-28       1350.00           1500.00           3001                                    
-        | 68454                TUCKER          SALESMAN        66928                                      1991-09-08       1600.00           0.00              3001                                    
-        | 68736                ADNRES          CLERK           67858                                      1997-05-23       1200.00           null              2001                                    
-        | 69000                JULIUS          CLERK           66928                                      1991-12-03       1050.00           null              3001                                    
-        | 69324                MARKER          CLERK           67832                                      1992-01-23       1400.00           null              1001                                    
+        | emp_id: integer, pk  emp_name: text  job_title: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: text  dep_id: integer, fk, department, dep_id
+        | 68319                KAYLING         PRESIDENT        null                                       1991-11-18       6000.00           null              1001
+        | 66928                BLAZE           MANAGER          68319                                      1991-05-01       2750.00           null              3001
+        | 67832                CLARE           MANAGER          68319                                      1991-06-09       2550.00           null              1001
+        | 65646                JONAS           MANAGER          68319                                      1991-04-02       2957.00           null              2001
+        | 67858                SCARLET         ANALYST          65646                                      1997-04-19       3100.00           null              2001
+        | 69062                FRANK           ANALYST          65646                                      1991-12-03       3100.00           null              2001
+        | 63679                SANDRINE        CLERK            69062                                      1990-12-18       900.00            null              2001
+        | 64989                ADELYN          SALESREP         66928                                      1991-02-20       1700.00           400.00            3001
+        | 65271                WADE            SALESREP         66928                                      1991-02-22       1350.00           600.00            3001
+        | 66564                MADDEN          SALESREP         66928                                      1991-09-28       1350.00           1500.00           3001
+        | 68454                TUCKER          SALESREP         66928                                      1991-09-08       1600.00           0.00              3001
+        | 68736                ADNRES          CLERK            67858                                      1997-05-23       1200.00           null              2001
+        | 69000                JULIUS          CLERK            66928                                      1991-12-03       1050.00           null              3001
+        | 69324                MARKER          CLERK            67832                                      1992-01-23       1400.00           null              1001
         |
         |salary_grade
         | grade: integer, pk  min_sal: currency  max_sal: currency 
@@ -41,14 +41,14 @@ object Testing {
     new OQL("""
         |entity employee {
         | *emp_id: integer
-        |  emp_name: text
-        |  job_name: text
+        |  name (emp_name): text
+        |  job_title: text
         |  manager (manager_id): employee
         |}
         |
         |entity department {
         | *dep_id: integer
-        |  dep_name: text
+        |  name (dep_name): text
         |  dep_location: text
         |}
         |
