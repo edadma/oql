@@ -19,15 +19,15 @@ class QueryBuilder private[oql] (private val oql: OQL, q: QueryOQL) {
 
     override def cond(b: Boolean): QueryBuilder = na
 
-    @JSExport("count")
-    override def jsCount(conn: Connection): js.Promise[Int] = na
+    @JSExport("getCount")
+    override def jsGetCount(conn: Connection): js.Promise[Int] = na
 
-    @JSExport("execute")
-    override def jsExecute(conn: Connection): js.Promise[js.Any] = na
+    @JSExport("getMany")
+    override def jsGetMany(conn: Connection): js.Promise[js.Any] = na
 
-    override def execute(conn: Connection): Future[List[ListMap[String, Any]]] = na
+    override def getMany(conn: Connection): Future[List[ListMap[String, Any]]] = na
 
-    override def count(conn: Connection): Future[Int] = na
+    override def getCount(conn: Connection): Future[Int] = na
 
     @JSExport
     override def limit(a: Int): QueryBuilder = QueryBuilder.this
@@ -97,17 +97,27 @@ class QueryBuilder private[oql] (private val oql: OQL, q: QueryOQL) {
   @JSExport
   def offset(a: Int): QueryBuilder = new QueryBuilder(oql, q.copy(offset = Some(a)))
 
-  @JSExport("execute")
-  def jsExecute(conn: Connection): js.Promise[js.Any] = check.oql.jsQuery(q, conn)
+  @JSExport("getMany")
+  def jsGetMany(conn: Connection): js.Promise[js.Any] = check.oql.jsQuery(q, conn)
 
-  @JSExport("count")
-  def jsCount(conn: Connection): js.Promise[Int] = count(conn).toJSPromise
+  @JSExport("getOne")
+  def jsGetOne(conn: Connection): js.Promise[js.Any] = toPromise(getOne(conn) map (_.getOrElse(js.undefined)))
 
-  def execute(conn: Connection): Future[List[ListMap[String, Any]]] = check.oql.query(q, conn)
+  @JSExport("getCount")
+  def jsGetCount(conn: Connection): js.Promise[Int] = getCount(conn).toJSPromise
 
-  def count(conn: Connection): Future[Int] = execute(conn) map (_.length)
+  def getMany(conn: Connection): Future[List[ListMap[String, Any]]] = check.oql.query(q, conn)
+
+  def getOne(conn: Connection): Future[Option[ListMap[String, Any]]] =
+    check.oql.query(q, conn) map {
+      case Nil       => None
+      case List(row) => Some(row)
+      case _         => sys.error("getOne: more than one was found")
+    }
+
+  def getCount(conn: Connection): Future[Int] = getMany(conn) map (_.length)
 
   def json(conn: Connection): Future[String] =
-    execute(conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+    getMany(conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
 }

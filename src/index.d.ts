@@ -16,9 +16,11 @@ export class QueryBuilder {
 
   offset(a: number): QueryBuilder
 
-  execute(conn: Connection): Promise<any>
+  getOne(conn: Connection): Promise<any>
 
-  count(conn: Connection): Promise<number>
+  getMany(conn: Connection): Promise<any[]>
+
+  getCount(conn: Connection): Promise<number>
 }
 
 export class OQL {
@@ -26,7 +28,7 @@ export class OQL {
 
   queryBuilder(): QueryBuilder
 
-  query(sql: string, conn: PostgresConnection): Promise<any>
+  query(sql: string, conn: PostgresConnection): Promise<any[]>
 }
 
 export class PostgresConnection extends Connection {

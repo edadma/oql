@@ -97,7 +97,7 @@ entityType = identifier .
 
 ### Query Language
 
-The query language is inspired by GraphQL.  Exactly the data that is needed is requested, so as to avoiding circularity.
+The query language is inspired by GraphQL.  Exactly the data that is needed is requested, so as to avoid circularity.
 
 #### Syntax
 
