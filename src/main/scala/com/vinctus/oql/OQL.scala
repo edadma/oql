@@ -262,20 +262,30 @@ class OQL(erd: String) {
 
     val attrs =
       project match {
-        case ProjectAllOQL => entity.attributes map { case (k, v) => (None, k, v, ProjectAllOQL, null) } toList
+        case ProjectAllOQL =>
+          entity.attributes filterNot {
+            case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
+            case _                                                                          => true
+          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL, null) } toList
         case ProjectAttributesOQL(attrs) =>
-          attrs map {
+          //
+          attrs flatMap {
+            case ProjectAllOQL =>
+              entity.attributes filterNot {
+                case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
+                case _                                                                          => true
+              } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL, null) } toList
             case AggregateAttributeOQL(agg, attr) =>
               attrType(attr) match {
-                case typ: PrimitiveEntityAttribute => (Some(agg.name), attr.name, typ, ProjectAllOQL, null)
+                case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL, null))
                 case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
               }
             case query @ QueryOQL(attr, project, None, None, None, None, None) =>
-              (None, attr.name, attrType(attr), project, query)
+              List((None, attr.name, attrType(attr), project, query))
             case query @ QueryOQL(source, project, _, _, _, _, _) =>
               attrType(source) match {
                 case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
-                  (None, source.name, typ, project, query)
+                  List((None, source.name, typ, project, query))
                 case _ =>
                   problem(source.pos, s"'${source.name}' is not an array type attribute")
               }
