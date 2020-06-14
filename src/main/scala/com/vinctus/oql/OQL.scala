@@ -268,26 +268,41 @@ class OQL(erd: String) {
             case _                                                                          => true
           } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
         case ProjectAttributesOQL(attrs) =>
-          (attrs.find(_.isInstanceOf[ProjectAllOQL]), attrs.findLast(_.isInstanceOf[ProjectAllOQL])) match {
-            case (Some(ProjectAllOQL(p1)), Some(ProjectAllOQL(p2))) if p1 != p2 => problem(p2, "only one * can be used")
-            case (Some(_), Some(_))                                             =>
-            case (None, None)                                                   =>
-          }
+          var projectall = false
+          val aggset = new mutable.HashSet[AggregateAttributeOQL]
+          val propset = attrs filter (_.isInstanceOf[QueryOQL]) map {
+            case QueryOQL(id, _, _, _, _, _, _) => id.name
+          } toSet
+          val propidset = new mutable.HashSet[Ident]
 
           attrs flatMap {
-            case _: ProjectAllOQL =>
+            case ProjectAllOQL(pos) =>
+              if (projectall)
+                problem(pos, "only one * can be used")
+              else
+                projectall = true
+
               entity.attributes filter {
                 case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
-                case _                                                                          => true
+                case (k, _)                                                                     => !propset(k)
               } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
-            case AggregateAttributeOQL(agg, attr) =>
+            case a @ AggregateAttributeOQL(agg, attr) =>
+              if (aggset(a))
+                problem(agg.pos, "aggregate function duplicated")
+
+              aggset += a
+
               attrType(attr) match {
                 case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null))
                 case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
               }
+            case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
             case query @ QueryOQL(attr, project, None, None, None, None, None) =>
+              propidset += attr
               List((None, attr.name, attrType(attr), project, query))
             case query @ QueryOQL(source, project, _, _, _, _, _) =>
+              propidset += source
+
               attrType(source) match {
                 case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
                   List((None, source.name, typ, project, query))

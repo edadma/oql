@@ -20,7 +20,7 @@ object Main extends App {
   val oql = employeesER //new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("employee { name manager.name department.name } [job_title = 'CLERK']", conn)
+    .json("employee { * } [job_title = 'CLERK'] <name>", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

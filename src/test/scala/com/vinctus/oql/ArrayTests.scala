@@ -124,4 +124,51 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
     }
   }
 
+  "many-to-one self-join and ordinary many-to-one" in {
+    employeesER.json("employee { name manager.name department.name } [job_title = 'CLERK'] <name>", employeesDB) map {
+      result =>
+        result shouldBe
+          """
+            |[
+            |  {
+            |    "name": "ADNRES",
+            |    "manager": {
+            |      "name": "SCARLET"
+            |    },
+            |    "department": {
+            |      "name": "AUDIT"
+            |    }
+            |  },
+            |  {
+            |    "name": "JULIUS",
+            |    "manager": {
+            |      "name": "BLAZE"
+            |    },
+            |    "department": {
+            |      "name": "MARKETING"
+            |    }
+            |  },
+            |  {
+            |    "name": "MARKER",
+            |    "manager": {
+            |      "name": "CLARE"
+            |    },
+            |    "department": {
+            |      "name": "FINANCE"
+            |    }
+            |  },
+            |  {
+            |    "name": "SANDRINE",
+            |    "manager": {
+            |      "name": "FRANK"
+            |    },
+            |    "department": {
+            |      "name": "AUDIT"
+            |    }
+            |  }
+            |]
+           """.trim.stripMargin
+    }
+  }
+
 }
