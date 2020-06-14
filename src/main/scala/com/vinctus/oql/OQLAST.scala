@@ -1,12 +1,12 @@
 package com.vinctus.oql
 
-import scala.util.parsing.input.Positional
+import scala.util.parsing.input.{Position, Positional}
 
 abstract class OQLAST
 
 abstract class ProjectExpressionOQL extends OQLAST
 case class ProjectAttributesOQL(attrs: Seq[ProjectExpressionOQL]) extends ProjectExpressionOQL
-case object ProjectAllOQL extends ProjectExpressionOQL
+case class ProjectAllOQL(pos: Position = null) extends ProjectExpressionOQL
 case class AggregateAttributeOQL(agg: Ident, attr: Ident) extends ProjectExpressionOQL
 case class QueryOQL(source: Ident,
                     project: ProjectExpressionOQL,

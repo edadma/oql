@@ -16,7 +16,7 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   @JSExport
-  def queryBuilder() = new QueryBuilder(this, QueryOQL(null, ProjectAllOQL, None, None, None, None, None))
+  def queryBuilder() = new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("query")
   def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(query(sql, conn))
@@ -262,22 +262,27 @@ class OQL(erd: String) {
 
     val attrs =
       project match {
-        case ProjectAllOQL =>
-          entity.attributes filterNot {
+        case _: ProjectAllOQL =>
+          entity.attributes filter {
             case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
             case _                                                                          => true
-          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL, null) } toList
+          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
         case ProjectAttributesOQL(attrs) =>
-          //
+          (attrs.find(_.isInstanceOf[ProjectAllOQL]), attrs.findLast(_.isInstanceOf[ProjectAllOQL])) match {
+            case (Some(ProjectAllOQL(p1)), Some(ProjectAllOQL(p2))) if p1 != p2 => problem(p2, "only one * can be used")
+            case (Some(_), Some(_))                                             =>
+            case (None, None)                                                   =>
+          }
+
           attrs flatMap {
-            case ProjectAllOQL =>
-              entity.attributes filterNot {
+            case _: ProjectAllOQL =>
+              entity.attributes filter {
                 case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
                 case _                                                                          => true
-              } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL, null) } toList
+              } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
             case AggregateAttributeOQL(agg, attr) =>
               attrType(attr) match {
-                case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL, null))
+                case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null))
                 case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
               }
             case query @ QueryOQL(attr, project, None, None, None, None, None) =>

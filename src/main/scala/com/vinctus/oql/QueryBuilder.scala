@@ -66,7 +66,7 @@ class QueryBuilder private[oql] (private val oql: OQL, q: QueryOQL) {
       oql,
       q.copy(source = Ident(resource),
              project = ProjectAttributesOQL(
-               attributes map (a => QueryOQL(Ident(a), ProjectAllOQL, None, None, None, None, None))))
+               attributes map (a => QueryOQL(Ident(a), ProjectAllOQL(), None, None, None, None, None))))
     )
 
   @JSExport
