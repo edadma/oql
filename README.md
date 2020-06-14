@@ -25,7 +25,7 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database.  The query syntax is inspired by GraphQL, but is not identical.  Some capabilities that GraphQL doesn't have been added, and some capabilities of GraphQL are done differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
+*OQL* (Object Query Language) is a language for querying a relational database.  The query syntax is inspired by GraphQL, but is not identical.  Some capabilities that are not in GraphQL have been added, and some capabilities of GraphQL are done differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
 
 Some features of *OQL* include:
 
