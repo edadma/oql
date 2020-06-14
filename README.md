@@ -76,9 +76,11 @@ The syntax of the data description language is given using a kind of enhanced [W
 ```
 model = entity+ .
 
-entity = "entity" "{" attribute+ "}" .
+entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
 
-attribute = identifier ":" type
+alias = identifier .
+
+attribute = identifier [ "(" alias ")" ] ":" type
           | identifier "=" json .
 
 type = primitiveType
@@ -107,7 +109,8 @@ query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ]
 project = "{" attributeProject+ "}"
         | "." attributeProject .
 
-attributeProject = identifier "(" identifier ")"
+attributeProject = identifier "(" [ "*" | identifier ] ")"
+                 | "*"
                  | query .
 
 select = "[" logicalExpression "]" .
