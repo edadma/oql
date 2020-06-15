@@ -291,7 +291,7 @@ object Testing {
         |  semester: text
         |  grade: text
         |}
-        |""".stripMargin
+       """.stripMargin
     )
 
   val starTrekDB =
