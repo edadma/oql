@@ -21,8 +21,8 @@ object Main extends App {
 //
 //  oql
 //    .json("agent { * orders { * agent.agent_name } } [agent_code = 'A001'] <agent_code>", conn)
-  val conn = student1DB //new RDBConnection(readFile("examples/student.tab"))
-  val oql = student1ER //new OQL(readFile("examples/student.erd"))
+  val conn = studentDB //new RDBConnection(readFile("examples/student.tab"))
+  val oql = studentER //new OQL(readFile("examples/student.erd"))
 
   oql
     .json("student { * classes { * students <student.name> } <class.name> } [name = 'John']", conn)

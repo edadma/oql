@@ -58,58 +58,58 @@ class StarTests extends AsyncFreeSpec with Matchers {
     }
   }
 
-  // todo: the query should be "student { * classes { * students <student.name> } <class.name> } [name = 'John']" but that doesn't work
   "recursion" in {
-    studentER.json("student { * classes { * students } <class.name> } [name = 'John']", studentDB) map { result =>
-      result shouldBe
-        """
-          |[
-          |  {
-          |    "id": 1,
-          |    "name": "John",
-          |    "classes": [
-          |      {
-          |        "id": 9,
-          |        "name": "Physical Education",
-          |        "students": [
-          |          {
-          |            "id": 1,
-          |            "name": "John"
-          |          },
-          |          {
-          |            "id": 2,
-          |            "name": "Debbie"
-          |          }
-          |        ]
-          |      },
-          |      {
-          |        "id": 5,
-          |        "name": "Science",
-          |        "students": [
-          |          {
-          |            "id": 1,
-          |            "name": "John"
-          |          },
-          |          {
-          |            "id": 2,
-          |            "name": "Debbie"
-          |          }
-          |        ]
-          |      },
-          |      {
-          |        "id": 3,
-          |        "name": "Spanish",
-          |        "students": [
-          |          {
-          |            "id": 1,
-          |            "name": "John"
-          |          }
-          |        ]
-          |      }
-          |    ]
-          |  }
-          |]
-         """.trim.stripMargin
+    studentER.json("student { * classes { * students <student.name> } <class.name> } [name = 'John']", studentDB) map {
+      result =>
+        result shouldBe
+          """
+            |[
+            |  {
+            |    "id": 1,
+            |    "name": "John",
+            |    "classes": [
+            |      {
+            |        "id": 9,
+            |        "name": "Physical Education",
+            |        "students": [
+            |          {
+            |            "id": 2,
+            |            "name": "Debbie"
+            |          },
+            |          {
+            |            "id": 1,
+            |            "name": "John"
+            |          }
+            |        ]
+            |      },
+            |      {
+            |        "id": 5,
+            |        "name": "Science",
+            |        "students": [
+            |          {
+            |            "id": 2,
+            |            "name": "Debbie"
+            |          },
+            |          {
+            |            "id": 1,
+            |            "name": "John"
+            |          }
+            |        ]
+            |      },
+            |      {
+            |        "id": 3,
+            |        "name": "Spanish",
+            |        "students": [
+            |          {
+            |            "id": 1,
+            |            "name": "John"
+            |          }
+            |        ]
+            |      }
+            |    ]
+            |  }
+            |]
+           """.trim.stripMargin
     }
   }
 
