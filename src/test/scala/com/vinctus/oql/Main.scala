@@ -16,11 +16,17 @@ object Main extends App {
   }
 
 //  val conn = new PostgresConnection("postgres", "docker")
-  val conn = ordersDB //new RDBConnection(readFile("examples/student.tab"))
-  val oql = ordersER //new OQL(readFile("examples/student.erd"))
+//  val conn = ordersDB //new RDBConnection(readFile("examples/student.tab"))
+//  val oql = ordersER //new OQL(readFile("examples/student.erd"))
+//
+//  oql
+//    .json("agent { * orders { * agent.agent_name } } [agent_code = 'A001'] <agent_code>", conn)
+  val conn = studentDB //new RDBConnection(readFile("examples/student.tab"))
+  val oql = studentER //new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("agent { * orders { sum(ord_amount) } } [working_area = 'Bangalore'] <agent_code>", conn)
+//    .json("student { * classes { * students <student.id> } <class.id> } [name = 'John']", conn)
+    .json("student { * classes { * students } <class.name> } [name = 'John']", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

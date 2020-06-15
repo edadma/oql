@@ -11,7 +11,7 @@ import Testing._
 class StarTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
-  "grouped" in {
+  "aggregate" in {
     ordersER.json("agent { * orders { sum(ord_amount) } } [working_area = 'Bangalore'] <agent_code>", ordersDB) map {
       result =>
         result shouldBe
@@ -55,6 +55,61 @@ class StarTests extends AsyncFreeSpec with Matchers {
             |  }
             |]
            """.trim.stripMargin
+    }
+  }
+
+  // todo: the query should be "student { * classes { * students <student.name> } <class.name> } [name = 'John']" but that doesn't work
+  "recursion" in {
+    studentER.json("student { * classes { * students } <class.name> } [name = 'John']", studentDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "id": 1,
+          |    "name": "John",
+          |    "classes": [
+          |      {
+          |        "id": 9,
+          |        "name": "Physical Education",
+          |        "students": [
+          |          {
+          |            "id": 1,
+          |            "name": "John"
+          |          },
+          |          {
+          |            "id": 2,
+          |            "name": "Debbie"
+          |          }
+          |        ]
+          |      },
+          |      {
+          |        "id": 5,
+          |        "name": "Science",
+          |        "students": [
+          |          {
+          |            "id": 1,
+          |            "name": "John"
+          |          },
+          |          {
+          |            "id": 2,
+          |            "name": "Debbie"
+          |          }
+          |        ]
+          |      },
+          |      {
+          |        "id": 3,
+          |        "name": "Spanish",
+          |        "students": [
+          |          {
+          |            "id": 1,
+          |            "name": "John"
+          |          }
+          |        ]
+          |      }
+          |    ]
+          |  }
+          |]
+         """.trim.stripMargin
     }
   }
 
