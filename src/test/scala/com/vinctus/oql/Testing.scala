@@ -237,6 +237,63 @@ object Testing {
         |}
         |""".stripMargin
     )
+
+  val student1DB =
+    new RDBConnection(
+      """
+        |student
+        | id: integer, pk  name: text
+        | 1                John
+        | 2                Debbie
+        |
+        |class
+        | id: integer, pk      name: text
+        | 1                English
+        | 2                Maths
+        | 3                Spanish
+        | 4                Biology
+        | 5                Science
+        | 6                Programming
+        | 7                Law
+        | 8                Commerce
+        | 9                Physical Education
+        |
+        |enrollment
+        | student: integer, fk, student, id  class: integer, fk, class, id  year: integer  semester: text  grade: text
+        | 1                                    3                                2019           fall            B+
+        | 1                                    5                                2018           winter          A
+        | 1                                    9                                2019           summer          F
+        | 2                                    1                                2018           fall            A+
+        | 2                                    4                                2019           winter          B-
+        | 2                                    5                                2018           summer          A-
+        | 2                                    9                                2019           fall            B+
+        |""".stripMargin
+    )
+  val student1ER =
+    new OQL(
+      """
+        |entity class {
+        | *id: integer
+        |  name: text
+        |  students: [student] (enrollment)
+        |}
+        |
+        |entity student {
+        | *id: integer
+        |  name: text
+        |  classes: [class] (enrollment)
+        |}
+        |
+        |entity enrollment {
+        |  student: student
+        |  class: class
+        |  year: integer
+        |  semester: text
+        |  grade: text
+        |}
+        |""".stripMargin
+    )
+
   val starTrekDB =
     new RDBConnection(
       """

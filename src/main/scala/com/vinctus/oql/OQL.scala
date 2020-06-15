@@ -100,7 +100,7 @@ class OQL(erd: String) {
       case (None, Some(o))    => sql append s"  OFFSET $o"
     }
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf
       .map {
