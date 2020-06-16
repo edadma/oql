@@ -337,24 +337,36 @@ CREATE TABLE class (
 );
 
 CREATE TABLE student_class (
-  studentid INTEGER REFERENCES students,
-  classid INTEGER REFERENCES class
+  studentid INTEGER REFERENCES students (id),
+  classid INTEGER REFERENCES class (id),
+  year INTEGER,
+  semester TEXT,
+  grade TEXT
 );
 
-INSERT INTO students (stu_name) VALUES
-  ('John'),
-  ('Debbie');
+INSERT INTO students (id, stu_name) VALUES
+  (1, 'John'),
+  (2, 'Debbie');
 
-INSERT INTO class (name) VALUES
-  ('English'),
-  ('Maths'),
-  ('Spanish');
+INSERT INTO class (id, name) VALUES
+  (1, 'English'),
+  (2, 'Maths'),
+  (3, 'Spanish'),
+  (4, 'Biology'),
+  (5, 'Science'),
+  (6, 'Programming'),
+  (7, 'Law'),
+  (8, 'Commerce'),
+  (9, 'Physical Education');
 
-INSERT INTO student_class (studentid, classid) VALUES
-  (1, 3),
-  (1, 1),
-  (2, 1),
-  (2, 2);
+INSERT INTO student_class (studentid, classid, year, semester, grade) VALUES
+  (1, 3, 2019, 'fall', 'B+'),
+  (1, 5, 2018, 'winter', 'A'),
+  (1, 9, 2019, 'summer', 'F'),
+  (2, 1, 2018, 'fall', 'A+'),
+  (2, 4, 2019, 'winter', 'B-'),
+  (2, 5, 2018, 'summer', 'A-'),
+  (2, 9, 2019, 'fall', 'B+');
 ```
 
 Run the following TypeScript program:
@@ -370,21 +382,24 @@ const oql =
       name: text
       students: [student] (enrollment)
     }
-
+    
     entity student (students) {
      *id: integer
       name (stu_name): text
       classes: [class] (enrollment)
     }
-  
+    
     entity enrollment (student_class) {
       student (studentid): student
       class (classid): class
+      year: integer
+      semester: text
+      grade: text
     }
   `)
 
 oql
-  .query('class { name students.name }', conn)
+  .query('student { * classes { * students <student.name> } <class.name> } [name = 'John']', conn)
   .then((res: any) => console.log(JSON.stringify(res, null, 2)))
 ```
 
@@ -393,36 +408,53 @@ You should see the following output:
 ```json
 [
   {
-    "name": "English",
-    "students": [
+    "id": 1,
+    "name": "John",
+    "classes": [
       {
-        "name": "John"
+        "id": 9,
+        "name": "Physical Education",
+        "students": [
+          {
+            "id": 2,
+            "name": "Debbie"
+          },
+          {
+            "id": 1,
+            "name": "John"
+          }
+        ]
       },
       {
-        "name": "Debbie"
-      }
-    ]
-  },
-  {
-    "name": "Maths",
-    "students": [
+        "id": 5,
+        "name": "Science",
+        "students": [
+          {
+            "id": 2,
+            "name": "Debbie"
+          },
+          {
+            "id": 1,
+            "name": "John"
+          }
+        ]
+      },
       {
-        "name": "Debbie"
-      }
-    ]
-  },
-  {
-    "name": "Spanish",
-    "students": [
-      {
-        "name": "John"
+        "id": 3,
+        "name": "Spanish",
+        "students": [
+          {
+            "id": 1,
+            "name": "John"
+          }
+        ]
       }
     ]
   }
 ]
 ```
 
-The query `class { name students.name }` in the above example program is asking for the names of the students enrolled in each class.  In standard GraphQL, the query would have been `{ class { name students { name } } }`, which we feel is more verbose than it needs to be.  The use of dot notation as in `students.name` is semantically equivalent to `students { name }`. 
+The query `student { * classes { * students <student.name> } <class.name> } [name = 'John']` in the above example program is asking for the names of the students enrolled only in the classes in which John is enrolled.  Also, the query is asking for the classes and the students in each class to be listed to be ordered by class name and student name, respectively.  The `*` operator is a wildcard that stands for all attributes that do not result in an array value. 
 
 License
 -------
