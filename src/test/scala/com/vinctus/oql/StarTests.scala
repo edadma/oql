@@ -59,10 +59,9 @@ class StarTests extends AsyncFreeSpec with Matchers {
   }
 
   "recursion" in {
-    studentER.json("student { * classes { * students <student.name> } <class.name> } [name = 'John']", studentDB) map {
-      result =>
-        result shouldBe
-          """
+    studentER.json("student { * classes { * students <name> } <name> } [name = 'John']", studentDB) map { result =>
+      result shouldBe
+        """
             |[
             |  {
             |    "id": 1,

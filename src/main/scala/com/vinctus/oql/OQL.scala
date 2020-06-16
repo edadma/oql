@@ -35,7 +35,7 @@ class OQL(erd: String) {
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, projectbuf, joinbuf, List(entity.table), Nil)
 
-    executeQuery(resource.name, select, group, order, limit, offset, entity, projectbuf, joinbuf, graph, conn)
+    executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph, conn)
   }
 
   private def executeQuery(resource: String,
@@ -44,6 +44,7 @@ class OQL(erd: String) {
                            order: Option[List[(ExpressionOQL, Boolean)]],
                            limit: Option[Int],
                            offset: Option[Int],
+                           entityType: Option[String],
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[String], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
@@ -65,18 +66,18 @@ class OQL(erd: String) {
 
     val where =
       if (select isDefined)
-        expression(resource, entity, select.get, joinbuf)
+        expression(resource, entity, entityType, select.get, joinbuf)
       else
         null
     val groupby =
       if (group isDefined)
-        group.get map (v => expression(resource, entity, v, joinbuf)) mkString ", "
+        group.get map (v => expression(resource, entity, entityType, v, joinbuf)) mkString ", "
       else
         null
     val orderby =
       if (order isDefined)
         order.get map {
-          case (e, o) => s"(${expression(resource, entity, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
+          case (e, o) => s"(${expression(resource, entity, entityType, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
         } mkString ", "
       else
         null
@@ -126,6 +127,7 @@ class OQL(erd: String) {
 
   private def expression(entityname: String,
                          entity: Entity,
+                         entityType: Option[String],
                          expr: ExpressionOQL,
                          joinbuf: ListBuffer[(String, String, String, String, String)]) = {
     val buf = new StringBuilder
@@ -175,8 +177,10 @@ class OQL(erd: String) {
         case ApplyExpressionOQL(func, args) =>
           buf ++= func.name
           expressions(args)
-        case VariableExpressionOQL(ids)  => buf append reference(entityname, entity, ids, ref = false, joinbuf)
-        case ReferenceExpressionOQL(ids) => buf append reference(entityname, entity, ids, ref = true, joinbuf)
+        case VariableExpressionOQL(ids) =>
+          buf append reference(entityname, entity, entityType, ids, ref = false, joinbuf)
+        case ReferenceExpressionOQL(ids) =>
+          buf append reference(entityname, entity, entityType, ids, ref = true, joinbuf)
         case CaseExpressionOQL(whens, els) =>
           buf ++= "CASE"
 
@@ -202,6 +206,7 @@ class OQL(erd: String) {
   private def reference(
       entityname: String,
       entity: Entity,
+      entityType: Option[String],
       ids: List[Ident],
       ref: Boolean,
       joinbuf: ListBuffer[(String, String, String, String, String)],
@@ -237,7 +242,7 @@ class OQL(erd: String) {
           }
       }
 
-    reference(entityname, entity, ids, List(entity.table))
+    reference(entityname, entity, if (entityType isDefined) Ident(entityType.get) :: ids else ids, List(entity.table))
   }
 
   private def entityNode(field: String, attr: EntityAttribute, circlist: List[(String, EntityAttribute)])(
@@ -370,9 +375,10 @@ class OQL(erd: String) {
         entityNode(field, attr, circlist)(
           c =>
             EntityArrayJunctionProjectionNode(
+              entityType,
               field,
               table,
-              entity.pk.get, // used to be attrEntity.pk.get
+              entity.pk.get,
               projectbuf,
               subjoinbuf,
               junctionType,
@@ -454,7 +460,8 @@ class OQL(erd: String) {
       nodes foreach {
         case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
         case EntityProjectionNode(_, nodes)                        => futures(nodes)
-        case node @ EntityArrayJunctionProjectionNode(_,
+        case node @ EntityArrayJunctionProjectionNode(entityType,
+                                                      _,
                                                       tabpk,
                                                       colpk,
                                                       subprojectbuf,
@@ -472,6 +479,7 @@ class OQL(erd: String) {
             query.order,
             query.limit,
             query.offset,
+            Some(entityType),
             entity,
             subprojectbuf,
             subjoinbuf,
@@ -499,6 +507,7 @@ class OQL(erd: String) {
             query.order,
             query.limit,
             query.offset,
+            None,
             entity,
             subprojectbuf,
             subjoinbuf,
@@ -525,7 +534,7 @@ class OQL(erd: String) {
         case LiteralProjectionNode(field, value)   => field -> value
         case PrimitiveProjectionNode(prop, column, table, _, _) =>
           prop -> row(projectmap((table, column)))
-        case node @ EntityArrayJunctionProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
+        case node @ EntityArrayJunctionProjectionNode(_, field, _, _, _, _, _, _, _, _, _) =>
           futuremap((row, node.serial)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
             case a                    => sys.error(s"failed to execute query: $a")
@@ -552,7 +561,8 @@ class OQL(erd: String) {
   case class PrimitiveProjectionNode(name: String, column: String, table: String, field: String, attr: EntityAttribute)
       extends ProjectionNode
   case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
-  case class EntityArrayJunctionProjectionNode(field: String,
+  case class EntityArrayJunctionProjectionNode(entityType: String,
+                                               field: String,
                                                tabpk: String,
                                                colpk: String,
                                                subprojectbuf: ListBuffer[(Option[String], String, String)],
