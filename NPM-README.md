@@ -257,7 +257,7 @@ oql
   .then((res: any) => console.log(JSON.stringify(res, null, 2)))
 ```
 
-You should see the following output:
+Output:
 
 ```json
 [
@@ -403,7 +403,7 @@ oql
   .then((res: any) => console.log(JSON.stringify(res, null, 2)))
 ```
 
-You should see the following output:
+Output:
 
 ```json
 [
