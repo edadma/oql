@@ -399,7 +399,7 @@ const oql =
   `)
 
 oql
-  .query('student { * classes { * students <student.name> } <class.name> } [name = 'John']', conn)
+  .query("student { * classes { * students <student.name> } <class.name> } [name = 'John']", conn)
   .then((res: any) => console.log(JSON.stringify(res, null, 2)))
 ```
 
