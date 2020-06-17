@@ -3,9 +3,9 @@ package com.vinctus.oql
 import scala.scalajs.js
 import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
-import scala.collection.immutable.ListMap
+import scala.collection.immutable.{ListMap, Set}
 import scala.collection.mutable.ListBuffer
-import scala.collection.mutable
+import scala.collection.{Set, mutable}
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -275,46 +275,64 @@ class OQL(erd: String) {
         case ProjectAttributesOQL(attrs) =>
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]
-          val propset = attrs filter (_.isInstanceOf[QueryOQL]) map {
-            case QueryOQL(id, _, _, _, _, _, _) => id.name
+          val propset = attrs flatMap {
+            case QueryOQL(id, _, _, _, _, _, _) => List(id.name)
+            case _                              => Nil
           } toSet
+          val negpropmap = attrs flatMap {
+            case NegativeAttribute(id) => List(id.name -> id.pos)
+            case _                     => Nil
+          } toMap
+
+          negpropmap.keySet.intersect(propset).toList match {
+            case Nil     =>
+            case id :: _ => problem(negpropmap(id), "can't negate an attribute that was explicitly given")
+          }
+
           val propidset = new mutable.HashSet[Ident]
 
-          attrs flatMap {
-            case ProjectAllOQL(pos) =>
-              if (projectall)
-                problem(pos, "only one * can be used")
-              else
-                projectall = true
+          val res =
+            attrs flatMap {
+              case ProjectAllOQL(pos) =>
+                if (projectall)
+                  problem(pos, "only one * can be used")
+                else
+                  projectall = true
 
-              entity.attributes filter {
-                case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
-                case (k, _)                                                                     => !propset(k)
-              } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
-            case a @ AggregateAttributeOQL(agg, attr) =>
-              if (aggset(a))
-                problem(agg.pos, "aggregate function duplicated")
+                entity.attributes filter {
+                  case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
+                  case (k, _)                                                                     => !propset(k) && !negpropmap.contains(k)
+                } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
+              case _: NegativeAttribute => Nil
+              case a @ AggregateAttributeOQL(agg, attr) =>
+                if (aggset(a))
+                  problem(agg.pos, "aggregate function duplicated")
 
-              aggset += a
+                aggset += a
 
-              attrType(attr) match {
-                case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null))
-                case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
-              }
-            case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
-            case query @ QueryOQL(attr, project, None, None, None, None, None) =>
-              propidset += attr
-              List((None, attr.name, attrType(attr), project, query))
-            case query @ QueryOQL(source, project, _, _, _, _, _) =>
-              propidset += source
+                attrType(attr) match {
+                  case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null))
+                  case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
+                }
+              case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
+              case query @ QueryOQL(attr, project, None, None, None, None, None) =>
+                propidset += attr
+                List((None, attr.name, attrType(attr), project, query))
+              case query @ QueryOQL(source, project, _, _, _, _, _) =>
+                propidset += source
 
-              attrType(source) match {
-                case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
-                  List((None, source.name, typ, project, query))
-                case _ =>
-                  problem(source.pos, s"'${source.name}' is not an array type attribute")
-              }
-          }
+                attrType(source) match {
+                  case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
+                    List((None, source.name, typ, project, query))
+                  case _ =>
+                    problem(source.pos, s"'${source.name}' is not an array type attribute")
+                }
+            }
+
+          if (!projectall && negpropmap.nonEmpty)
+            problem(negpropmap.head._2, "can't use attribute negation without a wildcard (i.e. '*')")
+
+          res
       }
     val table = attrlist mkString "$"
 

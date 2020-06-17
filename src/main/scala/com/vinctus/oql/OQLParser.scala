@@ -82,9 +82,10 @@ class OQLParser extends RegexParsers {
       }
 
   def attributeProject: Parser[ProjectExpressionOQL] =
-    ident ~ "(" ~ identOrStar ~ ")" ^^ {
-      case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
-    } |
+    "-" ~> ident ^^ NegativeAttribute |
+      ident ~ "(" ~ identOrStar ~ ")" ^^ {
+        case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
+      } |
       star ^^ (s => ProjectAllOQL(s.pos)) |
       query
 

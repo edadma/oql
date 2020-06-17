@@ -25,7 +25,7 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database.  The query syntax is inspired by GraphQL, but is not identical.  Some capabilities that are not in GraphQL have been added, and some capabilities of GraphQL are done differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
+*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
 
 Some features of *OQL* include:
 
@@ -59,7 +59,7 @@ oql.query(<query>, conn).then((result: any) => <handle result> )
 
 `<database username>` and `<database password>` are the username and password of the Postgres database you are querying.
 
-`<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  Primary keys of relevant tables should always be included, even if you're not interested in retrieving them.
+`<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  However, primary keys of tables that are being queried should always be included, even if you're not interested in retrieving the primary keys themselves.
 
 `<query>` is the OQL query string.
 
@@ -71,7 +71,7 @@ An "Entity-Relationship" style language is used to describe the database.  Only 
 
 #### Syntax
 
-The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
+The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
 
 ```
 model = entity+ .
@@ -80,7 +80,7 @@ entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
 
 alias = identifier .
 
-attribute = identifier [ "(" alias ")" ] ":" type
+attribute = [ "*" ] identifier [ "(" alias ")" ] ":" type
           | identifier "=" json .
 
 type = primitiveType
@@ -109,7 +109,8 @@ query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ]
 project = "{" attributeProject+ "}"
         | "." attributeProject .
 
-attributeProject = identifier "(" [ "*" | identifier ] ")"
+attributeProject = "-" identifier
+                 | identifier "(" [ "*" | identifier ] ")"
                  | "*"
                  | query .
 
