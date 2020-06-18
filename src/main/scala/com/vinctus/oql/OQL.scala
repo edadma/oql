@@ -466,7 +466,7 @@ class OQL(erd: String) {
   private def render(a: Any) =
     a match {
       case s: String => s"'$s'"
-      case _         => a.toString
+      case _         => String.valueOf(a)
     }
 
   private def futures(row: ResultRow,
