@@ -61,7 +61,11 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     new QueryBuilder(
       oql,
       conn,
-      q.copy(project = ProjectAttributesOQL(q.project.asInstanceOf[ProjectAttributesOQL].attrs :+ attribute.q)))
+      q.copy(project = ProjectAttributesOQL(q.project match {
+        case ProjectAttributesOQL(attrs) => attrs :+ attribute.q
+        case ProjectAllOQL(_)            => List(attribute.q)
+      }))
+    )
 
   @JSExport
   def project(resource: String, attributes: String*): QueryBuilder =

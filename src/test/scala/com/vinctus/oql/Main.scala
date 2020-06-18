@@ -25,8 +25,10 @@ object Main extends App {
   val oql = studentER //new OQL(readFile("examples/student.erd"))
 
   oql
-    .json("student { * classes { * students <name> } <name> } [name = 'John']", conn)
-//    .json("student { * classes { * students } <class.name> } [name = 'John']", conn)
+    .queryBuilder(conn)
+    .project("student", "*")
+    .json
+//    .json("student { * classes { * students } <name> } [name = 'John']", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>
