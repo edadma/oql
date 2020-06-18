@@ -26,7 +26,7 @@ export class QueryBuilder {
 export class OQL {
   constructor(erd: string)
 
-  queryBuilder(): QueryBuilder
+  queryBuilder(conn: PostgresConnection): QueryBuilder
 
   query(sql: string, conn: PostgresConnection): Promise<any[]>
 }

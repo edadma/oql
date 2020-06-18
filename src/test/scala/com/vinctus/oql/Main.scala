@@ -26,7 +26,8 @@ object Main extends App {
 
   oql
     .queryBuilder(conn)
-    .project("student", "*")
+    .project("student", "name")
+    .add(oql.queryBuilder(conn).project("classes").order("name", true))
     .json
 //    .json("student { * classes { * students } <name> } [name = 'John']", conn)
     .onComplete {
