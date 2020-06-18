@@ -16,7 +16,8 @@ class OQL(erd: String) {
   private val model = new ERModel(erd)
 
   @JSExport
-  def queryBuilder() = new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
+  def queryBuilder(conn: Connection) =
+    new QueryBuilder(this, conn, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("query")
   def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(query(sql, conn))

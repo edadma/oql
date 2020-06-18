@@ -2,7 +2,7 @@ export class QueryBuilder {
 
   cond(v: any): QueryBuilder
 
-  projectResource(resource: string): QueryBuilder
+  add(attribute: QueryBuilder): QueryBuilder
 
   project(resource: string, ...attributes: string[]): QueryBuilder
 
@@ -16,11 +16,11 @@ export class QueryBuilder {
 
   offset(a: number): QueryBuilder
 
-  getOne(conn: Connection): Promise<any>
+  getOne(): Promise<any>
 
-  getMany(conn: Connection): Promise<any[]>
+  getMany(): Promise<any[]>
 
-  getCount(conn: Connection): Promise<number>
+  getCount(): Promise<number>
 }
 
 export class OQL {
