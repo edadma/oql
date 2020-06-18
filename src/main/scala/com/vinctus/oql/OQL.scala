@@ -102,7 +102,7 @@ class OQL(erd: String) {
       case (None, Some(o))    => sql append s"  OFFSET $o"
     }
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf
       .map {
@@ -360,9 +360,13 @@ class OQL(erd: String) {
         val attrlist1 = attr.entity.table :: attrlist
 
         joinbuf += ((table, attr.column, attr.entity.table, attrlist1 mkString "$", attr.entity.pk.get))
-
-        entityNode(field, attr, circlist)(c =>
-          EntityProjectionNode(field, branches(attr.typ, attr.entity, project, projectbuf, joinbuf, attrlist1, c)))
+        projectbuf += ((None, table, attr.column))
+        entityNode(field, attr, circlist)(
+          c =>
+            EntityProjectionNode(field,
+                                 table,
+                                 attr.column,
+                                 branches(attr.typ, attr.entity, project, projectbuf, joinbuf, attrlist1, c)))
       case (_,
             field,
             attr @ ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction),
@@ -478,7 +482,7 @@ class OQL(erd: String) {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
         case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
-        case EntityProjectionNode(_, nodes)                        => futures(nodes)
+        case EntityProjectionNode(_, _, _, nodes)                  => futures(nodes)
         case node @ EntityArrayJunctionProjectionNode(entityType,
                                                       _,
                                                       tabpk,
@@ -549,10 +553,10 @@ class OQL(erd: String) {
                     conn: Connection) = {
     def build(branches: Seq[ProjectionNode]): ListMap[String, Any] = {
       (branches map {
-        case EntityProjectionNode(field, branches) => field -> build(branches)
-        case LiteralProjectionNode(field, value)   => field -> value
-        case PrimitiveProjectionNode(prop, column, table, _, _) =>
-          prop -> row(projectmap((table, column)))
+        case EntityProjectionNode(field, table, column, branches) =>
+          field -> (if (row(projectmap((table, column))) == null) null else build(branches))
+        case LiteralProjectionNode(field, value)                => field -> value
+        case PrimitiveProjectionNode(prop, column, table, _, _) => prop -> row(projectmap((table, column)))
         case node @ EntityArrayJunctionProjectionNode(_, field, _, _, _, _, _, _, _, _, _) =>
           futuremap((row, node.serial)).value match {
             case Some(Success(value)) => field -> (value map (m => m.head._2))
@@ -579,7 +583,8 @@ class OQL(erd: String) {
   case class LiteralProjectionNode(field: String, value: Any) extends ProjectionNode
   case class PrimitiveProjectionNode(name: String, column: String, table: String, field: String, attr: EntityAttribute)
       extends ProjectionNode
-  case class EntityProjectionNode(field: String, branches: Seq[ProjectionNode]) extends ProjectionNode
+  case class EntityProjectionNode(field: String, table: String, column: String, branches: Seq[ProjectionNode])
+      extends ProjectionNode
   case class EntityArrayJunctionProjectionNode(entityType: String,
                                                field: String,
                                                tabpk: String,
