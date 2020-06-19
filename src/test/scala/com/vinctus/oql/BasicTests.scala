@@ -144,11 +144,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
         |  {
         |    "char_id": 4,
         |    "name": "Worf, Son of Mogh",
-        |    "home": {
-        |      "plan_id": 1,
-        |      "name": "Earth",
-        |      "climate": "not too bad"
-        |    },
+        |    "home": null,
         |    "species": {
         |      "spec_id": 4,
         |      "name": "Klingon",

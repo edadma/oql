@@ -261,7 +261,7 @@ object Testing {
         | 1                     James Tiberius Kirk  1                                   1                                      
         | 2                     Spock                1                                   2                                      
         | 3                     Deanna Troi          1                                   3                                      
-        | 4                     Worf, Son of Mogh    1                                   4                                      
+        | 4                     Worf, Son of Mogh    null                                4
         | 5                     Kurn, Son of Mogh    4                                   4                                      
         | 6                     Lwaxana Troi         3                                   3                                      
         | 7                     Natasha Yar          5                                   1
