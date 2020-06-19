@@ -291,12 +291,13 @@ class OQL(erd: String) {
           entity.attributes filter {
             case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
             case _                                                                          => true
-          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
+          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null, false) } toList
         case ProjectAttributesOQL(attrs) =>
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]
           val propset = attrs flatMap {
             case QueryOQL(id, _, _, _, _, _, _) => List(id.name)
+            case ReferenceAttributeOQL(attr)    => List(attr.name)
             case _                              => Nil
           } toSet
           val negpropmap = attrs flatMap {
@@ -322,8 +323,16 @@ class OQL(erd: String) {
                 entity.attributes filter {
                   case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
                   case (k, _)                                                                     => !propset(k) && !negpropmap.contains(k)
-                } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null) } toList
-              case _: NegativeAttribute => Nil
+                } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null, false) } toList
+              case _: NegativeAttribute                           => Nil
+              case ReferenceAttributeOQL(attr) if propidset(attr) => problem(attr.pos, "duplicate property")
+              case ref @ ReferenceAttributeOQL(attr) =>
+                propidset += attr
+
+                attrType(attr) match {
+                  case _: ObjectEntityAttribute => List((None, attr.name, attrType(attr), null, null, true))
+                  case _                        => problem(attr.pos, s"can only apply a reference operator to an object attribute")
+                }
               case a @ AggregateAttributeOQL(agg, attr) =>
                 if (aggset(a))
                   problem(agg.pos, "aggregate function duplicated")
@@ -331,19 +340,20 @@ class OQL(erd: String) {
                 aggset += a
 
                 attrType(attr) match {
-                  case typ: PrimitiveEntityAttribute => List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null))
-                  case _                             => problem(agg.pos, s"can't apply an aggregate function to a non-primitive attribute")
+                  case typ: PrimitiveEntityAttribute =>
+                    List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null, false))
+                  case _ => problem(agg.pos, s"can only apply an aggregate function to a primitive attribute")
                 }
               case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
               case query @ QueryOQL(attr, project, None, None, None, None, None) =>
                 propidset += attr
-                List((None, attr.name, attrType(attr), project, query))
+                List((None, attr.name, attrType(attr), project, query, false))
               case query @ QueryOQL(source, project, _, _, _, _, _) =>
                 propidset += source
 
                 attrType(source) match {
                   case typ @ (_: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) =>
-                    List((None, source.name, typ, project, query))
+                    List((None, source.name, typ, project, query, false))
                   case _ =>
                     problem(source.pos, s"'${source.name}' is not an array type attribute")
                 }
@@ -358,21 +368,28 @@ class OQL(erd: String) {
 
     // add the primary key to projectbuf if an array type attribute is being projected
     if (attrs.exists {
-          case (_, _, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute, _, _) => true
-          case _                                                                                   => false
+          case (_, _, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute, _, _, _) => true
+          case _                                                                                      => false
         } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
       projectbuf += ((None, table, entity.pk.get))
 
     attrs map {
-      case (_, field, attr: LiteralEntityAttribute, _, _) => LiteralProjectionNode(field, attr.value)
-      case (agg, field, attr: PrimitiveEntityAttribute, _, _) =>
+      case (_, field, attr: LiteralEntityAttribute, _, _, _) => LiteralProjectionNode(field, attr.value)
+      case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))
         PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
                                 agg.map(a => s"${a}_${attr.column}").getOrElse(attr.column),
                                 table,
                                 field,
                                 attr)
-      case (_, field, attr: ObjectEntityAttribute, project, _) =>
+      case (agg, field, attr: ObjectEntityAttribute, _, _, true) =>
+        projectbuf += ((agg, table, attr.column))
+        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
+                                agg.map(a => s"${a}_${attr.column}").getOrElse(attr.column),
+                                table,
+                                field,
+                                attr)
+      case (_, field, attr: ObjectEntityAttribute, project, _, false) =>
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.typ}' is referenced as a type but has no primary key")
 
@@ -392,7 +409,8 @@ class OQL(erd: String) {
             field,
             attr @ ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction),
             project,
-            query) =>
+            query,
+            _) =>
         val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
@@ -450,7 +468,7 @@ class OQL(erd: String) {
               ),
               query
           ))
-      case (_, field, attr @ ObjectArrayEntityAttribute(entityType, attrEntity), project, query) =>
+      case (_, field, attr @ ObjectArrayEntityAttribute(entityType, attrEntity), project, query, _) =>
         val projectbuf = new ListBuffer[(Option[String], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val es = attrEntity.attributes.toList.filter(

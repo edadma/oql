@@ -110,6 +110,7 @@ project = "{" attributeProject+ "}"
         | "." attributeProject .
 
 attributeProject = "-" identifier
+                 | identifier "#"
                  | identifier "(" [ "*" | identifier ] ")"
                  | "*"
                  | query .

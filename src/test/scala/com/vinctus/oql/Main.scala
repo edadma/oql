@@ -27,12 +27,13 @@ object Main extends App {
   val oql = ordersER
 
   oql
-    .json(
-      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
-      conn)
+//    .json(
+//      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
+//      conn)
+    .json("order { ord_num agent# } [ord_amount between 3000 and 4000]", conn)
 
-//  val conn = studentDB //new RDBConnection(readFile("examples/student.tab"))
-//  val oql = studentER //new OQL(readFile("examples/student.erd"))
+//  val conn = studentDB
+//  val oql = studentER
 //
 //  oql
 //    .queryBuilder(conn)
