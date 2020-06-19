@@ -68,6 +68,9 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     )
 
   @JSExport
+  def add(q: String): QueryBuilder = add(query(q))
+
+  @JSExport
   def project(resource: String, attributes: String*): QueryBuilder =
     new QueryBuilder(
       oql,
@@ -86,7 +89,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     )
 
   @JSExport
-  def query(q: String): QueryBuilder = new QueryBuilder(oql, conn, OQLParser.parseQuery(q))
+  def query(query: String): QueryBuilder = new QueryBuilder(oql, conn, OQLParser.parseQuery(query))
 
   @JSExport
   def select(s: String): QueryBuilder = {

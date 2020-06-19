@@ -4,6 +4,8 @@ export class QueryBuilder {
 
   add(attribute: QueryBuilder): QueryBuilder
 
+  add(query: String): QueryBuilder
+  
   project(resource: string, ...attributes: string[]): QueryBuilder
 
   query(oql: string): QueryBuilder
