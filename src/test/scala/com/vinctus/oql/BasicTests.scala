@@ -12,7 +12,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "query" in {
-    starTrekER.query("character { name species.origin.name } [species.name = 'Betazoid'] <name>", starTrekDB) map {
+    starTrekER.queryMany("character { name species.origin.name } [species.name = 'Betazoid'] <name>", starTrekDB) map {
       result =>
         result shouldBe
           List(

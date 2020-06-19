@@ -23,7 +23,10 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     override def jsGetCount(): js.Promise[Int] = na
 
     @JSExport("getMany")
-    override def jsGetMany(): js.Promise[js.Any] = na
+    override def jsGetMany(): js.Promise[js.Array[js.Any]] = na
+
+    @JSExport("getOne")
+    override def jsGetOne(): js.Promise[js.Any] = na
 
     override def getMany: Future[List[ListMap[String, Any]]] = na
 
@@ -118,22 +121,17 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
   def offset(a: Int): QueryBuilder = new QueryBuilder(oql, conn, q.copy(offset = Some(a)))
 
   @JSExport("getMany")
-  def jsGetMany(): js.Promise[js.Any] = check.oql.jsQuery(q, conn)
+  def jsGetMany(): js.Promise[js.Any] = check.oql.jsQueryMany(q, conn)
 
   @JSExport("getOne")
-  def jsGetOne(): js.Promise[js.Any] = toPromise(getOne map (_.getOrElse(js.undefined)))
+  def jsGetOne(): js.Promise[js.Any] = check.oql.jsQueryOne(q, conn)
 
   @JSExport("getCount")
   def jsGetCount(): js.Promise[Int] = getCount.toJSPromise
 
-  def getMany: Future[List[ListMap[String, Any]]] = check.oql.query(q, conn)
+  def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q, conn)
 
-  def getOne: Future[Option[ListMap[String, Any]]] =
-    check.oql.query(q, conn) map {
-      case Nil       => None
-      case List(row) => Some(row)
-      case _         => sys.error("getOne: more than one was found")
-    }
+  def getOne: Future[Option[ListMap[String, Any]]] = check.oql.queryOne(q, conn)
 
   def getCount: Future[Int] = getMany map (_.length)
 

@@ -19,17 +19,35 @@ class OQL(erd: String) {
   def queryBuilder(conn: Connection) =
     new QueryBuilder(this, conn, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
-  @JSExport("query")
-  def jsQuery(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(query(sql, conn))
+  @JSExport("queryOne")
+  def jsQueryOne(sql: String, conn: Connection): js.Promise[js.Any] =
+    toPromise(queryOne(sql, conn) map (_.getOrElse(js.undefined)))
 
-  def jsQuery(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromise(query(q, conn))
+  def jsQueryOne(q: QueryOQL, conn: Connection): js.Promise[js.Any] =
+    toPromise(queryOne(q, conn) map (_.getOrElse(js.undefined)))
+
+  @JSExport("queryMany")
+  def jsQueryMany(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(queryMany(sql, conn))
+
+  def jsQueryMany(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromise(queryMany(q, conn))
 
   def json(oql: String, conn: Connection): Future[String] =
-    query(oql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+    queryMany(oql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
-  def query(oql: String, conn: Connection): Future[List[ListMap[String, Any]]] = query(OQLParser.parseQuery(oql), conn)
+  def queryOne(oql: String, conn: Connection): Future[Option[ListMap[String, Any]]] =
+    queryOne(OQLParser.parseQuery(oql), conn)
 
-  def query(q: QueryOQL, conn: Connection): Future[List[ListMap[String, Any]]] = {
+  def queryOne(oql: QueryOQL, conn: Connection): Future[Option[ListMap[String, Any]]] =
+    queryMany(oql, conn) map {
+      case Nil       => None
+      case List(row) => Some(row)
+      case _         => sys.error("queryOne: more than one was found")
+    }
+
+  def queryMany(oql: String, conn: Connection): Future[List[ListMap[String, Any]]] =
+    queryMany(OQLParser.parseQuery(oql), conn)
+
+  def queryMany(q: QueryOQL, conn: Connection): Future[List[ListMap[String, Any]]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]

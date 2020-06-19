@@ -30,7 +30,9 @@ export class OQL {
 
   queryBuilder(conn: PostgresConnection): QueryBuilder
 
-  query(sql: string, conn: PostgresConnection): Promise<any[]>
+  queryOne(sql: string, conn: PostgresConnection): Promise<any | undefined>
+
+  queryMany(sql: string, conn: PostgresConnection): Promise<any[]>
 }
 
 export class PostgresConnection extends Connection {
