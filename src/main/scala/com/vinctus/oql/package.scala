@@ -4,6 +4,8 @@ import java.time.LocalDate
 
 import scala.scalajs.js
 import js.JSConverters._
+import scala.scalajs.js.JSON
+
 import scala.concurrent.Future
 import scala.util.parsing.input.Position
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,6 +13,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 package object oql {
 
   def toPromise[T](result: Future[T]): js.Promise[js.Any] = result map toJS toJSPromise
+
+  def toPromiseOne[T](result: Future[Option[T]]): js.Promise[js.Any] = toPromise(result map (_.getOrElse(js.undefined)))
+
+  def toJSON[T](result: Future[T]): Future[String] =
+    result.map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
   def problem(pos: Position, error: String): Nothing =
     if (pos eq null)
@@ -22,6 +29,8 @@ package object oql {
 
   def toJS(a: Any): js.Any =
     a match {
+      case Some(a) => a.asInstanceOf[js.Any]
+      case None    => js.undefined
       case date: LocalDate =>
         val jsdate = new js.Date(date.getYear, date.getMonthValue - 1, date.getDayOfMonth)
 

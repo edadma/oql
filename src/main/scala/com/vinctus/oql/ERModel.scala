@@ -88,14 +88,16 @@ class ERModel(defn: String) {
       case ObjectLiteralERD(membs)    => membs map { case (k, v) => (eval(k), eval(v)) } to ListMap
     }
 
-  def get(table: String, pos: Position): Entity =
-    entities get table match {
-      case None    => problem(pos, s"unknown resource: '$table'")
+  def get(resource: String): Option[Entity] = entities get resource
+
+  def get(resource: String, pos: Position): Entity =
+    entities get resource match {
+      case None    => problem(pos, s"unknown resource: '$resource'")
       case Some(e) => e
     }
 
-  def list(table: String, pos: Position): Seq[(String, EntityAttribute)] =
-    get(table, pos).attributes.toList
+  def list(resource: String, pos: Position): Seq[(String, EntityAttribute)] =
+    get(resource, pos).attributes.toList
 
 }
 

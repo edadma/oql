@@ -33,6 +33,8 @@ export class OQL {
   queryOne(sql: string, conn: PostgresConnection): Promise<any | undefined>
 
   queryMany(sql: string, conn: PostgresConnection): Promise<any[]>
+
+  findOne(resource: string, id: any, conn: Connection): Promise<any | undefined>
 }
 
 export class PostgresConnection extends Connection {

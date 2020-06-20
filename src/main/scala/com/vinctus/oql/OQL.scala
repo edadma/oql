@@ -3,9 +3,9 @@ package com.vinctus.oql
 import scala.scalajs.js
 import js.JSON
 import js.annotation.{JSExport, JSExportTopLevel}
-import scala.collection.immutable.{ListMap, Set}
+import scala.collection.immutable.ListMap
 import scala.collection.mutable.ListBuffer
-import scala.collection.{Set, mutable}
+import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,19 +20,17 @@ class OQL(erd: String) {
     new QueryBuilder(this, conn, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("queryOne")
-  def jsQueryOne(sql: String, conn: Connection): js.Promise[js.Any] =
-    toPromise(queryOne(sql, conn) map (_.getOrElse(js.undefined)))
+  def jsQueryOne(oql: String, conn: Connection): js.Promise[js.Any] = jsQueryOne(OQLParser.parseQuery(oql), conn)
 
-  def jsQueryOne(q: QueryOQL, conn: Connection): js.Promise[js.Any] =
-    toPromise(queryOne(q, conn) map (_.getOrElse(js.undefined)))
+  def jsQueryOne(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromiseOne(queryOne(q, conn))
 
   @JSExport("queryMany")
-  def jsQueryMany(sql: String, conn: Connection): js.Promise[js.Any] = toPromise(queryMany(sql, conn))
+  def jsQueryMany(oql: String, conn: Connection): js.Promise[js.Any] = jsQueryMany(OQLParser.parseQuery(oql), conn)
 
   def jsQueryMany(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromise(queryMany(q, conn))
 
   def json(oql: String, conn: Connection): Future[String] =
-    queryMany(oql, conn).map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+    toJSON(queryMany(oql, conn))
 
   def queryOne(oql: String, conn: Connection): Future[Option[ListMap[String, Any]]] =
     queryOne(OQLParser.parseQuery(oql), conn)
@@ -55,6 +53,36 @@ class OQL(erd: String) {
     val graph = branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
 
     executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph, conn)
+  }
+
+  @JSExport("findOne")
+  def jsFindOne(resource: String, id: js.Any, conn: Connection): js.Promise[js.Any] =
+    toPromiseOne(findOne(resource, id, conn))
+
+  def findOne(resource: String, id: Any, conn: Connection): Future[Option[ListMap[String, Any]]] = {
+    model.get(resource) match {
+      case Some(entity) =>
+        entity.pk match {
+          case None => sys.error(s"findOne: resource '$resource' doesn't have a declared primary key")
+          case Some(pk) =>
+            queryOne(
+              QueryOQL(
+                Ident(resource),
+                ProjectAllOQL(),
+                Some(
+                  EqualsExpressionOQL(entity.table,
+                                      entity.attributes(pk).asInstanceOf[PrimitiveEntityAttribute].column,
+                                      s"'$id'")),
+                None,
+                None,
+                None,
+                None
+              ),
+              conn
+            )
+        }
+      case None => sys.error(s"findOne: unknown resource '$resource'")
+    }
   }
 
   private def executeQuery(resource: String,
@@ -615,20 +643,35 @@ class OQL(erd: String) {
     build(branches)
   }
 
-  object ProjectionNode { private var serial = 0 }
-  abstract class ProjectionNode {
+  private object ProjectionNode { private var serial = 0 }
+  private abstract class ProjectionNode {
     val field: String
     val serial: Int = ProjectionNode.serial
 
     ProjectionNode.serial += 1
   }
-  case class LiteralProjectionNode(field: String, value: Any) extends ProjectionNode
-  case class PrimitiveProjectionNode(name: String, column: String, table: String, field: String, attr: EntityAttribute)
+  private case class LiteralProjectionNode(field: String, value: Any) extends ProjectionNode
+  private case class PrimitiveProjectionNode(name: String,
+                                             column: String,
+                                             table: String,
+                                             field: String,
+                                             attr: EntityAttribute)
       extends ProjectionNode
-  case class EntityProjectionNode(field: String, fk: Option[(String, String)], branches: Seq[ProjectionNode])
+  private case class EntityProjectionNode(field: String, fk: Option[(String, String)], branches: Seq[ProjectionNode])
       extends ProjectionNode
-  case class EntityArrayJunctionProjectionNode(entityType: String,
-                                               field: String,
+  private case class EntityArrayJunctionProjectionNode(entityType: String,
+                                                       field: String,
+                                                       tabpk: String,
+                                                       colpk: String,
+                                                       subprojectbuf: ListBuffer[(Option[String], String, String)],
+                                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                                       resource: String,
+                                                       column: String,
+                                                       entity: Entity,
+                                                       branches: Seq[ProjectionNode],
+                                                       query: QueryOQL)
+      extends ProjectionNode
+  private case class EntityArrayProjectionNode(field: String,
                                                tabpk: String,
                                                colpk: String,
                                                subprojectbuf: ListBuffer[(Option[String], String, String)],
@@ -638,17 +681,6 @@ class OQL(erd: String) {
                                                entity: Entity,
                                                branches: Seq[ProjectionNode],
                                                query: QueryOQL)
-      extends ProjectionNode
-  case class EntityArrayProjectionNode(field: String,
-                                       tabpk: String,
-                                       colpk: String,
-                                       subprojectbuf: ListBuffer[(Option[String], String, String)],
-                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
-                                       resource: String,
-                                       column: String,
-                                       entity: Entity,
-                                       branches: Seq[ProjectionNode],
-                                       query: QueryOQL)
       extends ProjectionNode
 
 }

@@ -22,6 +22,12 @@ class BasicTests extends AsyncFreeSpec with Matchers {
     }
   }
 
+  "findOne" in {
+    studentER.findOne("class", 3, studentDB) map { result =>
+      result shouldBe Some(Map("id" -> 3, "name" -> "Spanish"))
+    }
+  }
+
   "ordered" in {
     starTrekER.json("character <name>", starTrekDB) map { result =>
       result shouldBe
