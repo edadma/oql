@@ -312,6 +312,18 @@ class OQL(erd: String) {
         case Some(typ) => typ
       }
 
+    project match {
+      case ProjectAttributesOQL(attrs) =>
+        attrs find
+          (_.isInstanceOf[LiftedAttribute]) match {
+          case Some(LiftedAttribute(q)) =>
+            if (attrs.length > 1)
+              problem(q.source.pos, s"lifted attribute '${q.source.name}' must be the sole attribute being projected")
+
+          case _ =>
+        }
+    }
+
     val attrs =
       project match {
         case _: ProjectAllOQL =>
@@ -320,11 +332,6 @@ class OQL(erd: String) {
             case _                                                                          => true
           } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null, false) } toList
         case ProjectAttributesOQL(attrs) =>
-          attrs find (_.isInstanceOf[LiftedAttribute]) match {
-            case Some(LiftedAttribute(q)) if attrs.length > 1 =>
-              problem(q.source.pos, s"lifted attribute '${q.source.name}' must be the sole attribute being projected")
-            case _ =>
-          }
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]
           val propset = attrs flatMap {
