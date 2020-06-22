@@ -16,7 +16,7 @@ object ERDParser {
 
 class ERDParser extends RegexParsers {
 
-  override protected val whiteSpace: Regex = """(\s|;.*)+""".r
+  override protected val whiteSpace: Regex = """(\s|#.*)+""".r
 
   def pos: Parser[Position] = positioned(success(new Positional {})) ^^ {
     _.pos

@@ -34,7 +34,7 @@ object OQLParser {
 
 class OQLParser extends RegexParsers {
 
-  override protected val whiteSpace: Regex = """(\s|;.*)+""".r
+  override protected val whiteSpace: Regex = """(\s|#.*)+""".r
 
   def pos: Parser[Position] = positioned(success(new Positional {})) ^^ {
     _.pos
@@ -75,19 +75,19 @@ class OQLParser extends RegexParsers {
     }
 
   def project: Parser[ProjectExpressionOQL] =
-    "{" ~> rep1(attributeProject) <~ "}" ^^ ProjectAttributesOQL |
+    "{" ~> rep1(
+      attributeProject | "-" ~> ident ^^ NegativeAttribute | "&" ~> ident ^^ ReferenceAttributeOQL | star ^^ (s =>
+        ProjectAllOQL(s.pos))) <~ "}" ^^ ProjectAttributesOQL |
       "." ~> attributeProject ^^ {
         case a: ProjectAllOQL => a
         case a                => ProjectAttributesOQL(List(a))
       }
 
   def attributeProject: Parser[ProjectExpressionOQL] =
-    "-" ~> ident ^^ NegativeAttribute |
-      ident <~ "#" ^^ ReferenceAttributeOQL |
-      ident ~ "(" ~ identOrStar ~ ")" ^^ {
-        case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
-      } |
-      star ^^ (s => ProjectAllOQL(s.pos)) |
+    ident ~ "(" ~ identOrStar ~ ")" ^^ {
+      case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
+    } |
+      "^" ~> query ^^ LiftedAttribute |
       query
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
@@ -144,7 +144,7 @@ class OQLParser extends RegexParsers {
   def primaryExpression: Parser[ExpressionOQL] =
     number |
       string |
-      rep1sep(ident, ".") <~ "#" ^^ ReferenceExpressionOQL |
+      "&" ~> rep1sep(ident, ".") ^^ ReferenceExpressionOQL |
       variable |
       caseExpression |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
