@@ -624,32 +624,36 @@ class OQL(erd: String) {
                     futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
                     branches: Seq[ProjectionNode],
                     conn: Connection) = {
-    def build(branches: Seq[ProjectionNode]): ListMap[String, Any] = {
-      (branches map {
-        case EntityProjectionNode(field, Some(fk), branches) =>
-          field -> (if (row(projectmap(fk)) == null) null else build(branches))
-        case EntityProjectionNode(field, None, branches)        => field -> build(branches)
-        case LiteralProjectionNode(field, value)                => field -> value
-        case PrimitiveProjectionNode(prop, column, table, _, _) => prop -> row(projectmap((table, column)))
-        case node @ EntityArrayJunctionProjectionNode(_, field, _, _, _, _, _, _, _, _, _) =>
-          futuremap((row, node.serial)).value match {
-            case Some(Success(value)) => field -> (value map (m => m.head._2))
-            case a                    => sys.error(s"failed to execute query: $a")
-          }
-        case node @ EntityArrayProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
-          futuremap((row, node.serial)).value match {
-            case Some(Success(value)) => field -> value
-            case a                    => sys.error(s"failed to execute query: $a")
-          }
-      }).to(ListMap)
-    }
+    def build(branches: Seq[ProjectionNode]): ListMap[String, Any] =
+      branches match {
+        case Seq(LiftedProjectionNode(Some(fk), branches)) => if (row(projectmap(fk)) == null) null else build(branches)
+        case Seq(LiftedProjectionNode(None, branches))     => build(branches)
+        case _ =>
+          (branches map {
+            case EntityProjectionNode(field, Some(fk), branches) =>
+              field -> (if (row(projectmap(fk)) == null) null else build(branches))
+            case EntityProjectionNode(field, None, branches)        => field -> build(branches)
+            case LiteralProjectionNode(field, value)                => field -> value
+            case PrimitiveProjectionNode(prop, column, table, _, _) => prop -> row(projectmap((table, column)))
+            case node @ EntityArrayJunctionProjectionNode(_, field, _, _, _, _, _, _, _, _, _) =>
+              futuremap((row, node.serial)).value match {
+                case Some(Success(list)) => field -> (list map (m => m.head._2))
+                case a                   => sys.error(s"failed to execute query: $a")
+              }
+            case node @ EntityArrayProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
+              futuremap((row, node.serial)).value match {
+                case Some(Success(list)) => field -> list
+                case a                   => sys.error(s"failed to execute query: $a")
+              }
+          }).to(ListMap)
+      }
 
     build(branches)
   }
 
   private object ProjectionNode { private var serial = 0 }
   private abstract class ProjectionNode {
-    val field: String
+    //val field: String
     val serial: Int = ProjectionNode.serial
 
     ProjectionNode.serial += 1
@@ -662,6 +666,8 @@ class OQL(erd: String) {
                                              attr: EntityAttribute)
       extends ProjectionNode
   private case class EntityProjectionNode(field: String, fk: Option[(String, String)], branches: Seq[ProjectionNode])
+      extends ProjectionNode
+  private case class LiftedProjectionNode(fk: Option[(String, String)], branches: Seq[ProjectionNode])
       extends ProjectionNode
   private case class EntityArrayJunctionProjectionNode(entityType: String,
                                                        field: String,
