@@ -39,7 +39,7 @@ class ERModel(defn: String) {
                   }
                 case OneToOneTypeERD(typ, attr) =>
                   entityMap get typ.name match {
-                    case Some(t) =>
+                    case Some(t) => ObjectOneEntityAttribute(typ.name, t, attr map (_.name))
                     case None =>
                       problem(typ.pos, s"not an entity: ${typ.name}")
                   }

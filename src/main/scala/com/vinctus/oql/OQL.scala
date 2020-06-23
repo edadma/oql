@@ -283,7 +283,9 @@ class OQL(erd: String) {
                 joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
               }
-            case Some(_: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute) =>
+            case Some(
+                _: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute |
+                _: ObjectOneEntityAttribute) => // todo: figure out how to add support for ObjectOneEntityAttribute here
               problem(attr.pos, s"attribute '${attr.name}' is an array type and may not be referenced")
           }
       }
@@ -334,9 +336,12 @@ class OQL(erd: String) {
       project match {
         case _: ProjectAllOQL =>
           entity.attributes filter {
-            case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
-            case _                                                                          => true
-          } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null, false) } toList
+            case (_,
+                  _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute |
+                  _: ObjectOneEntityAttribute) =>
+              false
+            case _            => true
+          } map { case (k, v) => (None, k, v, ProjectAllOQL(), null, false) } toList
         case ProjectAttributesOQL(attrs) =>
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]
@@ -366,9 +371,12 @@ class OQL(erd: String) {
                   projectall = true
 
                 entity.attributes filter {
-                  case (_, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute) => false
-                  case (k, _)                                                                     => !propset(k) && !negpropmap.contains(k)
-                } map { case (k, v)                                                               => (None, k, v, ProjectAllOQL(), null, false) } toList
+                  case (_,
+                        _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute |
+                        _: ObjectOneEntityAttribute) =>
+                    false
+                  case (k, _)       => !propset(k) && !negpropmap.contains(k)
+                } map { case (k, v) => (None, k, v, ProjectAllOQL(), null, false) } toList
               case _: NegativeAttribute                           => Nil
               case ReferenceAttributeOQL(attr) if propidset(attr) => problem(attr.pos, "duplicate property")
               case ReferenceAttributeOQL(attr) =>
