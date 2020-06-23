@@ -37,6 +37,12 @@ class ERModel(defn: String) {
                     case None =>
                       PrimitiveEntityAttribute(column.name, typ.name)
                   }
+                case OneToOneTypeERD(typ, attr) =>
+                  entityMap get typ.name match {
+                    case Some(t) =>
+                    case None =>
+                      problem(typ.pos, s"not an entity: ${typ.name}")
+                  }
                 case JunctionArrayTypeERD(typ, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
                     case (Some(t), Some(j)) =>

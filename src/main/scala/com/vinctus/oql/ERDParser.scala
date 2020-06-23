@@ -43,39 +43,7 @@ class ERDParser extends RegexParsers {
 
   def definition: Parser[ERDefinitionERD] = rep1(block) ^^ ERDefinitionERD
 
-  def block: Parser[BlockERD] = /*typeBlock |*/ entityBlock
-
-//  def typeBlock: Parser[TypeBlockERD] =
-//    "type" ~> ident ~ "=" ~ ident ~ ":" ~ condition ^^ {
-//      case n ~ _ ~ u ~ _ ~ c => TypeBlockERD(n, u, c)
-//    }
-//
-//  def condition: Parser[ExpressionERD] = boolCondition
-//
-//  def boolCondition: Parser[ExpressionERD] =
-//    orCondition ~ rep("and" ~> orCondition) ^^ {
-//      case first ~ rest =>
-//        rest.foldLeft(first) { case (l, r) => AndExpressionERD(l, r) }
-//    }
-//
-//  def orCondition: Parser[ExpressionERD] =
-//    compCondition ~ rep("or" ~> compCondition) ^^ {
-//      case first ~ rest =>
-//        rest.foldLeft(first) { case (l, r) => OrExpressionERD(l, r) }
-//    }
-//
-//  def compCondition: Parser[ExpressionERD] =
-//    positioned(notCondition ~ rep(("<" | "<=") ~ notCondition) ^^ {
-//      case first ~ Nil => first
-//      case first ~ rest =>
-//        ComparisonExpressionERD(first, rest map { case c ~ r => (c, r) })
-//    })
-//
-//  def notCondition: Parser[ExpressionERD] =
-//    positioned("not" ~> primaryCondition ^^ NotExpressionERD) |
-//      primaryCondition
-//
-//  def primaryCondition: Parser[ExpressionERD] = variable | number
+  def block: Parser[BlockERD] = entityBlock
 
   def entityBlock: Parser[EntityBlockERD] =
     "entity" ~ ident ~ opt("(" ~> ident <~ ")") ~ "{" ~ rep1(field) ~ "}" ^^ {
@@ -105,7 +73,10 @@ class ERDParser extends RegexParsers {
       ("[" ~> ident <~ "]") ~ ("(" ~> ident <~ ")") ^^ {
         case e ~ j => JunctionArrayTypeERD(e, j)
       } |
-      ("[" ~> ident <~ "]") ^^ ArrayTypeERD
+      ("[" ~> ident <~ "]") ^^ ArrayTypeERD |
+      ident ~ opt("<" ~> ident <~ ">") ^^ {
+        case e ~ a => OneToOneTypeERD(e, a)
+      }
 
   def parseFromString[T](src: String, grammar: Parser[T]): T =
     parseAll(grammar, new CharSequenceReader(src)) match {
