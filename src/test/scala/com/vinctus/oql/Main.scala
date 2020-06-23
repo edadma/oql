@@ -41,7 +41,7 @@ object Main extends App {
 //    .add(oql.queryBuilder(conn).project("classes").order("name", true))
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']", conn)
-    .json("enrollment { ^student } [&class = 9]", conn)
+    .json("enrollment { ^student { * classes } } [&class = 9]", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

@@ -320,8 +320,11 @@ class OQL(erd: String) {
             if (attrs.length > 1)
               problem(q.source.pos, s"lifted attribute '${q.source.name}' must be the sole attribute being projected")
 
-            println(branches(entityname, entity, q, fk, projectbuf, joinbuf, attrlist, circlist))
-            sys.error("")
+            branches(entityname, entity, ProjectAttributesOQL(List(q)), fk, projectbuf, joinbuf, attrlist, circlist) match {
+              case Seq(EntityProjectionNode(_, fk, bs)) =>
+                return List(LiftedProjectionNode(fk, bs))
+              case _ => problem(q.source.pos, s"can only lift an object attribute")
+            }
           case None =>
         }
       case _ =>
@@ -567,6 +570,7 @@ class OQL(erd: String) {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
         case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
+        case LiftedProjectionNode(_, nodes)                        => futures(nodes)
         case EntityProjectionNode(_, _, nodes)                     => futures(nodes)
         case node @ EntityArrayJunctionProjectionNode(entityType,
                                                       _,

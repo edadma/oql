@@ -106,13 +106,12 @@ The query language is inspired by GraphQL.  Exactly the data that is needed is r
 ```
 query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ]
 
-project = "{" attributeProject+ "}"
+project = "{" (attributeProject | "-" identifier | "&" identifier | "*")+ "}"
         | "." attributeProject .
 
-attributeProject = "-" identifier
-                 | identifier "#"
+attributeProject =
                  | identifier "(" [ "*" | identifier ] ")"
-                 | "*"
+                 | "^" query
                  | query .
 
 select = "[" logicalExpression "]" .
@@ -142,7 +141,8 @@ applyExpression = identifier expressions
 
 primaryExpression = number
                   | string
-                  | identifier { "." identifier } "#"
+                  | "TRUE" | "true" | "FALSE" | "false"
+                  | "&" identifier { "." identifier }
                   | variable
                   | caseExpression
                   | "(" logicalExpression ")" .

@@ -196,6 +196,56 @@ class BasicTests extends AsyncFreeSpec with Matchers {
     }
   }
 
+  "lift" in {
+    studentER.json("enrollment { ^student { * classes } } [&class = 9]", studentDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "id": 1,
+          |    "name": "John",
+          |    "classes": [
+          |      {
+          |        "id": 3,
+          |        "name": "Spanish"
+          |      },
+          |      {
+          |        "id": 5,
+          |        "name": "Science"
+          |      },
+          |      {
+          |        "id": 9,
+          |        "name": "Physical Education"
+          |      }
+          |    ]
+          |  },
+          |  {
+          |    "id": 2,
+          |    "name": "Debbie",
+          |    "classes": [
+          |      {
+          |        "id": 1,
+          |        "name": "English"
+          |      },
+          |      {
+          |        "id": 4,
+          |        "name": "Biology"
+          |      },
+          |      {
+          |        "id": 5,
+          |        "name": "Science"
+          |      },
+          |      {
+          |        "id": 9,
+          |        "name": "Physical Education"
+          |      }
+          |    ]
+          |  }
+          |]
+      """.trim.stripMargin
+    }
+  }
+
   "ordered resource selection" in {
     starTrekER.json("character [char_id < 4] <name>", starTrekDB) map { result =>
       result shouldBe
