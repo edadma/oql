@@ -144,6 +144,7 @@ class OQLParser extends RegexParsers {
   def primaryExpression: Parser[ExpressionOQL] =
     number |
       string |
+      ("TRUE" | "true" | "FALSE" | "false") ^^ BooleanLiteralOQL |
       "&" ~> rep1sep(ident, ".") ^^ ReferenceExpressionOQL |
       variable |
       caseExpression |

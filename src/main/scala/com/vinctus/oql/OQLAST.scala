@@ -37,3 +37,4 @@ case class GroupedExpressionOQL(expr: ExpressionOQL) extends ExpressionOQL
 case class FloatLiteralOQL(n: String) extends ExpressionOQL
 case class IntegerLiteralOQL(n: String) extends ExpressionOQL
 case class StringLiteralOQL(s: String) extends ExpressionOQL
+case class BooleanLiteralOQL(s: String) extends ExpressionOQL

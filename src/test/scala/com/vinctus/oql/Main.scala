@@ -23,24 +23,25 @@ object Main extends App {
 
   //  val conn = new PostgresConnection("postgres", "docker")
 
-  val conn = ordersDB
-  val oql = ordersER
-
-  oql
+//  val conn = ordersDB
+//  val oql = ordersER
+//
+//  oql
 //    .json(
 //      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
 //      conn)
-    .json("order { ord_num agent# } [ord_amount between 3000 and 4000]", conn)
+//    .json("order { ord_num &agent } [ord_amount between 3000 and 4000]", conn)
 
-//  val conn = studentDB
-//  val oql = studentER
-//
-//  oql
+  val conn = studentDB
+  val oql = studentER
+
+  oql
 //    .queryBuilder(conn)
 //    .project("student", "name")
 //    .add(oql.queryBuilder(conn).project("classes").order("name", true))
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']", conn)
+    .json("enrollment { ^student } [&class = 9]", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

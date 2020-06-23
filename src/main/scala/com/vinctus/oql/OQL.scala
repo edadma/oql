@@ -320,8 +320,11 @@ class OQL(erd: String) {
             if (attrs.length > 1)
               problem(q.source.pos, s"lifted attribute '${q.source.name}' must be the sole attribute being projected")
 
-          case _ =>
+            println(branches(entityname, entity, q, fk, projectbuf, joinbuf, attrlist, circlist))
+            sys.error("")
+          case None =>
         }
+      case _ =>
     }
 
     val attrs =
@@ -455,7 +458,9 @@ class OQL(erd: String) {
         val ts = junction.attributes.toList.filter(
           a =>
             a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == attrEntity)
+              .isInstanceOf[ObjectEntityAttribute] && a._2
+              .asInstanceOf[ObjectEntityAttribute]
+              .entity == attrEntity)
         val junctionAttr =
           ts.length match {
             case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
