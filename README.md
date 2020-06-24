@@ -86,6 +86,7 @@ attribute = [ "*" ] identifier [ "(" alias ")" ] ":" type
 type = primitiveType
      | entityType
      | "[" entityType "]"
+     | "<" entityType ">" [ "<" identifier ">" ]
      | "[" entityType "]" "(" entityType ")" .
 
 primitiveType = "text"
