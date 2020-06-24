@@ -2,6 +2,37 @@ package com.vinctus.oql
 
 object Testing {
 
+  val unDB =
+    new RDBConnection("""
+        |country
+        | id: integer, pk          name: text
+        | 1                Nigeria
+        | 2                Ghana
+        | 3                South Africa
+        | 4                Republic of China (Taiwan)
+        |
+        |rep
+        | id: integer, pk    name: text    country: integer, fk, country, id
+        | 1                Abubakar Ahmad  1
+        | 2                Joseph Nkrumah  2
+        | 3                Lauren Zuma     3
+        | 4                Batman          null
+        |""".stripMargin)
+  val unER =
+    new OQL("""
+        |entity country {
+        | *id: integer
+        |  name: text
+        |  rep: <rep>
+        |}
+        |
+        |entity rep {
+        | *id: integer
+        |  name: text
+        |  country: country
+        |}
+        |""".stripMargin)
+
   val employeesDB =
     new RDBConnection(
       """

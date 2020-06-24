@@ -342,4 +342,40 @@ class BasicTests extends AsyncFreeSpec with Matchers {
     }
   }
 
+  "one-to-one" in {
+    unER.json("country { * rep.name }", unDB) map { result =>
+      result shouldBe
+        """
+          |[
+          |  {
+          |    "id": 1,
+          |    "name": "Nigeria",
+          |    "rep": {
+          |      "name": "Abubakar Ahmad"
+          |    }
+          |  },
+          |  {
+          |    "id": 2,
+          |    "name": "Ghana",
+          |    "rep": {
+          |      "name": "Joseph Nkrumah"
+          |    }
+          |  },
+          |  {
+          |    "id": 3,
+          |    "name": "South Africa",
+          |    "rep": {
+          |      "name": "Lauren Zuma"
+          |    }
+          |  },
+          |  {
+          |    "id": 4,
+          |    "name": "Republic of China (Taiwan)",
+          |    "rep": null
+          |  }
+          |]
+      """.trim.stripMargin
+    }
+  }
+
 }

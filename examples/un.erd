@@ -1,7 +1,6 @@
 entity country {
  *id: integer
   name: text
-  officialLang: text
   rep: <rep>
 }
 

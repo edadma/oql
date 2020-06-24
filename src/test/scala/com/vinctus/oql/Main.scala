@@ -15,11 +15,12 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new OQL(readFile("examples/un.erd"))
-  val oql = new RDBConnection(readFile("examples/un.tab"))
+  val oql = new OQL(readFile("examples/un.erd"))
+  val conn = new RDBConnection(readFile("examples/un.tab"))
 
   oql
-    .json("employee { name manager.name } [job_title = 'PRESIDENT']", conn)
+    .json("country { * rep.name }", conn)
+//    .json("rep { name country.name }", conn)
 
 //  val conn = employeesDB
 //  val oql = employeesER
