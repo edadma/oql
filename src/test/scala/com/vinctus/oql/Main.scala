@@ -15,13 +15,19 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
+  val conn = new OQL(readFile("examples/un.erd"))
+  val oql = new RDBConnection(readFile("examples/un.tab"))
+
+  oql
+    .json("employee { name manager.name } [job_title = 'PRESIDENT']", conn)
+
 //  val conn = employeesDB
 //  val oql = employeesER
 //
 //  oql
 //    .json("employee { name manager.name } [job_title = 'PRESIDENT']", conn)
 
-  //  val conn = new PostgresConnection("postgres", "docker")
+    //  val conn = new PostgresConnection("postgres", "docker")
 
 //  val conn = ordersDB
 //  val oql = ordersER
@@ -32,16 +38,16 @@ object Main extends App {
 //      conn)
 //    .json("order { ord_num &agent } [ord_amount between 3000 and 4000]", conn)
 
-  val conn = studentDB
-  val oql = studentER
-
-  oql
+//  val conn = studentDB
+//  val oql = studentER
+//
+//  oql
 //    .queryBuilder(conn)
 //    .project("student", "name")
 //    .add(oql.queryBuilder(conn).project("classes").order("name", true))
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']", conn)
-    .json("enrollment { ^student { * classes } } [&class = 9]", conn)
+//    .json("enrollment { ^student { * classes } } [&class = 9]", conn)
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

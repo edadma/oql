@@ -1,0 +1,12 @@
+entity country {
+ *id: integer
+  name: text
+  officialLang: text
+  rep: <rep>
+}
+
+entity rep {
+ *id: integer
+  name: text
+  country: country
+}

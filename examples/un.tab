@@ -1,0 +1,11 @@
+country
+ id: integer, pk   name: text   officialLang: text 
+ 1                Nigeria       English            
+ 2                Ghana         English            
+ 3                South Africa  English            
+
+rep
+ id: integer, pk    name: text    country: integer, fk, country 
+ 1                Abubakar Ahmad  1                             
+ 2                Joseph Nkrumah  2                             
+ 3                Lauren Zuma     3                             

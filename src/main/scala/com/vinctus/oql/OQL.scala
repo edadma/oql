@@ -560,6 +560,43 @@ class OQL(erd: String) {
               ),
               query
           ))
+      case (_, field, attr @ ObjectOneEntityAttribute(entityType, attrEntity, _), project, query, _) =>
+        val projectbuf = new ListBuffer[(Option[String], String, String)]
+        val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
+        val es = attrEntity.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+        val column =
+          es.length match {
+            case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
+            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+            case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
+          }
+
+        entityNode(field, attr, circlist)(
+          c =>
+            EntityOneProjectionNode(
+              field,
+              table,
+              entity.pk.get,
+              projectbuf,
+              subjoinbuf,
+              entityType,
+              column,
+              attrEntity,
+              branches(
+                entityType,
+                attrEntity,
+                project,
+                query.group.isEmpty,
+                projectbuf,
+                subjoinbuf,
+                List(attrEntity.table),
+                c
+              ),
+              query
+          ))
     }
   }
 
@@ -600,6 +637,34 @@ class OQL(erd: String) {
             query.limit,
             query.offset,
             Some(entityType),
+            entity,
+            subprojectbuf,
+            subjoinbuf,
+            nodes,
+            conn
+          )
+
+          futurebuf += future
+          futuremap((row, node.serial)) = future
+        case node @ EntityOneProjectionNode(_,
+                                            tabpk,
+                                            colpk,
+                                            subprojectbuf,
+                                            subjoinbuf,
+                                            resource,
+                                            column,
+                                            entity,
+                                            nodes,
+                                            query) =>
+          val pkwhere = EqualsExpressionOQL(entity.table, column, render(row(projectmap((tabpk, colpk)))))
+          val future = executeQuery(
+            resource,
+            Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+            query.group,
+            query.order,
+            query.limit,
+            query.offset,
+            None,
             entity,
             subprojectbuf,
             subjoinbuf,
@@ -669,6 +734,13 @@ class OQL(erd: String) {
                 case Some(Success(list)) => field -> list
                 case a                   => sys.error(s"failed to execute query: $a")
               }
+            case node @ EntityOneProjectionNode(field, _, _, _, _, _, _, _, _, _) =>
+              futuremap((row, node.serial)).value match {
+                case Some(Success(Nil))        => field -> null
+                case Some(Success(List(item))) => field -> item
+                case Some(Success(_))          => sys.error(s"not one-to-one: $field")
+                case a                         => sys.error(s"failed to execute query: $a")
+              }
           }).to(ListMap)
       }
 
@@ -715,6 +787,17 @@ class OQL(erd: String) {
                                                entity: Entity,
                                                branches: Seq[ProjectionNode],
                                                query: QueryOQL)
+      extends ProjectionNode
+  private case class EntityOneProjectionNode(field: String,
+                                             tabpk: String,
+                                             colpk: String,
+                                             subprojectbuf: ListBuffer[(Option[String], String, String)],
+                                             subjoinbuf: ListBuffer[(String, String, String, String, String)],
+                                             resource: String,
+                                             column: String,
+                                             entity: Entity,
+                                             branches: Seq[ProjectionNode],
+                                             query: QueryOQL)
       extends ProjectionNode
 
 }
