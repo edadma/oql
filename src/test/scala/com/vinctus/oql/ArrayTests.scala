@@ -12,7 +12,7 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "one-to-many/many-to-one" in {
-    ordersER.json("agent { agent_code orders { ord_num customer.name } <ord_num> } [agent_code = 'A003']", ordersDB) map {
+    ordersER.json("agent { agent_code orders { ord_num customer.name } <ord_num> } [agent_code = 'A003']") map {
       result =>
         result shouldBe
           """
@@ -40,7 +40,7 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-one" in {
-    studentER.json("enrollment { student.name class.name grade } <grade> |2, 3|", studentDB) map { result =>
+    studentER.json("enrollment { student.name class.name grade } <grade> |2, 3|") map { result =>
       result shouldBe
         """
           |[
@@ -68,7 +68,7 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-many" in {
-    studentER.json("class { name students { name } <name> } [name LIKE 'S%'] <name>", studentDB) map { result =>
+    studentER.json("class { name students { name } <name> } [name LIKE 'S%'] <name>") map { result =>
       result shouldBe
         """
           |[
@@ -97,7 +97,7 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-one self-join" in {
-    employeesER.json("employee { name manager.name } <name> |3|", employeesDB) map { result =>
+    employeesER.json("employee { name manager.name } <name> |3|") map { result =>
       result shouldBe
         """
           |[
@@ -125,10 +125,9 @@ class ArrayTests extends AsyncFreeSpec with Matchers {
   }
 
   "many-to-one self-join and ordinary many-to-one" in {
-    employeesER.json("employee { name manager.name department.name } [job_title = 'CLERK'] <name>", employeesDB) map {
-      result =>
-        result shouldBe
-          """
+    employeesER.json("employee { name manager.name department.name } [job_title = 'CLERK'] <name>") map { result =>
+      result shouldBe
+        """
             |[
             |  {
             |    "name": "ADNRES",

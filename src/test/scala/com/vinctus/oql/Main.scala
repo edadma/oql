@@ -15,18 +15,18 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val oql = new OQL(readFile("examples/un.erd"))
   val conn = new RDBConnection(readFile("examples/un.tab"))
+  val oql = new OQL(conn, readFile("examples/un.erd"))
 
   oql
-    .json("country { * rep.name }", conn)
-//    .json("rep { name country.name }", conn)
+    .json("country { * rep.name }")
+//    .json("rep { name country.name }")
 
 //  val conn = employeesDB
 //  val oql = employeesER
 //
 //  oql
-//    .json("employee { name manager.name } [job_title = 'PRESIDENT']", conn)
+//    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
 
     //  val conn = new PostgresConnection("postgres", "docker")
 
@@ -37,7 +37,7 @@ object Main extends App {
 //    .json(
 //      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
 //      conn)
-//    .json("order { ord_num &agent } [ord_amount between 3000 and 4000]", conn)
+//    .json("order { ord_num &agent } [ord_amount between 3000 and 4000]")
 
 //  val conn = studentDB
 //  val oql = studentER
@@ -47,8 +47,8 @@ object Main extends App {
 //    .project("student", "name")
 //    .add(oql.queryBuilder(conn).project("classes").order("name", true))
 //    .json
-//    .json("student { * classes { * students } <name> } [name = 'John']", conn)
-//    .json("enrollment { ^student { * classes } } [&class = 9]", conn)
+//    .json("student { * classes { * students } <name> } [name = 'John']")
+//    .json("enrollment { ^student { * classes } } [&class = 9]")
     .onComplete {
       case Failure(exception) => throw exception
       case Success(value) =>

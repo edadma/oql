@@ -12,24 +12,23 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "query" in {
-    starTrekER.queryMany("character { name species.origin.name } [species.name = 'Betazoid'] <name>", starTrekDB) map {
-      result =>
-        result shouldBe
-          List(
-            Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
-            Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
-          )
+    starTrekER.queryMany("character { name species.origin.name } [species.name = 'Betazoid'] <name>") map { result =>
+      result shouldBe
+        List(
+          Map("name" -> "Deanna Troi", "species" -> Map("origin" -> Map("name" -> "Betazed"))),
+          Map("name" -> "Lwaxana Troi", "species" -> Map("origin" -> Map("name" -> "Betazed")))
+        )
     }
   }
 
   "findOne" in {
-    studentER.findOne("class", 3, studentDB) map { result =>
+    studentER.findOne("class", 3) map { result =>
       result shouldBe Some(Map("id" -> 3, "name" -> "Spanish"))
     }
   }
 
   "ordered" in {
-    starTrekER.json("character <name>", starTrekDB) map { result =>
+    starTrekER.json("character <name>") map { result =>
       result shouldBe
         """
         |[
@@ -168,7 +167,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "deep many-to-one selection" in {
-    starTrekER.json("character [species.origin.name = 'Vulcan']", starTrekDB) map { result =>
+    starTrekER.json("character [species.origin.name = 'Vulcan']") map { result =>
       result shouldBe
         """
           |[
@@ -197,7 +196,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "lift" in {
-    studentER.json("enrollment { ^student { * classes } } [&class = 9]", studentDB) map { result =>
+    studentER.json("enrollment { ^student { * classes } } [&class = 9]") map { result =>
       result shouldBe
         """
           |[
@@ -247,7 +246,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "ordered resource selection" in {
-    starTrekER.json("character [char_id < 4] <name>", starTrekDB) map { result =>
+    starTrekER.json("character [char_id < 4] <name>") map { result =>
       result shouldBe
         """
           |[
@@ -314,7 +313,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "single selection" in {
-    starTrekER.json("character [char_id = 3]", starTrekDB) map { result =>
+    starTrekER.json("character [char_id = 3]") map { result =>
       result shouldBe
         """
           |[
@@ -343,7 +342,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "one-to-one" in {
-    unER.json("country { * rep.name }", unDB) map { result =>
+    unER.json("country { * rep.name }") map { result =>
       result shouldBe
         """
           |[

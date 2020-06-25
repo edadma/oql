@@ -12,10 +12,10 @@ class StarTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "aggregate" in {
-    ordersER.json("agent { * -phone_no orders { sum(ord_amount) } } [working_area = 'Bangalore'] <agent_code>",
-                  ordersDB) map { result =>
-      result shouldBe
-        """
+    ordersER.json("agent { * -phone_no orders { sum(ord_amount) } } [working_area = 'Bangalore'] <agent_code>") map {
+      result =>
+        result shouldBe
+          """
             |[
             |  {
             |    "agent_code": "A001",
@@ -56,7 +56,7 @@ class StarTests extends AsyncFreeSpec with Matchers {
   }
 
   "recursion" in {
-    studentER.json("student { * classes { * students <name> } <name> } [name = 'John']", studentDB) map { result =>
+    studentER.json("student { * classes { * students <name> } <name> } [name = 'John']") map { result =>
       result shouldBe
         """
             |[

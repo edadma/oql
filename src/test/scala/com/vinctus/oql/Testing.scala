@@ -19,7 +19,9 @@ object Testing {
         | 4                Batman          null
         |""".stripMargin)
   val unER =
-    new OQL("""
+    new OQL(
+      unDB,
+      """
         |entity country {
         | *id: integer
         |  name: text
@@ -31,7 +33,8 @@ object Testing {
         |  name: text
         |  country: country
         |}
-        |""".stripMargin)
+        |""".stripMargin
+    )
 
   val employeesDB =
     new RDBConnection(
@@ -69,7 +72,9 @@ object Testing {
         | 5                   3101               9999              
         |""".stripMargin)
   val employeesER =
-    new OQL("""
+    new OQL(
+      employeesDB,
+      """
         |entity employee {
         | *emp_id: integer
         |  name (emp_name): text
@@ -92,7 +97,8 @@ object Testing {
         |  min_sal: decimal
         |  max_sal: decimal
         |}
-        |""".stripMargin)
+        |""".stripMargin
+    )
 
   val ordersDB =
     new RDBConnection(
@@ -188,7 +194,9 @@ object Testing {
         |""".stripMargin
     )
   val ordersER =
-    new OQL("""
+    new OQL(
+      ordersDB,
+      """
         |entity agent {
         | *agent_code: text
         |  agent_name: text
@@ -211,7 +219,8 @@ object Testing {
         | *cust_code: text
         |  name: text
         |}
-        |""".stripMargin)
+        |""".stripMargin
+    )
 
   val studentDB =
     new RDBConnection(
@@ -246,6 +255,7 @@ object Testing {
     )
   val studentER =
     new OQL(
+      studentDB,
       """
         |entity class {
         | *id: integer
@@ -300,6 +310,7 @@ object Testing {
     )
   val starTrekER =
     new OQL(
+      starTrekDB,
       """
       |entity planet {
       | *plan_id: integer

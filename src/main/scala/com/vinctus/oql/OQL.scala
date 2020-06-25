@@ -14,7 +14,7 @@ class OQL(conn: Connection, erd: String) {
 
   private val model = new ERModel(erd)
 
-  def apply(resource: String): Entity =
+  def apply(resource: String): Resource =
     model get resource match {
       case None         => sys.error(s"resource '$resource' not found")
       case Some(entity) => new Resource(this, resource, entity)

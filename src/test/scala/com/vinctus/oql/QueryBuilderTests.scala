@@ -12,7 +12,7 @@ class QueryBuilderTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "deep many-to-one selection" in {
-    starTrekER.queryBuilder(starTrekDB).query("character").select("species.origin.name = 'Vulcan'").json map { result =>
+    starTrekER.queryBuilder.query("character").select("species.origin.name = 'Vulcan'").json map { result =>
       result shouldBe
         """
           |[
@@ -41,8 +41,7 @@ class QueryBuilderTests extends AsyncFreeSpec with Matchers {
   }
 
   "ordered resource selection" in {
-    starTrekER
-      .queryBuilder(starTrekDB)
+    starTrekER.queryBuilder
       .query("character")
       .select("char_id < 4")
       .order("name", ascending = true)

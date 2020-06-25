@@ -12,10 +12,10 @@ class LogicTests extends AsyncFreeSpec with Matchers {
   implicit override def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 
   "not/or" in {
-    studentER.json("enrollment { class { name } } [NOT (semester = 'fall' OR semester = 'winter')] <class.name>",
-                   studentDB) map { result =>
-      result shouldBe
-        """
+    studentER.json("enrollment { class { name } } [NOT (semester = 'fall' OR semester = 'winter')] <class.name>") map {
+      result =>
+        result shouldBe
+          """
             |[
             |  {
             |    "class": {
@@ -45,10 +45,10 @@ class LogicTests extends AsyncFreeSpec with Matchers {
 
   "between" in {
     ordersER.json(
-      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
-      ordersDB) map { result =>
-      result shouldBe
-        """
+      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>") map {
+      result =>
+        result shouldBe
+          """
           |[
           |  {
           |    "sum_ord_amount": 6500,
