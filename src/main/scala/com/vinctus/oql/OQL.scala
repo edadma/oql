@@ -10,55 +10,61 @@ import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("OQL")
-class OQL(erd: String) {
+class OQL(conn: Connection, erd: String) {
 
   private val model = new ERModel(erd)
 
+  def apply(resource: String): Entity =
+    model get resource match {
+      case None         => sys.error(s"resource '$resource' not found")
+      case Some(entity) => new Resource(this, resource, entity)
+    }
+
   @JSExport
-  def queryBuilder(conn: Connection) =
-    new QueryBuilder(this, conn, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
+  def queryBuilder =
+    new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("queryOne")
-  def jsQueryOne(oql: String, conn: Connection): js.Promise[js.Any] = jsQueryOne(OQLParser.parseQuery(oql), conn)
+  def jsQueryOne(oql: String): js.Promise[js.Any] = jsQueryOne(OQLParser.parseQuery(oql))
 
-  def jsQueryOne(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromiseOne(queryOne(q, conn))
+  def jsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromiseOne(queryOne(q))
 
   @JSExport("queryMany")
-  def jsQueryMany(oql: String, conn: Connection): js.Promise[js.Any] = jsQueryMany(OQLParser.parseQuery(oql), conn)
+  def jsQueryMany(oql: String): js.Promise[js.Any] = jsQueryMany(OQLParser.parseQuery(oql))
 
-  def jsQueryMany(q: QueryOQL, conn: Connection): js.Promise[js.Any] = toPromise(queryMany(q, conn))
+  def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
 
-  def json(oql: String, conn: Connection): Future[String] =
-    toJSON(queryMany(oql, conn))
+  def json(oql: String): Future[String] =
+    toJSON(queryMany(oql))
 
-  def queryOne(oql: String, conn: Connection): Future[Option[ListMap[String, Any]]] =
-    queryOne(OQLParser.parseQuery(oql), conn)
+  def queryOne(oql: String): Future[Option[ListMap[String, Any]]] =
+    queryOne(OQLParser.parseQuery(oql))
 
-  def queryOne(oql: QueryOQL, conn: Connection): Future[Option[ListMap[String, Any]]] =
-    queryMany(oql, conn) map {
+  def queryOne(oql: QueryOQL): Future[Option[ListMap[String, Any]]] =
+    queryMany(oql) map {
       case Nil       => None
       case List(row) => Some(row)
       case _         => sys.error("queryOne: more than one was found")
     }
 
-  def queryMany(oql: String, conn: Connection): Future[List[ListMap[String, Any]]] =
-    queryMany(OQLParser.parseQuery(oql), conn)
+  def queryMany(oql: String): Future[List[ListMap[String, Any]]] =
+    queryMany(OQLParser.parseQuery(oql))
 
-  def queryMany(q: QueryOQL, conn: Connection): Future[List[ListMap[String, Any]]] = {
+  def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph = branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
 
-    executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph, conn)
+    executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
   }
 
   @JSExport("findOne")
-  def jsFindOne(resource: String, id: js.Any, conn: Connection): js.Promise[js.Any] =
-    toPromiseOne(findOne(resource, id, conn))
+  def jsFindOne(resource: String, id: js.Any): js.Promise[js.Any] =
+    toPromiseOne(findOne(resource, id))
 
-  def findOne(resource: String, id: Any, conn: Connection): Future[Option[ListMap[String, Any]]] = {
+  def findOne(resource: String, id: Any): Future[Option[ListMap[String, Any]]] = {
     model.get(resource) match {
       case Some(entity) =>
         entity.pk match {
@@ -76,8 +82,7 @@ class OQL(erd: String) {
                 None,
                 None,
                 None
-              ),
-              conn
+              )
             )
         }
       case None => sys.error(s"findOne: unknown resource '$resource'")
@@ -94,8 +99,7 @@ class OQL(erd: String) {
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[String], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
-                           graph: Seq[ProjectionNode],
-                           conn: Connection): Future[List[ListMap[String, Any]]] = {
+                           graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f)    => s"$e.$f"
@@ -163,11 +167,10 @@ class OQL(erd: String) {
       .flatMap(result => {
         val list = result.toList
         val futurebuf = new ListBuffer[Future[List[ListMap[String, Any]]]]
-        val futuremap =
-          new mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]]
+        val futuremap = new mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]]
 
-        list foreach (futures(_, futurebuf, futuremap, projectmap, graph, conn))
-        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, conn)))
+        list foreach (futures(_, futurebuf, futuremap, projectmap, graph))
+        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph)))
       })
   }
 
@@ -610,8 +613,7 @@ class OQL(erd: String) {
                       futurebuf: ListBuffer[Future[List[ListMap[String, Any]]]],
                       futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
                       projectmap: Map[(String, String), Int],
-                      nodes: Seq[ProjectionNode],
-                      conn: Connection): Unit = {
+                      nodes: Seq[ProjectionNode]): Unit = {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
         case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
@@ -640,8 +642,7 @@ class OQL(erd: String) {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes,
-            conn
+            nodes
           )
 
           futurebuf += future
@@ -668,8 +669,7 @@ class OQL(erd: String) {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes,
-            conn
+            nodes
           )
 
           futurebuf += future
@@ -696,8 +696,7 @@ class OQL(erd: String) {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes,
-            conn
+            nodes
           )
 
           futurebuf += future
@@ -711,8 +710,7 @@ class OQL(erd: String) {
   private def build(row: ResultRow,
                     projectmap: Map[(String, String), Int],
                     futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
-                    branches: Seq[ProjectionNode],
-                    conn: Connection) = {
+                    branches: Seq[ProjectionNode]) = {
     def build(branches: Seq[ProjectionNode]): ListMap[String, Any] =
       branches match {
         case Seq(LiftedProjectionNode(Some(fk), branches)) => if (row(projectmap(fk)) == null) null else build(branches)

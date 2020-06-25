@@ -8,10 +8,10 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connection, private[oql] val q: QueryOQL) {
+class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: QueryOQL) {
   private def check = if (q.source eq null) sys.error("QueryBuilder: no resource was given") else this
 
-  private class DoNothingQueryBuilder extends QueryBuilder(oql, conn, q) {
+  private class DoNothingQueryBuilder extends QueryBuilder(oql, q) {
     private def na = sys.error("not applicable")
 
     @JSExport("cond")
@@ -63,7 +63,6 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
   def add(attribute: QueryBuilder) =
     new QueryBuilder(
       oql,
-      conn,
       q.copy(project = ProjectAttributesOQL(q.project match {
         case ProjectAttributesOQL(attrs) => attrs :+ attribute.q
         case ProjectAllOQL(_)            => List(attribute.q)
@@ -77,7 +76,6 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
   def project(resource: String, attributes: String*): QueryBuilder =
     new QueryBuilder(
       oql,
-      conn,
       if (attributes nonEmpty)
         q.copy(
           source = Ident(resource),
@@ -92,7 +90,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     )
 
   @JSExport
-  def query(query: String): QueryBuilder = new QueryBuilder(oql, conn, OQLParser.parseQuery(query))
+  def query(query: String): QueryBuilder = new QueryBuilder(oql, OQLParser.parseQuery(query))
 
   @JSExport
   def select(s: String): QueryBuilder = {
@@ -100,7 +98,6 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
 
     new QueryBuilder(
       oql,
-      conn,
       q.copy(
         select =
           if (q.select isDefined)
@@ -112,26 +109,26 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
 
   @JSExport
   def order(attribute: String, ascending: Boolean): QueryBuilder =
-    new QueryBuilder(oql, conn, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), ascending)))))
+    new QueryBuilder(oql, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), ascending)))))
 
   @JSExport
-  def limit(a: Int): QueryBuilder = new QueryBuilder(oql, conn, q.copy(limit = Some(a)))
+  def limit(a: Int): QueryBuilder = new QueryBuilder(oql, q.copy(limit = Some(a)))
 
   @JSExport
-  def offset(a: Int): QueryBuilder = new QueryBuilder(oql, conn, q.copy(offset = Some(a)))
+  def offset(a: Int): QueryBuilder = new QueryBuilder(oql, q.copy(offset = Some(a)))
 
   @JSExport("getMany")
-  def jsGetMany(): js.Promise[js.Any] = check.oql.jsQueryMany(q, conn)
+  def jsGetMany(): js.Promise[js.Any] = check.oql.jsQueryMany(q)
 
   @JSExport("getOne")
-  def jsGetOne(): js.Promise[js.Any] = check.oql.jsQueryOne(q, conn)
+  def jsGetOne(): js.Promise[js.Any] = check.oql.jsQueryOne(q)
 
   @JSExport("getCount")
   def jsGetCount(): js.Promise[Int] = getCount.toJSPromise
 
-  def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q, conn)
+  def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q)
 
-  def getOne: Future[Option[ListMap[String, Any]]] = check.oql.queryOne(q, conn)
+  def getOne: Future[Option[ListMap[String, Any]]] = check.oql.queryOne(q)
 
   def getCount: Future[Int] = getMany map (_.length)
 
