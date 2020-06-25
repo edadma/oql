@@ -11,5 +11,15 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport
   def getMany(): Future[List[ListMap[String, Any]]] = builder.getMany
 
-  def insert(obj: js.Any): js.Any = {}
+  def insert(obj: js.Any): js.Any = {
+    val map = obj.asInstanceOf[js.Dictionary[js.Any]]
+
+    // check if the object has a primary key
+    entity.pk match {
+      case None =>
+      case Some(pk) =>
+        if (map.contains(pk))
+          sys.error(s"Resource.insert: object has a primary key property: $pk = ${map(pk)}")
+    }
+  }
 }
