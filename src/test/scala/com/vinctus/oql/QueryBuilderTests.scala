@@ -44,7 +44,7 @@ class QueryBuilderTests extends AsyncFreeSpec with Matchers {
     starTrekER.queryBuilder
       .query("character")
       .select("char_id < 4")
-      .order("name", ascending = true)
+      .order("name", "ASC")
       .json map { result =>
       result shouldBe
         """

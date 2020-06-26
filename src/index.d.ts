@@ -12,7 +12,7 @@ export class QueryBuilder {
 
   select(oql: string): QueryBuilder
 
-  order(attribute: string, ascending: boolean): QueryBuilder
+  order(attribute: string, sorting: string): QueryBuilder
 
   limit(a: number): QueryBuilder
 

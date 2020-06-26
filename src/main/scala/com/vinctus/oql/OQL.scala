@@ -92,7 +92,7 @@ class OQL(private[oql] val conn: Connection, erd: String) {
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
                            group: Option[List[VariableExpressionOQL]],
-                           order: Option[List[(ExpressionOQL, Boolean)]],
+                           order: Option[List[(ExpressionOQL, String)]],
                            limit: Option[Int],
                            offset: Option[Int],
                            entityType: Option[String],
@@ -127,7 +127,7 @@ class OQL(private[oql] val conn: Connection, erd: String) {
     val orderby =
       if (order isDefined)
         order.get map {
-          case (e, o) => s"(${expression(resource, entity, entityType, e, joinbuf)}) ${if (o) "ASC" else "DESC"}"
+          case (e, o) => s"(${expression(resource, entity, entityType, e, joinbuf)}) $o"
         } mkString ", "
       else
         null
@@ -330,7 +330,8 @@ class OQL(private[oql] val conn: Connection, erd: String) {
                 return List(LiftedProjectionNode(fk, bs))
               case _ => problem(q.source.pos, s"can only lift an object attribute")
             }
-          case None =>
+          case None    =>
+          case Some(_) => sys.error("problem")
         }
       case _ =>
     }

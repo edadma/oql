@@ -15,7 +15,7 @@ case class QueryOQL(source: Ident,
                     project: ProjectExpressionOQL,
                     select: Option[ExpressionOQL],
                     group: Option[List[VariableExpressionOQL]],
-                    order: Option[List[(ExpressionOQL, Boolean)]],
+                    order: Option[List[(ExpressionOQL, String)]],
                     limit: Option[Int],
                     offset: Option[Int])
     extends ProjectExpressionOQL
