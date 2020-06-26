@@ -41,10 +41,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val values =
       attrs map {
         case (k, _: PrimitiveEntityAttribute) => render(obj(k))
-        case (k, ObjectEntityAttribute(column, typ, entity)) =>
+        case (k, ObjectEntityAttribute(_, typ, entity)) =>
           entity.pk match {
             case None     => sys.error(s"entity '$typ' has no declared primary key attribute")
-            case Some(pk) => obj(k).asInstanceOf[entity.attributes(pk)]
+            case Some(pk) => render(obj(k).asInstanceOf[ListMap[String, Any]](pk))
           }
       }
 
