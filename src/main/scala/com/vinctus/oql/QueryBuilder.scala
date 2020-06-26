@@ -39,7 +39,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
     override def offset(a: Int): QueryBuilder = QueryBuilder.this
 
     @JSExport
-    override def order(attribute: String, ascending: Boolean): QueryBuilder = QueryBuilder.this
+    override def order(attribute: String, sorting: String): QueryBuilder = QueryBuilder.this
 
     @JSExport
     override def project(resource: String, attributes: String*): QueryBuilder = QueryBuilder.this
@@ -111,8 +111,8 @@ class QueryBuilder private[oql] (private val oql: OQL, private val conn: Connect
   }
 
   @JSExport
-  def order(attribute: String, ascending: Boolean): QueryBuilder =
-    new QueryBuilder(oql, conn, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), ascending)))))
+  def order(attribute: String, sorting: String): QueryBuilder =
+    new QueryBuilder(oql, conn, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), sorting)))))
 
   @JSExport
   def limit(a: Int): QueryBuilder = new QueryBuilder(oql, conn, q.copy(limit = Some(a)))

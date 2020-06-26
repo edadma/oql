@@ -14,7 +14,7 @@ class PostgresConnection(user: String, password: String) extends Connection {
       .literal(user = user, password = password)
       .asInstanceOf[ClientConfig])
 
-  client.connect
+  client.connect()
 
   def query(sql: String): ResultSet =
     new PostgresArrayResultSet(
@@ -22,6 +22,6 @@ class PostgresConnection(user: String, password: String) extends Connection {
         .query[js.Array[js.Any], js.Any](QueryArrayConfig[js.Any](pgStrings.array, sql)))
 
   @JSExport
-  def close(): Unit = client.end
+  def close(): Unit = client.end()
 
 }

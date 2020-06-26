@@ -45,7 +45,7 @@ object Main extends App {
 //  oql
 //    .queryBuilder(conn)
 //    .project("student", "name")
-//    .add(oql.queryBuilder(conn).project("classes").order("name", true))
+//    .add(oql.queryBuilder(conn).project("classes").order("name", "ASC"))
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']", conn)
 //    .json("enrollment { ^student { * classes } } [&class = 9]", conn)
