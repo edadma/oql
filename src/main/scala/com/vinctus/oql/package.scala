@@ -12,6 +12,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 package object oql {
 
+  def render(a: Any) =
+    a match {
+      case s: String => s"'$s'"
+      case _         => String.valueOf(a)
+    }
+
   def toPromise[T](result: Future[T]): js.Promise[js.Any] = result map toJS toJSPromise
 
   def toPromiseOne[T](result: Future[Option[T]]): js.Promise[js.Any] = toPromise(result map (_.getOrElse(js.undefined)))

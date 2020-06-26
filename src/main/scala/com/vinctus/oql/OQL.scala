@@ -603,12 +603,6 @@ class OQL(conn: Connection, erd: String) {
     }
   }
 
-  private def render(a: Any) =
-    a match {
-      case s: String => s"'$s'"
-      case _         => String.valueOf(a)
-    }
-
   private def futures(row: ResultRow,
                       futurebuf: ListBuffer[Future[List[ListMap[String, Any]]]],
                       futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
