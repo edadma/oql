@@ -1,0 +1,11 @@
+CREATE DATABASE test;
+
+CREATE TABLE t (
+  id SERIAL PRIMARY KEY,
+  a TEXT,
+  b INTEGER
+);
+
+INSERT INTO t (a, b) VALUES
+  ('asdf', 123)
+  ;

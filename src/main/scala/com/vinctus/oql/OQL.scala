@@ -10,7 +10,7 @@ import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("OQL")
-class OQL(conn: Connection, erd: String) {
+class OQL(private[oql] val conn: Connection, erd: String) {
 
   private val model = new ERModel(erd)
 

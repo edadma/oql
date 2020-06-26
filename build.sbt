@@ -4,7 +4,7 @@ version := "0.1.0-q.beta.1-i.alpha.1"
 
 description := "Object Query Language"
 
-scalaVersion := "2.13.2"
+scalaVersion := "2.13.3"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
 
@@ -20,9 +20,9 @@ enablePlugins(ScalaJSPlugin)
 
 enablePlugins(ScalablyTypedConverterPlugin)
 
-//Test / scalaJSUseMainModuleInitializer := true
-//
-//Test / scalaJSUseTestModuleInitializer := false
+Test / scalaJSUseMainModuleInitializer := true
+
+Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 

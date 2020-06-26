@@ -15,11 +15,23 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("examples/un.tab"))
-  val oql = new OQL(conn, readFile("examples/un.erd"))
+  val conn = new PostgresConnection("postgres", "docker")
 
-  oql
-    .json("country { * rep.name }")
+  conn
+    .query("insert into t (a, b) values ('zxcv', 789) returning id")
+    .rowSet
+    .onComplete {
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value.next.apply(0))
+        conn.close()
+    }
+
+//  val conn = new RDBConnection(readFile("examples/un.tab"))
+//  val oql = new OQL(conn, readFile("examples/un.erd"))
+//
+//  oql
+//    .json("country { * rep.name }")
 //    .json("rep { name country.name }")
 
 //  val conn = employeesDB
@@ -28,7 +40,7 @@ object Main extends App {
 //  oql
 //    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
 
-    //  val conn = new PostgresConnection("postgres", "docker")
+  //  val conn = new PostgresConnection("postgres", "docker")
 
 //  val conn = ordersDB
 //  val oql = ordersER
@@ -49,11 +61,11 @@ object Main extends App {
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']")
 //    .json("enrollment { ^student { * classes } } [&class = 9]")
-    .onComplete {
-      case Failure(exception) => throw exception
-      case Success(value) =>
-        println(value)
-        conn.close()
-    }
+//    .onComplete {
+//      case Failure(exception) => throw exception
+//      case Success(value) =>
+//        println(value)
+//        conn.close()
+//    }
 
 }

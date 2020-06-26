@@ -1,8 +1,9 @@
 package com.vinctus.oql
 
 import scala.collection.immutable.ListMap
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 
@@ -13,7 +14,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport
   def getMany(): Future[List[ListMap[String, Any]]] = builder.getMany
 
-  def insert(obj: collection.Map[String, Any]): js.Any = {
+  @JSExport("insert")
+  def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(obj.asInstanceOf[js.Dictionary[js.Any]].toMap))
+
+  def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
     entity.pk match {
       case None     =>
@@ -36,8 +40,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     if (!attrs.keySet.subsetOf(obj.keySet))
       sys.error(s"missing properties: ${attrs.keySet.diff(obj.keySet) mkString ", "}")
 
-    // build insert command
     val command = new StringBuilder
+    // build list of values to insert
     val values =
       attrs map {
         case (k, _: PrimitiveEntityAttribute) => render(obj(k))
@@ -48,8 +52,23 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
           }
       }
 
+    // build insert command
     command append s"INSERT INTO ${entity.table} (${attrs.values map (_.column) mkString ", "}) VALUES\n"
     command append s"  (${values mkString ", "})\n"
+
+    entity.pk match {
+      case None =>
+      case Some(pk) =>
+        command append s"  RETURNING $pk\n"
+    }
+
+    // execute insert command (to get a future)
+    oql.conn.query(command.toString).rowSet map (row =>
+      entity.pk match {
+        case None => obj
+        case Some(pk) =>
+          obj + (pk -> row.next().apply(0))
+      })
   }
 
 }
