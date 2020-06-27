@@ -35,7 +35,7 @@ export class QueryBuilder {
 export class OQL {
   constructor(erd: string)
 
-  apply(resource: string): Resource
+  entity(resource: string): Resource
 
   queryBuilder(conn: PostgresConnection): QueryBuilder
 

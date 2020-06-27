@@ -14,13 +14,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private val model = new ERModel(erd)
 
-  def apply(resource: String): Resource =
+  @JSExport
+  def entity(resource: String): Resource =
     model get resource match {
       case None         => sys.error(s"resource '$resource' not found")
       case Some(entity) => new Resource(this, resource, entity)
     }
 
-  def selectDynamic(resource: String): Resource = apply(resource)
+  def selectDynamic(resource: String): Resource = entity(resource)
 
   @JSExport
   def queryBuilder =
