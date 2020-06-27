@@ -6,7 +6,7 @@ description := "Object Query Language"
 
 scalaVersion := "2.13.3"
 
-scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials" )
+scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials", "-language:dynamics" )
 
 organization := "com.vinctus"
 

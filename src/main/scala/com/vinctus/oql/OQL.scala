@@ -10,7 +10,7 @@ import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("OQL")
-class OQL(private[oql] val conn: Connection, erd: String) {
+class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private val model = new ERModel(erd)
 
@@ -19,6 +19,8 @@ class OQL(private[oql] val conn: Connection, erd: String) {
       case None         => sys.error(s"resource '$resource' not found")
       case Some(entity) => new Resource(this, resource, entity)
     }
+
+  def selectDynamic(resource: String): Resource = apply(resource)
 
   @JSExport
   def queryBuilder =

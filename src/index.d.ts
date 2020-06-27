@@ -1,4 +1,7 @@
 export class Resource {
+
+  insert(obj: any): Promise<any>
+
 }
 
 export class QueryBuilder {
@@ -26,6 +29,7 @@ export class QueryBuilder {
   getMany(): Promise<any[]>
 
   getCount(): Promise<number>
+
 }
 
 export class OQL {

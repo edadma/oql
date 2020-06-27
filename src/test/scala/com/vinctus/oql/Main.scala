@@ -26,8 +26,9 @@ object Main extends App {
       |}
       |""".stripMargin)
 
-  oql("t")
+  oql.t
     .insert(ListMap("a" -> "one", "b" -> 1))
+
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
 //    .rowSet

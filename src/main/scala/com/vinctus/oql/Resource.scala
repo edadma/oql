@@ -4,7 +4,7 @@ import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.JSExport
 
 class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
@@ -36,11 +36,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         }
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 
-    val attrsNoPK =
-      if (entity.pk isDefined)
-        attrs - entity.pk.get
-      else
-        attrs
+    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
 
     // check if object contains all necessary column attribute properties
     if (!attrsNoPK.keySet.subsetOf(obj.keySet))
