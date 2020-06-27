@@ -3,9 +3,8 @@ package com.vinctus.oql
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.scalajs.js
-import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
 class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
