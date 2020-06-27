@@ -10,8 +10,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   private val builder = oql.queryBuilder.project(name)
 
-  @JSExport
-  def getMany(): Future[List[ListMap[String, Any]]] = builder.getMany
+  @JSExport("getMany")
+  def jsGetMany(): js.Promise[js.Any] = builder.jsGetMany()
+
+  def getMany: Future[List[ListMap[String, Any]]] = builder.getMany
 
   @JSExport("insert")
   def jsInsert(obj: js.Any): js.Promise[js.Any] =
@@ -31,8 +33,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val attrs =
       entity.attributes
         .filter {
-          case (name, _: EntityColumnAttribute) => true
-          case _                                => false
+          case (_, _: EntityColumnAttribute) => true
+          case _                             => false
         }
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 

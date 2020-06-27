@@ -1,5 +1,7 @@
 export class Resource {
 
+  getMany(): Promise<any[]>
+
   insert(obj: any): Promise<any>
 
 }
@@ -33,6 +35,7 @@ export class QueryBuilder {
 }
 
 export class OQL {
+
   constructor(erd: string)
 
   entity(resource: string): Resource
@@ -44,14 +47,19 @@ export class OQL {
   queryMany(sql: string, conn: PostgresConnection): Promise<any[]>
 
   findOne(resource: string, id: any, conn: Connection): Promise<any | undefined>
+
 }
 
 export class PostgresConnection extends Connection {
+
   constructor(user: string, password: string)
 
   close(): void
+
 }
 
 export abstract class Connection {
+
   close(): void
+
 }
