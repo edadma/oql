@@ -6,7 +6,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
-class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
+@JSExportTopLevel("Resource")
+class Resource /* private[oql] */ (oql: OQL, name: String, entity: Entity) {
 
   private val builder = oql.queryBuilder.project(name)
 
