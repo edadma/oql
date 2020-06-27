@@ -14,7 +14,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def getMany(): Future[List[ListMap[String, Any]]] = builder.getMany
 
   @JSExport("insert")
-  def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(obj.asInstanceOf[js.Dictionary[js.Any]].toMap))
+  def jsInsert(obj: js.Any): js.Promise[js.Any] =
+    toPromise(insert(obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)))
 
   def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
@@ -30,19 +31,25 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val attrs =
       entity.attributes
         .filter {
-          case (name, _: EntityColumnAttribute) if entity.pk.isEmpty || entity.pk.get != name => true
-          case _                                                                              => false
+          case (name, _: EntityColumnAttribute) => true
+          case _                                => false
         }
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 
+    val attrsNoPK =
+      if (entity.pk isDefined)
+        attrs - entity.pk.get
+      else
+        attrs
+
     // check if object contains all necessary column attribute properties
-    if (!attrs.keySet.subsetOf(obj.keySet))
-      sys.error(s"missing properties: ${attrs.keySet.diff(obj.keySet) mkString ", "}")
+    if (!attrsNoPK.keySet.subsetOf(obj.keySet))
+      sys.error(s"missing properties: ${attrsNoPK.keySet.diff(obj.keySet) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
     // build list of values to insert
     val values =
-      attrs map {
+      attrsNoPK map {
         case (k, _: PrimitiveEntityAttribute) => render(obj(k))
         case (k, ObjectEntityAttribute(_, typ, entity)) =>
           entity.pk match {
@@ -52,7 +59,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       }
 
     // build insert command
-    command append s"INSERT INTO ${entity.table} (${attrs.values map (_.column) mkString ", "}) VALUES\n"
+    command append s"INSERT INTO ${entity.table} (${attrsNoPK.values map (_.column) mkString ", "}) VALUES\n"
     command append s"  (${values mkString ", "})\n"
 
     entity.pk match {
@@ -66,7 +73,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       entity.pk match {
         case None => obj
         case Some(pk) =>
-          obj + (pk -> row.next().apply(0))
+          val res = obj + (pk -> row.next().apply(0))
+
+          attrs map { case (k, _) => k -> res(k) } to ListMap
       })
   }
 

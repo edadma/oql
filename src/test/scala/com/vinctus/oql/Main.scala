@@ -4,8 +4,9 @@ import scala.scalajs.js
 import js.Dynamic.{global => g}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
-
 import Testing._
+
+import scala.collection.immutable.ListMap
 
 object Main extends App {
 
@@ -16,16 +17,26 @@ object Main extends App {
   }
 
   val conn = new PostgresConnection("postgres", "docker")
+  val oql = new OQL(conn,
+                    """
+      |entity t {
+      | *id: integer
+      |  a: text
+      |  b: integer
+      |}
+      |""".stripMargin)
 
-  conn
-    .query("insert into t (a, b) values ('zxcv', 789) returning id")
-    .rowSet
-    .onComplete {
-      case Failure(exception) => throw exception
-      case Success(value) =>
-        println(value.next.apply(0))
-        conn.close()
-    }
+  oql("t")
+    .insert(ListMap("a" -> "one", "b" -> 1))
+//  conn
+//    .query("insert into t (a, b) values ('zxcv', 789) returning id")
+//    .rowSet
+//    .onComplete {
+//      case Failure(exception) => throw exception
+//      case Success(value) =>
+//        println(value.next.apply(0))
+//        conn.close()
+//    }
 
 //  val conn = new RDBConnection(readFile("examples/un.tab"))
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
@@ -40,7 +51,7 @@ object Main extends App {
 //  oql
 //    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
 
-  //  val conn = new PostgresConnection("postgres", "docker")
+    //  val conn = new PostgresConnection("postgres", "docker")
 
 //  val conn = ordersDB
 //  val oql = ordersER
@@ -61,11 +72,11 @@ object Main extends App {
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']")
 //    .json("enrollment { ^student { * classes } } [&class = 9]")
-//    .onComplete {
-//      case Failure(exception) => throw exception
-//      case Success(value) =>
-//        println(value)
-//        conn.close()
-//    }
+    .onComplete {
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value)
+        conn.close()
+    }
 
 }
