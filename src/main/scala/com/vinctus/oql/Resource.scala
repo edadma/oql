@@ -39,6 +39,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 
     val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
+    val attrsRequired = attrsNoPK
 
     // check if object contains all necessary column attribute properties
     if (!attrsNoPK.keySet.subsetOf(obj.keySet))

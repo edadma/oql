@@ -46,18 +46,18 @@ class ERDParser extends RegexParsers {
   def block: Parser[BlockERD] = entityBlock
 
   def entityBlock: Parser[EntityBlockERD] =
-    "entity" ~ ident ~ opt("(" ~> ident <~ ")") ~ "{" ~ rep1(field) ~ "}" ^^ {
+    "entity" ~ ident ~ opt("(" ~> ident <~ ")") ~ "{" ~ rep1(attribute) ~ "}" ^^ {
       case _ ~ n ~ a ~ _ ~ fs ~ _ =>
         EntityBlockERD(n, if (a isDefined) a.get else n, fs)
     }
 
-  def field: Parser[EntityAttributeERD] =
-    opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ^^ {
-      case pk ~ n ~ a ~ _ ~ t =>
-        EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined)
+  def attribute: Parser[EntityAttributeERD] =
+    opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ~ opt("!") ^^ {
+      case pk ~ n ~ a ~ _ ~ t ~ r =>
+        EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined, r isDefined)
     } |
       ident ~ "=" ~ jsonLiteral ^^ {
-        case n ~ _ ~ v => EntityAttributeERD(n, n, LiteralTypeERD(v), pk = false)
+        case n ~ _ ~ v => EntityAttributeERD(n, n, LiteralTypeERD(v), pk = false, required = true)
       }
 
   def jsonLiteral: Parser[ExpressionERD] = number | string | boolean | "null" ^^^ NullLiteralERD | array | jsonObject

@@ -272,12 +272,12 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             case None =>
               problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
             case Some(LiteralEntityAttribute(_)) => problem(attr.pos, "literals are not yet supported here")
-            case Some(PrimitiveEntityAttribute(column, _)) =>
+            case Some(PrimitiveEntityAttribute(column, _, _)) =>
               if (tail != Nil)
                 problem(attr.pos, s"'${attr.pos}' is a primitive type and so has no components")
 
               s"${attrlist mkString "$"}.$column"
-            case Some(ObjectEntityAttribute(column, entityType, entity)) =>
+            case Some(ObjectEntityAttribute(column, entityType, entity, _)) =>
               if (tail == Nil) {
                 if (ref)
                   s"${attrlist mkString "$"}.$column"

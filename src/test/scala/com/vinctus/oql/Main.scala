@@ -16,18 +16,18 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new PostgresConnection("postgres", "docker")
-  val oql = new OQL(conn,
-                    """
-      |entity t {
-      | *id: integer
-      |  a: text
-      |  b: integer
-      |}
-      |""".stripMargin)
+//  val conn = new PostgresConnection("postgres", "docker")
+  val conn = new RDBConnection(readFile("examples/un.tab"))
+  val oql = new OQL(conn, readFile("examples/un.erd"))
 
-  oql.t
-    .insert(ListMap("a" -> "one", "b" -> 1))
+  oql.country
+    .insert(ListMap("name" -> "HappyLand"))
+    .onComplete {
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value)
+        conn.close()
+    }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
@@ -41,9 +41,9 @@ object Main extends App {
 
 //  val conn = new RDBConnection(readFile("examples/un.tab"))
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
-//
-//  oql
-//    .json("country { * rep.name }")
+
+  oql
+    .json("country")
 //    .json("rep { name country.name }")
 
 //  val conn = employeesDB

@@ -5,9 +5,10 @@ import scala.collection.immutable.ListMap
 class Entity(var table: String, var pk: Option[String], var attributes: ListMap[String, EntityAttribute]) {}
 
 sealed abstract class EntityAttribute { val typ: String }
-sealed abstract class EntityColumnAttribute extends EntityAttribute { val column: String }
-case class PrimitiveEntityAttribute(column: String, typ: String) extends EntityColumnAttribute
-case class ObjectEntityAttribute(column: String, typ: String, entity: Entity) extends EntityColumnAttribute
+sealed abstract class EntityColumnAttribute extends EntityAttribute { val column: String; val required: Boolean }
+case class PrimitiveEntityAttribute(column: String, typ: String, required: Boolean) extends EntityColumnAttribute
+case class ObjectEntityAttribute(column: String, typ: String, entity: Entity, required: Boolean)
+    extends EntityColumnAttribute
 case class ObjectOneEntityAttribute(typ: String, entity: Entity, attr: Option[String]) extends EntityAttribute
 case class ObjectArrayJunctionEntityAttribute(entityType: String,
                                               entity: Entity,
