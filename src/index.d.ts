@@ -36,23 +36,23 @@ export class QueryBuilder {
 
 export class OQL {
 
-  constructor(erd: string)
+  constructor(conn: Connection, erd: string)
 
   entity(resource: string): Resource
 
-  queryBuilder(conn: PostgresConnection): QueryBuilder
+  queryBuilder(): QueryBuilder
 
-  queryOne(sql: string, conn: PostgresConnection): Promise<any | undefined>
+  queryOne(sql: string): Promise<any | undefined>
 
-  queryMany(sql: string, conn: PostgresConnection): Promise<any[]>
+  queryMany(sql: string): Promise<any[]>
 
-  findOne(resource: string, id: any, conn: Connection): Promise<any | undefined>
+  findOne(resource: string, id: any): Promise<any | undefined>
 
 }
 
 export class PostgresConnection extends Connection {
 
-  constructor(host: string, port: number, database: string, user: string, password: string, ssl: boolean)
+  constructor(host: string, port: number, database: string, user: string, password: string, ssl: any)
 
   close(): void
 

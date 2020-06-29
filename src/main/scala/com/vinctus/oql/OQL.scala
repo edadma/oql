@@ -24,7 +24,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def selectDynamic(resource: String): Resource = entity(resource)
 
   @JSExport
-  def queryBuilder =
+  def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("queryOne")

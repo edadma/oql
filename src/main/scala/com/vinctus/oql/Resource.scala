@@ -8,7 +8,7 @@ import scala.scalajs.js.annotation.JSExport
 
 class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
-  private val builder = oql.queryBuilder.project(name)
+  private val builder = oql.queryBuilder().project(name)
 
   @JSExport("getMany")
   def jsGetMany(): js.Promise[js.Any] = builder.jsGetMany()

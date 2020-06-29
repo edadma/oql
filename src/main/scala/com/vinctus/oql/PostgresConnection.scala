@@ -7,7 +7,7 @@ import scala.scalajs.js
 import js.annotation.{JSExport, JSExportTopLevel}
 
 @JSExportTopLevel("PostgresConnection")
-class PostgresConnection(host: String, port: Double, database: String, user: String, password: String, ssl: Boolean)
+class PostgresConnection(host: String, port: Double, database: String, user: String, password: String, ssl: js.Any)
     extends Connection {
 
   private val client = new Client(
