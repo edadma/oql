@@ -39,26 +39,25 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 
     // get sub-map of all column attributes that are required
-//    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
+    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
     val attrsRequired =
-      entity.attributes
+      attrsNoPK
         .filter {
-          case (name, attr: EntityColumnAttribute) if attr.required && (entity.pk.isEmpty || entity.pk.get =! name) =>
-            true
-          case _ => false
+          case (_, attr: EntityColumnAttribute) => attr.required
+          case _                                => false
         }
         .asInstanceOf[ListMap[String, EntityColumnAttribute]]
 
     // check if object contains all necessary column attribute properties
-    if (!attrsNoPK.keySet.subsetOf(obj.keySet))
-      sys.error(s"missing properties: ${attrsNoPK.keySet.diff(obj.keySet) map (p => s"'$p'") mkString ", "}")
+    if (!attrsRequired.keySet.subsetOf(obj.keySet))
+      sys.error(s"missing properties: ${attrsRequired.keySet.diff(obj.keySet) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
     // build list of values to insert
     val values =
       attrsNoPK map {
-        case (k, _: PrimitiveEntityAttribute) => render(obj(k))
-        case (k, ObjectEntityAttribute(_, typ, entity)) =>
+        case (k, _: PrimitiveEntityAttribute) if obj contains k => render(obj(k))
+        case (k, ObjectEntityAttribute(_, typ, entity, _)) if obj contains k =>
           entity.pk match {
             case None     => sys.error(s"entity '$typ' has no declared primary key attribute")
             case Some(pk) => render(obj(k).asInstanceOf[ListMap[String, Any]](pk))
