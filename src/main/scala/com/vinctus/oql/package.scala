@@ -12,7 +12,21 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 package object oql {
 
-  def render(a: Any) =
+  private val varRegex = ":([a-zA-Z]+)" r
+
+  def quote(s: String): String = {
+    s"'$s'"
+  }
+
+  def template(s: String, vars: Map[String, String]): String =
+    varRegex.replaceAllIn(s,
+                          m =>
+                            vars get m.group(1) match {
+                              case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
+                              case Some(value) => quote(value)
+                          })
+
+  def render(a: Any): String =
     a match {
       case s: String => s"'$s'"
       case _         => String.valueOf(a)
