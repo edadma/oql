@@ -13,10 +13,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 package object oql {
 
   private val varRegex = ":([a-zA-Z]+)" r
+  private val specialRegex = """(['\\\r\n])""" r
 
-  def quote(s: String): String = {
-    s"'$s'"
-  }
+  def quote(s: String): String =
+    s"'${specialRegex.replaceAllIn(s, _.group(1) match {
+      case "'"  => """\'"""
+      case "\\" => """\\"""
+      case "\r" => """\r"""
+      case "\n" => """\n"""
+    })}'"
 
   def template(s: String, vars: Map[String, String]): String =
     varRegex.replaceAllIn(s,
@@ -25,6 +30,9 @@ package object oql {
                               case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
                               case Some(value) => quote(value)
                           })
+
+  def toMap(obj: js.Object): Map[String, String] =
+    if (obj eq null) null else obj.asInstanceOf[js.Dictionary[String]].toMap
 
   def render(a: Any): String =
     a match {

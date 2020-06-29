@@ -28,19 +28,16 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("queryOne")
-  def jsQueryOne(oql: String): js.Promise[js.Any] = jsQueryOne(OQLParser.parseQuery(oql))
-
-  def jsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromiseOne(queryOne(q))
+  def jsQueryOne(oql: String, parameters: js.Object): js.Promise[js.Any] =
+    toPromiseOne(queryOne(oql, toMap(parameters)))
 
   @JSExport("queryMany")
-  def jsQueryMany(oql: String): js.Promise[js.Any] = jsQueryMany(OQLParser.parseQuery(oql))
-
-  def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
+  def jsQueryMany(oql: String, parameters: js.Object): js.Promise[js.Any] = toPromise(queryMany(oql, toMap(parameters)))
 
   def json(oql: String): Future[String] = toJSON(queryMany(oql))
 
-  def queryOne(oql: String): Future[Option[ListMap[String, Any]]] =
-    queryOne(OQLParser.parseQuery(oql))
+  def queryOne(oql: String, parameters: Map[String, String] = null): Future[Option[ListMap[String, Any]]] =
+    queryOne(OQLParser.parseQuery(template(oql, parameters)))
 
   def queryOne(oql: QueryOQL): Future[Option[ListMap[String, Any]]] =
     queryMany(oql) map {
@@ -50,7 +47,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     }
 
   def queryMany(oql: String, parameters: Map[String, String] = null): Future[List[ListMap[String, Any]]] =
-    queryMany(OQLParser.parseQuery(oql))
+    queryMany(OQLParser.parseQuery(template(oql, parameters)))
 
   def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q

@@ -80,7 +80,7 @@ entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
 
 alias = identifier .
 
-attribute = [ "*" ] identifier [ "(" alias ")" ] ":" type
+attribute = [ "*" ] identifier [ "(" alias ")" ] ":" type [ "!" ]
           | identifier "=" json .
 
 type = primitiveType
