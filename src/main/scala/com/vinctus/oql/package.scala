@@ -5,10 +5,10 @@ import java.time.LocalDate
 import scala.scalajs.js
 import js.JSConverters._
 import scala.scalajs.js.JSON
-
 import scala.concurrent.Future
 import scala.util.parsing.input.Position
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.matching.Regex
 
 package object oql {
 
@@ -17,19 +17,21 @@ package object oql {
 
   def quote(s: String): String =
     s"'${specialRegex.replaceAllIn(s, _.group(1) match {
-      case "'"  => """\'"""
-      case "\\" => """\\"""
-      case "\r" => """\r"""
-      case "\n" => """\n"""
+      case "'"  => """\\'"""
+      case "\\" => """\\\\"""
+      case "\r" => """\\r"""
+      case "\n" => """\\n"""
     })}'"
 
   def template(s: String, vars: Map[String, String]): String =
-    varRegex.replaceAllIn(s,
-                          m =>
-                            vars get m.group(1) match {
-                              case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
-                              case Some(value) => quote(value)
-                          })
+    varRegex.replaceAllIn(
+      s,
+      m =>
+        vars get m.group(1) match {
+          case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
+          case Some(value) => Regex.quoteReplacement(quote(value))
+      }
+    )
 
   def toMap(obj: js.Object): Map[String, String] =
     if (obj eq null) null else obj.asInstanceOf[js.Dictionary[String]].toMap

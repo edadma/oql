@@ -47,7 +47,7 @@ object Main extends App {
   oql
 //    .json("t")
 //    .json("rep { name country.name }")
-    .json("planet [name = 'Qo\\'noS']")
+    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
 
 //  val conn = employeesDB
 //  val oql = employeesER
