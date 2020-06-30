@@ -3,7 +3,7 @@ package com.vinctus.oql
 import scala.scalajs.js
 import js.annotation.JSExport
 import js.JSConverters._
-import js.JSON
+import js.{JSON, |}
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,7 +51,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     override def query(q: String): QueryBuilder = QueryBuilder.this
 
     @JSExport
-    override def select(s: String): QueryBuilder = QueryBuilder.this
+    override def select(s: String, parameters: js.Any): QueryBuilder = QueryBuilder.this
   }
 
   @JSExport("cond")
@@ -93,8 +93,8 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   def query(query: String): QueryBuilder = new QueryBuilder(oql, OQLParser.parseQuery(query))
 
   @JSExport
-  def select(s: String): QueryBuilder = {
-    val sel = OQLParser.parseSelect(s)
+  def select(s: String, parameters: js.Any): QueryBuilder = {
+    val sel = OQLParser.parseSelect(template(s, toMap(parameters)))
 
     new QueryBuilder(
       oql,

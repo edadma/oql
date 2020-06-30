@@ -18,7 +18,7 @@ export class QueryBuilder {
 
   query(oql: string): QueryBuilder
 
-  select(oql: string): QueryBuilder
+  select(oql: string, parameters?: any): QueryBuilder
 
   order(attribute: string, sorting: string): QueryBuilder
 
@@ -42,9 +42,9 @@ export class OQL {
 
   queryBuilder(): QueryBuilder
 
-  queryOne(sql: string): Promise<any | undefined>
+  queryOne(oql: string, parameters?: any): Promise<any | undefined>
 
-  queryMany(sql: string): Promise<any[]>
+  queryMany(oql: string, parameters?: any): Promise<any[]>
 
   findOne(resource: string, id: any): Promise<any | undefined>
 

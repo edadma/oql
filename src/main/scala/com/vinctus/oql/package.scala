@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import scala.scalajs.js
 import js.JSConverters._
-import scala.scalajs.js.JSON
+import scala.scalajs.js.{JSON, |}
 import scala.concurrent.Future
 import scala.util.parsing.input.Position
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,7 +33,7 @@ package object oql {
       }
     )
 
-  def toMap(obj: js.Object): Map[String, String] =
+  def toMap(obj: js.Any): Map[String, String] =
     if (obj eq null) null else obj.asInstanceOf[js.Dictionary[String]].toMap
 
   def render(a: Any): String =
