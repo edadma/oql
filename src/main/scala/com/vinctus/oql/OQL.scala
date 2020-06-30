@@ -31,16 +31,20 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def jsQueryOne(oql: String, parameters: js.Object): js.Promise[js.Any] =
     toPromiseOne(queryOne(oql, toMap(parameters)))
 
+  def jsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromise(queryOne(q))
+
   @JSExport("queryMany")
   def jsQueryMany(oql: String, parameters: js.Object): js.Promise[js.Any] = toPromise(queryMany(oql, toMap(parameters)))
+
+  def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
 
   def json(oql: String): Future[String] = toJSON(queryMany(oql))
 
   def queryOne(oql: String, parameters: Map[String, String] = null): Future[Option[ListMap[String, Any]]] =
     queryOne(OQLParser.parseQuery(template(oql, parameters)))
 
-  def queryOne(oql: QueryOQL): Future[Option[ListMap[String, Any]]] =
-    queryMany(oql) map {
+  def queryOne(q: QueryOQL): Future[Option[ListMap[String, Any]]] =
+    queryMany(q) map {
       case Nil       => None
       case List(row) => Some(row)
       case _         => sys.error("queryOne: more than one was found")
