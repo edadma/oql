@@ -38,7 +38,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
 
-  def json(oql: String): Future[String] = toJSON(queryMany(oql))
+  def json(oql: String, parameters: Map[String, String] = null): Future[String] = toJSON(queryMany(oql, parameters))
 
   def queryOne(oql: String, parameters: Map[String, String] = null): Future[Option[ListMap[String, Any]]] =
     queryOne(OQLParser.parseQuery(template(oql, parameters)))

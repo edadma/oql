@@ -19,8 +19,8 @@ object Main extends App {
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
 
-  val conn = new RDBConnection(readFile("examples/un.tab"))
-  val oql = new OQL(conn, readFile("examples/un.erd"))
+  val conn = new RDBConnection(readFile("examples/star_trek.tab"))
+  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
 
 //  oql.country
 //    .insert(ListMap("name" -> "HappyLand"))
@@ -46,7 +46,8 @@ object Main extends App {
 
   oql
 //    .json("t")
-    .json("rep { name country.name }")
+//    .json("rep { name country.name }")
+    .json("planet [name = 'Qo\\'noS']")
 
 //  val conn = employeesDB
 //  val oql = employeesER
