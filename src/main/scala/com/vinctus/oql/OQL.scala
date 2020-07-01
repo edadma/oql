@@ -29,13 +29,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
   @JSExport("queryOne")
-  def jsQueryOne(oql: String, parameters: js.Any): js.Promise[js.Any] =
+  def jsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
     toPromiseOne(queryOne(oql, toMap(parameters)))
 
   def jsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromise(queryOne(q))
 
   @JSExport("queryMany")
-  def jsQueryMany(oql: String, parameters: js.Any): js.Promise[js.Any] =
+  def jsQueryMany(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
     toPromise(queryMany(oql, toMap(parameters)))
 
   def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))

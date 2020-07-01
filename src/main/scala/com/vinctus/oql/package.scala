@@ -17,24 +17,27 @@ package object oql {
 
   def quote(s: String): String =
     s"'${specialRegex.replaceAllIn(s, _.group(1) match {
-      case "'"  => """\\'"""
+      case "'"  => "''"
       case "\\" => """\\\\"""
       case "\r" => """\\r"""
       case "\n" => """\\n"""
     })}'"
 
   def template(s: String, vars: Map[String, String]): String =
-    varRegex.replaceAllIn(
-      s,
-      m =>
-        vars get m.group(1) match {
-          case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
-          case Some(value) => Regex.quoteReplacement(quote(value))
-      }
-    )
+    if (vars eq null)
+      s
+    else
+      varRegex.replaceAllIn(
+        s,
+        m =>
+          vars get m.group(1) match {
+            case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
+            case Some(value) => Regex.quoteReplacement(quote(value))
+        }
+      )
 
   def toMap(obj: js.Any): Map[String, String] =
-    if (obj eq null) null else obj.asInstanceOf[js.Dictionary[String]].toMap
+    if (obj == js.undefined) null else obj.asInstanceOf[js.Dictionary[String]].toMap
 
   def render(a: Any): String =
     a match {

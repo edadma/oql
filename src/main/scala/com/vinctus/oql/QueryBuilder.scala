@@ -51,7 +51,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     override def query(q: String): QueryBuilder = QueryBuilder.this
 
     @JSExport
-    override def select(s: String, parameters: js.Any): QueryBuilder = QueryBuilder.this
+    override def select(s: String, parameters: js.Any = js.undefined): QueryBuilder = QueryBuilder.this
   }
 
   @JSExport("cond")
@@ -93,7 +93,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   def query(query: String): QueryBuilder = new QueryBuilder(oql, OQLParser.parseQuery(query))
 
   @JSExport
-  def select(s: String, parameters: js.Any): QueryBuilder = {
+  def select(s: String, parameters: js.Any = js.undefined): QueryBuilder = {
     val sel = OQLParser.parseSelect(template(s, toMap(parameters)))
 
     new QueryBuilder(

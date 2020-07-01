@@ -51,8 +51,8 @@ class OQLParser extends RegexParsers {
 
   def string: Parser[StringLiteralOQL] =
     positioned(
-      (("'" ~> """(?:[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
-        ("\"" ~> """(?:[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLiteralOQL)
+      (("'" ~> """(?:''|[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
+        ("\"" ~> """(?:""|[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLiteralOQL)
 
   def ident: Parser[Ident] =
     positioned("""[a-zA-Z_$][a-zA-Z0-9_$]*""".r ^^ Ident)
