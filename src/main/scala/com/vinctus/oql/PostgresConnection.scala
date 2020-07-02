@@ -17,7 +17,7 @@ class PostgresConnection(host: String, port: Double, database: String, user: Str
       .literal(host = host, port = port, database = database, user = user, password = password, ssl = ssl, max = 2)
       .asInstanceOf[PoolConfig])
 
-  def query(sql: String): ResultSet =
+  def command(sql: String): ResultSet =
     new PostgresArrayResultSet(
       pool.connect.toFuture
         .flatMap(

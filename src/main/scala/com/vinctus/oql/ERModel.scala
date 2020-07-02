@@ -6,7 +6,7 @@ import scala.util.parsing.input.Position
 
 class ERModel(defn: String) {
 
-  private val entities: Map[String, Entity] = {
+  val entities: Map[String, Entity] = {
     val erDefinition = ERDParser.parseDefinition(defn)
     val entityMap = new mutable.HashMap[String, Entity]
 

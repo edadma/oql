@@ -74,8 +74,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"  RETURNING $pk\n"
     }
 
+    print(command.toString)
+
     // execute insert command (to get a future)
-    oql.conn.query(command.toString).rowSet map (row =>
+    oql.conn.command(command.toString).rows map (row =>
       entity.pk match {
         case None => obj
         case Some(pk) =>

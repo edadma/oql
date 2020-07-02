@@ -1,6 +1,7 @@
 package com.vinctus.oql
 
 import scala.scalajs.js
+import js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
 import scala.collection.immutable.ListMap
 import scala.collection.mutable.ListBuffer
@@ -13,6 +14,45 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private val model = new ERModel(erd)
+
+  @JSExport("create")
+  def jsCreate(): js.Promise[Unit] = create.toJSPromise
+
+  def create: Future[Unit] = {
+    def typ2db(typ: String) =
+      typ match {
+        case "text"    => "TEXT"
+        case "integer" => "INTEGER"
+        case "bigint"  => "BIGINT"
+      }
+
+    def pktyp2db(typ: String) =
+      typ match {
+        case "text"    => "TEXT"
+        case "integer" => "SERIAL"
+        case "bigint"  => "BIGSERIAL"
+      }
+
+    val futures =
+      model.entities map {
+        case (_, entity) =>
+          val buf = new StringBuilder
+
+          buf append s"CREATE TABLE ${entity.table} (\n"
+          buf append (entity.attributes map {
+            case (name, PrimitiveEntityAttribute(column, typ, required)) =>
+              if (entity.pk.isDefined && name == entity.pk.get)
+                s"  $column ${pktyp2db(typ)} PRIMARY KEY"
+              else
+                s"  $column ${typ2db(typ)}${if (required) "" else " NOT NULL"}"
+
+          } mkString ("", ",\n", ");"))
+
+          conn.command(buf.toString).rows map (_ => {})
+      }
+
+    Future.sequence(futures) map (_ => {})
+  }
 
   @JSExport
   def entity(resource: String): Resource =
@@ -166,8 +206,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       .toMap
 
     conn
-      .query(sql.toString)
-      .rowSet
+      .command(sql.toString)
+      .rows
       .flatMap(result => {
         val list = result.toList
         val futurebuf = new ListBuffer[Future[List[ListMap[String, Any]]]]

@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 abstract class ResultSet {
-  def rowSet: Future[Iterator[ResultRow]]
+  def rows: Future[Iterator[ResultRow]]
 }
 
 abstract class ResultRow {
@@ -15,7 +15,7 @@ abstract class ResultRow {
 }
 
 class PostgresArrayResultSet(promise: js.Promise[QueryArrayResult[js.Array[js.Any]]]) extends ResultSet {
-  def rowSet =
+  def rows =
     promise.toFuture.map(result => result.rows.iterator map (new JSArrayResultRow(_)))
 }
 
@@ -24,7 +24,7 @@ class JSArrayResultRow(row: js.Array[js.Any]) extends ResultRow {
 }
 
 class BasicResultSet(rows: Iterator[IndexedSeq[Any]]) extends ResultSet {
-  def rowSet = Future { rows map (new BasicResultRow(_)) }
+  def rows = Future { rows map (new BasicResultRow(_)) }
 }
 
 class BasicResultRow(row: IndexedSeq[Any]) extends ResultRow {
