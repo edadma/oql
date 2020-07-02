@@ -25,27 +25,31 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("examples/star_trek.tab"))
 //  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
 
-  val conn = new RDBConnection(
-    """
-      |country
-      | id: integer, pk  name: text
-      |
-      |rep
-      | id: integer, pk  name: text  country: integer, fk, country, id
-      |""".stripMargin
-  )
+  val conn = new RDBConnection(null)
+//    """
+//      |country
+//      | id: integer, pk  name: text
+//      |
+//      |rep
+//      | id: integer, pk  name: text  country: integer, fk, country, id
+//      |""".stripMargin
+//  )
   //(readFile("examples/un.tab"))
 
   val oql = new OQL(conn, readFile("examples/un.erd"))
 
-  oql.country
-    .insert(ListMap("name" -> "HappyLand"))
-    .onComplete {
-      case Failure(exception) => throw exception
-      case Success(value) =>
-        println(value)
-        conn.close()
-    }
+  oql.create.onComplete {
+    case Failure(exception) => throw exception
+    case Success(_) =>
+      oql.country
+        .insert(ListMap("name" -> "HappyLand"))
+        .onComplete {
+          case Failure(exception) => throw exception
+          case Success(value) =>
+            println(value)
+            conn.close()
+        }
+  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")

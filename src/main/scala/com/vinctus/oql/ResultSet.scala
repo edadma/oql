@@ -23,8 +23,8 @@ class JSArrayResultRow(row: js.Array[js.Any]) extends ResultRow {
   def apply(idx: Int) = row(idx)
 }
 
-class BasicResultSet(rows: Iterator[IndexedSeq[Any]]) extends ResultSet {
-  def rows = Future { rows map (new BasicResultRow(_)) }
+class BasicResultSet(data: Iterator[IndexedSeq[Any]]) extends ResultSet {
+  def rows = Future { data map (new BasicResultRow(_)) }
 }
 
 class BasicResultRow(row: IndexedSeq[Any]) extends ResultRow {

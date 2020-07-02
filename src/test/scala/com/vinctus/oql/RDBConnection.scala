@@ -5,7 +5,11 @@ import xyz.hyperreal.rdb_sjs.{CreateResult, InsertResult, RelationResult}
 
 class RDBConnection(data: String) extends Connection {
 
-  private val client = new rdb_sjs.Connection { load(data, doubleSpaces = true) }
+  private val client =
+    new rdb_sjs.Connection {
+      if (data ne null)
+        load(data, doubleSpaces = true)
+    }
 
   def command(sql: String): ResultSet =
     new BasicResultSet(client.executeSQLStatement(sql) match {

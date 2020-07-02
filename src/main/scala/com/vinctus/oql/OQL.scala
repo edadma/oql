@@ -45,8 +45,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 s"  $column ${pktyp2db(typ)} PRIMARY KEY"
               else
                 s"  $column ${typ2db(typ)}${if (required) "" else " NOT NULL"}"
-
-          } mkString ("", ",\n", ");"))
+            case (name, ObjectEntityAttribute(column, typ, entity, required)) =>
+              s"  $column ${typ2db(typ)} REFERENCES ${model.entities(typ).table}${if (required) "" else " NOT NULL"}"
+            case _ => ""
+          } mkString ",\n")
+          buf append ");"
 
           conn.command(buf.toString).rows map (_ => {})
       }
