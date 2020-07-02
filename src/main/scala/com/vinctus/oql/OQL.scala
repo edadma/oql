@@ -8,7 +8,6 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.|
 
 @JSExportTopLevel("OQL")
 class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
