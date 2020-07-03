@@ -76,17 +76,18 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"  RETURNING $pk\n"
     }
 
-    print(command.toString)
+    //print(command.toString)
 
     // execute insert command (to get a future)
-    oql.conn.command(command.toString).rows map (row =>
+    oql.conn.command(command.toString).rows map (row => {
       entity.pk match {
         case None => obj
         case Some(pk) =>
           val res = obj + (pk -> row.next().apply(0))
 
-          attrs map { case (k, _) => k -> res(k) } to ListMap
-      })
+          attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
+      }
+    })
   }
 
 }

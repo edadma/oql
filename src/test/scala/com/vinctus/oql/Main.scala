@@ -30,13 +30,16 @@ object Main extends App {
 
   for {
     _ <- oql.create
-    _ <- oql.rep.insert(Map("name" -> "rep1")) //, "country" -> Map("name" -> "asdf")))
-//    _ <- oql.rep.insert(Map("name" -> "rep2")) //, "country" -> Map("name" -> "zxcv")))
-//    _ <- oql.country.insert(Map("name" -> "asdf"))
-//    _ <- oql.country.insert(Map("name" -> "zxcv"))
-    country <- oql.json("country")
+    asdf <- oql.country.insert(Map("name" -> "asdf"))
+    _ <- oql.rep.insert(
+      Map("name" -> "rep1", "country" -> ListMap("id" -> asdf.asInstanceOf[ListMap[String, Any]]("id"))))
+    //    _ <- oql.rep.insert(Map("name" -> "rep2")) //, "country" -> Map("name" -> "zxcv")))
+    //    _ <- oql.country.insert(Map("name" -> "asdf"))
+    //    _ <- oql.country.insert(Map("name" -> "zxcv"))
+    result1 <- oql.json("country {* rep.name}")
+    result2 <- oql.json("rep")
   } {
-    println(country)
+    println(result1, result2)
     conn.close()
   }
 
