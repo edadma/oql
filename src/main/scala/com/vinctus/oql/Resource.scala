@@ -74,7 +74,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"  RETURNING $pk\n"
     }
 
-    print(command.toString)
+    //print(command.toString)
 
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row =>

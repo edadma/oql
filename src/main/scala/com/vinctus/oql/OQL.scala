@@ -39,22 +39,25 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           val buf = new StringBuilder
 
           buf append s"CREATE TABLE ${entity.table} (\n"
-          buf append (entity.attributes map {
+          buf append (entity.attributes flatMap {
             case (name, PrimitiveEntityAttribute(column, typ, required)) =>
-              if (entity.pk.isDefined && name == entity.pk.get)
-                s"  $column ${pktyp2db(typ)} PRIMARY KEY"
-              else
-                s"  $column ${typ2db(typ)}${if (required) "" else " NOT NULL"}"
-            case (name, ObjectEntityAttribute(column, typ, entity, required)) =>
-              s"  $column ${typ2db(typ)} REFERENCES ${model.entities(typ).table}${if (required) "" else " NOT NULL"}"
-            case _ => ""
+              List(
+                if (entity.pk.isDefined && name == entity.pk.get)
+                  s"  $column ${pktyp2db(typ)} PRIMARY KEY"
+                else
+                  s"  $column ${typ2db(typ)}${if (required) " NOT NULL" else ""}")
+            case (_, ObjectEntityAttribute(column, typ, entity, required)) =>
+              List(
+                s"  $column ${typ2db(model.entities(typ).attributes(model.entities(typ).pk.get).typ)} REFERENCES ${entity.table}${if (required) " NOT NULL" else ""}")
+            case _ => Nil
           } mkString ",\n")
-          buf append ");"
+          buf append ")"
 
+          //println(buf.toString)
           conn.command(buf.toString).rows map (_ => {})
       }
 
-    Future.sequence(futures) map (_ => {})
+    Future sequence futures map (_ => {})
   }
 
   @JSExport

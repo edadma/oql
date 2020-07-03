@@ -15,9 +15,7 @@ class RDBConnection(data: String) extends Connection {
     new BasicResultSet(client.executeSQLStatement(sql) match {
       case CreateResult(_)          => Iterator()
       case RelationResult(relation) => relation.iterator
-      case InsertResult(auto, _) =>
-        println(auto)
-        Iterator(auto.head.values.toIndexedSeq)
+      case InsertResult(auto, _)    => Iterator(auto.head.values.toIndexedSeq)
     })
 
   def close(): Unit = {}
