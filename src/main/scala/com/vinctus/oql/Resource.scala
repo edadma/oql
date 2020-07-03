@@ -41,16 +41,16 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // get sub-map of all column attributes that are required
     val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
     val attrsRequired =
-      attrsNoPK
-        .filter {
-          case (_, attr: EntityColumnAttribute) => attr.required
-          case _                                => false
-        }
-        .asInstanceOf[ListMap[String, EntityColumnAttribute]]
+      attrsNoPK.filter {
+        case (_, attr: EntityColumnAttribute) => attr.required
+        case _                                => false
+      } keySet
 
-    // check if object contains all necessary column attribute properties
-    if (!attrsRequired.keySet.subsetOf(obj.keySet))
-      sys.error(s"missing properties: ${attrsRequired.keySet.diff(obj.keySet) map (p => s"'$p'") mkString ", "}")
+//        .asInstanceOf[ListMap[String, EntityColumnAttribute]]
+
+    // check if object contains all required column attribute properties
+    if (!attrsRequired.subsetOf(obj.keySet))
+      sys.error(s"missing properties: ${attrsRequired.diff(obj.keySet) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
     // build list of values to insert
@@ -62,6 +62,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             case None     => sys.error(s"entity '$typ' has no declared primary key attribute")
             case Some(pk) => render(obj(k).asInstanceOf[ListMap[String, Any]](pk))
           }
+        case (k, _) => if (attrsRequired(k)) sys.error(s"attribute '$k' is required")
       }
 
     // build insert command
@@ -74,7 +75,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"  RETURNING $pk\n"
     }
 
-    //print(command.toString)
+    print(command.toString)
 
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row =>

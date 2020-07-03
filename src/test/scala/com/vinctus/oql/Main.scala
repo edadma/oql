@@ -30,8 +30,8 @@ object Main extends App {
 
   for {
     _ <- oql.create
-    _ <- oql.country.insert(ListMap("name" -> "asdf"))
-    _ <- oql.country.insert(ListMap("name" -> "zxcv"))
+    _ <- oql.rep.insert(ListMap("name" -> "rep1")) //, "country" -> ListMap("name" -> "asdf")))
+    _ <- oql.rep.insert(ListMap("name" -> "rep2")) //, "country" -> ListMap("name" -> "zxcv")))
     country <- oql.json("country")
   } {
     println(country)
