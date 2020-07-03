@@ -54,19 +54,20 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     val command = new StringBuilder
     // build list of values to insert
-    val values =
-      attrsNoPK map {
-        case (k, _: PrimitiveEntityAttribute) if obj contains k => render(obj(k))
+    val pairs =
+      attrsNoPK flatMap {
+        case (k, _: PrimitiveEntityAttribute) if obj contains k => List(k -> render(obj(k)))
         case (k, ObjectEntityAttribute(_, typ, entity, _)) if obj contains k =>
           entity.pk match {
             case None     => sys.error(s"entity '$typ' has no declared primary key attribute")
-            case Some(pk) => render(obj(k).asInstanceOf[ListMap[String, Any]](pk))
+            case Some(pk) => List(k -> render(obj(k).asInstanceOf[ListMap[String, Any]](pk)))
           }
-        case (k, _) => if (attrsRequired(k)) sys.error(s"attribute '$k' is required")
+        case (k, _) => if (attrsRequired(k)) sys.error(s"attribute '$k' is required") else Nil
       }
+    val (keys, values) = pairs.unzip
 
     // build insert command
-    command append s"INSERT INTO ${entity.table} (${attrsNoPK.values map (_.column) mkString ", "}) VALUES\n"
+    command append s"INSERT INTO ${entity.table} (${keys mkString ", "}) VALUES\n"
     command append s"  (${values mkString ", "})\n"
 
     entity.pk match {
