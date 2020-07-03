@@ -26,29 +26,16 @@ object Main extends App {
 //  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
 
   val conn = new RDBConnection(null)
-//    """
-//      |country
-//      | id: integer, pk  name: text
-//      |
-//      |rep
-//      | id: integer, pk  name: text  country: integer, fk, country, id
-//      |""".stripMargin
-//  )
-  //(readFile("examples/un.tab"))
-
   val oql = new OQL(conn, readFile("examples/un.erd"))
 
-  oql.create.onComplete {
-    case Failure(exception) => throw exception
-    case Success(_) =>
-      oql.country
-        .insert(ListMap("name" -> "HappyLand"))
-        .onComplete {
-          case Failure(exception) => throw exception
-          case Success(value) =>
-            println(value)
-            conn.close()
-        }
+  for {
+    _ <- oql.create
+    _ <- oql.country.insert(ListMap("name" -> "asdf"))
+    _ <- oql.country.insert(ListMap("name" -> "zxcv"))
+    country <- oql.json("country")
+  } {
+    println(country)
+    conn.close()
   }
 
 //  conn
