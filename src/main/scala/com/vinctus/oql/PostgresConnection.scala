@@ -19,13 +19,15 @@ class PostgresConnection(host: String, port: Double, database: String, user: Str
 
   def command(sql: String): ResultSet =
     new PostgresArrayResultSet(
-      pool.connect.toFuture
+      pool
+        .connect()
+        .toFuture
         .flatMap(
           (client: PoolClient) =>
             client
               .query[js.Array[js.Any], js.Any](QueryArrayConfig[js.Any](pgStrings.array, sql))
               .toFuture
-              .andThen(_ => client.release))
+              .andThen(_ => client.release()))
         .toJSPromise
     )
 
