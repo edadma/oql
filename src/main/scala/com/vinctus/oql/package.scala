@@ -23,7 +23,7 @@ package object oql {
       case "\n" => """\\n"""
     })}'"
 
-  def template(s: String, vars: Map[String, String]): String =
+  def template(s: String, vars: Map[String, Any]): String =
     if (vars eq null)
       s
     else
@@ -32,11 +32,11 @@ package object oql {
         m =>
           vars get m.group(1) match {
             case None        => sys.error(s"template: parameter '${m.group(1)}' not found")
-            case Some(value) => Regex.quoteReplacement(quote(value))
+            case Some(value) => Regex.quoteReplacement(quote(String.valueOf(value)))
         }
       )
 
-  def toMap(obj: js.Any): Map[String, String] =
+  def toMap(obj: js.Any): Map[String, Any] =
     if (obj == js.undefined) null else obj.asInstanceOf[js.Dictionary[String]].toMap
 
   def render(a: Any): String =
