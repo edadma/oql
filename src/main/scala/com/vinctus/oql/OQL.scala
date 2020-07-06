@@ -139,17 +139,17 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     }
   }
 
-  private def executeQuery(resource: String,
-                           select: Option[ExpressionOQL],
-                           group: Option[List[VariableExpressionOQL]],
-                           order: Option[List[(ExpressionOQL, String)]],
-                           limit: Option[Int],
-                           offset: Option[Int],
-                           entityType: Option[String],
-                           entity: Entity,
-                           projectbuf: ListBuffer[(Option[String], String, String)],
-                           joinbuf: ListBuffer[(String, String, String, String, String)],
-                           graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
+  private def writeQuery(resource: String,
+                         select: Option[ExpressionOQL],
+                         group: Option[List[VariableExpressionOQL]],
+                         order: Option[List[(ExpressionOQL, String)]],
+                         limit: Option[Int],
+                         offset: Option[Int],
+                         entityType: Option[String],
+                         entity: Entity,
+                         projectbuf: ListBuffer[(Option[String], String, String)],
+                         joinbuf: ListBuffer[(String, String, String, String, String)],
+                         graph: Seq[ProjectionNode]): String = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f)    => s"$e.$f"
@@ -201,6 +201,22 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (None, Some(o))    => sql append s"  OFFSET $o"
     }
 
+    sql.toString
+  }
+
+  private def executeQuery(resource: String,
+                           select: Option[ExpressionOQL],
+                           group: Option[List[VariableExpressionOQL]],
+                           order: Option[List[(ExpressionOQL, String)]],
+                           limit: Option[Int],
+                           offset: Option[Int],
+                           entityType: Option[String],
+                           entity: Entity,
+                           projectbuf: ListBuffer[(Option[String], String, String)],
+                           joinbuf: ListBuffer[(String, String, String, String, String)],
+                           graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
+    val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
+
     //print(sql)
 
     val projectmap = projectbuf
@@ -212,7 +228,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       .toMap
 
     conn
-      .command(sql.toString)
+      .command(sql)
       .rows
       .flatMap(result => {
         val list = result.toList

@@ -131,6 +131,9 @@ class OQLParser extends RegexParsers {
       applyExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ expressions ^^ {
         case e ~ o ~ l => InExpressionOQL(e, o, l)
       } |
+      applyExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ query ^^ {
+        case e ~ o ~ q => InSubqueryExpressionOQL(e, o, q)
+      } |
       applyExpression
 
   def expressions: Parser[List[ExpressionOQL]] = "(" ~> rep1sep(expression, ",") <~ ")"
