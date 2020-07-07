@@ -1,6 +1,6 @@
 package com.vinctus.oql
 
-import typings.pg.mod.{Pool, PoolConfig, PoolClient, Client, ClientConfig, QueryArrayConfig}
+import typings.pg.mod.{Pool, PoolConfig, PoolClient, QueryArrayConfig}
 import typings.pg.pgStrings
 
 import scala.scalajs.js

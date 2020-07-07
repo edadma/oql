@@ -218,7 +218,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
-    print(sql)
+    //print(sql)
 
     val projectmap = projectbuf
       .map {
@@ -327,7 +327,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
 
-    println(project)
     entity.attributes get attr.name match {
       case None =>
         problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
@@ -369,14 +368,27 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                   None,
                   None
                 ))),
-            group.isEmpty,
+            fk = false,
             projectbuf,
             joinbuf,
             List(junction.table),
             Nil
           )
 
-        writeQuery(junctionType, select, group, order, limit, offset, None, junction, projectbuf, joinbuf, graph)
+        val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
+        writeQuery(
+          junctionType,
+          Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+          group,
+          order,
+          limit,
+          offset,
+          None,
+          junction,
+          projectbuf,
+          joinbuf,
+          graph
+        )
     }
   }
 

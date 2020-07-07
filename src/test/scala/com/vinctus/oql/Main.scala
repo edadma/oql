@@ -4,9 +4,8 @@ import scala.scalajs.js
 import js.Dynamic.{global => g}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
-import Testing._
 
-import scala.collection.immutable.ListMap
+import typings.pg.mod.types.setTypeParser
 
 object Main extends App {
 
@@ -15,6 +14,8 @@ object Main extends App {
   private def readFile(name: String) = {
     fs.readFileSync(name).toString
   }
+
+  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
   val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
   val oql = new OQL(conn, readFile("sc.erd"))
@@ -60,7 +61,7 @@ object Main extends App {
 //    .json("t")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
-    .json("user {user_type firstName} ['ROLE_ADMIN' IN (roles {roleName})]")
+    .json("user {firstName} ['ROLE_ADMIN' IN (roles {roleName})]")
 
 //  val conn = employeesDB
 //  val oql = employeesER
