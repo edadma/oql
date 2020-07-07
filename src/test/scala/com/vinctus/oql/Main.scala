@@ -16,8 +16,8 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, "entity tenant (tenants) {*id: bigint domain: text}")
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
   //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -25,23 +25,23 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("examples/star_trek.tab"))
 //  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
 
-  val conn = new RDBConnection(null)
-  val oql = new OQL(conn, readFile("examples/un.erd"))
-
-  for {
-    _ <- oql.create
-    asdf <- oql.country.insert(Map("name" -> "asdf"))
-    _ <- oql.rep.insert(
-      Map("name" -> "rep1", "country" -> ListMap("id" -> asdf.asInstanceOf[ListMap[String, Any]]("id"))))
-    //    _ <- oql.rep.insert(Map("name" -> "rep2")) //, "country" -> Map("name" -> "zxcv")))
-    //    _ <- oql.country.insert(Map("name" -> "asdf"))
-    //    _ <- oql.country.insert(Map("name" -> "zxcv"))
-    result1 <- oql.json("country {* rep.name}")
-    result2 <- oql.json("rep")
-  } {
-    println(result1, result2)
-    conn.close()
-  }
+//  val conn = new RDBConnection(null)
+//  val oql = new OQL(conn, readFile("examples/un.erd"))
+//
+//  for {
+//    _ <- oql.create
+//    asdf <- oql.country.insert(Map("name" -> "asdf"))
+//    _ <- oql.rep.insert(
+//      Map("name" -> "rep1", "country" -> ListMap("id" -> asdf.asInstanceOf[ListMap[String, Any]]("id"))))
+//    //    _ <- oql.rep.insert(Map("name" -> "rep2")) //, "country" -> Map("name" -> "zxcv")))
+//    //    _ <- oql.country.insert(Map("name" -> "asdf"))
+//    //    _ <- oql.country.insert(Map("name" -> "zxcv"))
+//    result1 <- oql.json("country {* rep.name}")
+//    result2 <- oql.json("rep")
+//  } {
+//    println(result1, result2)
+//    conn.close()
+//  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
@@ -56,11 +56,11 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("examples/un.tab"))
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
-//  oql
+  oql
 //    .json("t")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
-//    .json("tenant")
+    .json("user {user_type firstName roles} ['ROLE_ADMIN' IN (roles {name})]")
 
 //  val conn = employeesDB
 //  val oql = employeesER
@@ -68,7 +68,7 @@ object Main extends App {
 //  oql
 //    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
 
-  //  val conn = new PostgresConnection("postgres", "docker")
+    //  val conn = new PostgresConnection("postgres", "docker")
 
 //  val conn = ordersDB
 //  val oql = ordersER
@@ -89,12 +89,11 @@ object Main extends App {
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']")
 //    .json("enrollment { ^student { * classes } } [&class = 9]")
-
-//    .onComplete {
-//      case Failure(exception) => throw exception
-//      case Success(value) =>
-//        println(value)
-//        conn.close()
-//    }
+    .onComplete {
+      case Failure(exception) => throw exception
+      case Success(value) =>
+        println(value)
+        conn.close()
+    }
 
 }

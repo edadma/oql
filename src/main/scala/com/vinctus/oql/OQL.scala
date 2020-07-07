@@ -276,6 +276,19 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           expression(expr)
           buf ++= s" $op "
           expressions(list)
+        case InSubqueryExpressionOQL(expr, op, subquery) =>
+          expression(expr)
+
+          val QueryOQL(resource, project, select, group, order, limit, offset) = subquery
+          val entity = model.get(resource.name, resource.pos)
+          val projectbuf = new ListBuffer[(Option[String], String, String)]
+          val joinbuf = new ListBuffer[(String, String, String, String, String)]
+          val graph =
+            branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
+          val sql =
+            writeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
+
+          buf ++= s" $op ($sql)"
         case BetweenExpressionOQL(expr, op, lower, upper) =>
           expression(expr)
           buf ++= s" $op "
