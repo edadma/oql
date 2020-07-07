@@ -105,7 +105,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
-    val graph = branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
+    val graph =
+      branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
 
     executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
   }
@@ -326,6 +327,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     val projectbuf = new ListBuffer[(Option[String], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
 
+    println(project)
     entity.attributes get attr.name match {
       case None =>
         problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
@@ -549,7 +551,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       }
     val table = attrlist mkString "$"
 
-    // add the primary key to projectbuf if an array type attribute is being projected
+    // add the primary key to projectbuf if an array type attribute is being projected and not a subquery
     if (attrs.exists {
           case (_, _, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute, _, _, _) => true
           case _                                                                                      => false
