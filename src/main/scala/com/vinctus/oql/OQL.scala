@@ -217,7 +217,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf
       .map {
@@ -276,19 +276,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           expression(expr)
           buf ++= s" $op "
           expressions(list)
-        case InSubqueryExpressionOQL(expr, op, subquery) =>
+        case InSubqueryExpressionOQL(expr, op, query) =>
           expression(expr)
-
-          val QueryOQL(resource, project, select, group, order, limit, offset) = subquery
-          val entity = model.get(resource.name, resource.pos)
-          val projectbuf = new ListBuffer[(Option[String], String, String)]
-          val joinbuf = new ListBuffer[(String, String, String, String, String)]
-          val graph =
-            branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
-          val sql =
-            writeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
-
-          buf ++= s" $op ($sql)"
+          buf ++= s" $op (${subquery(entityname, entity, query)})"
         case BetweenExpressionOQL(expr, op, lower, upper) =>
           expression(expr)
           buf ++= s" $op "
@@ -329,6 +319,45 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
     expression(expr)
     buf.toString
+  }
+
+  private def subquery(entityname: String, entity: Entity, query: QueryOQL) = {
+    val QueryOQL(attr, project, select, group, order, limit, offset) = query
+    val projectbuf = new ListBuffer[(Option[String], String, String)]
+    val joinbuf = new ListBuffer[(String, String, String, String, String)]
+
+    entity.attributes get attr.name match {
+      case None =>
+        problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+      case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
+        val ts = junction.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2
+              .asInstanceOf[ObjectEntityAttribute]
+              .entity == attrEntity)
+        val junctionAttr =
+          ts.length match {
+            case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
+            case 1 => ts.head._1
+            case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
+          }
+        val es = junction.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+        val column =
+          es.length match {
+            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+          }
+    }
+
+//    val graph =
+//      branches(attr.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
+
+//    writeQuery(attr.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
   }
 
   private def reference(
@@ -558,7 +587,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         val junctionAttr =
           ts.length match {
             case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
-            case 1 => ts.head._1 //_2.asInstanceOf[ObjectEntityAttribute].column
+            case 1 => ts.head._1
             case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
           }
         val es = junction.attributes.toList.filter(
