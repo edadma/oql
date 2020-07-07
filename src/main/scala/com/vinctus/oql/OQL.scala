@@ -352,12 +352,30 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
             case _ => problem(null, s"contains more than one attribute of type '$entityname'")
           }
+        val graph =
+          branches(
+            junctionType,
+            junction,
+            ProjectAttributesOQL(
+              List(
+                QueryOQL(
+                  Ident(junctionAttr),
+                  project,
+                  None,
+                  None,
+                  None,
+                  None,
+                  None
+                ))),
+            group.isEmpty,
+            projectbuf,
+            joinbuf,
+            List(junction.table),
+            Nil
+          )
+
+        writeQuery(junctionType, select, group, order, limit, offset, None, junction, projectbuf, joinbuf, graph)
     }
-
-//    val graph =
-//      branches(attr.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
-
-//    writeQuery(attr.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
   }
 
   private def reference(

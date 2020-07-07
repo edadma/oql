@@ -60,7 +60,7 @@ object Main extends App {
 //    .json("t")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
-    .json("user {user_type firstName roles} ['ROLE_ADMIN' IN (roles {name})]")
+    .json("user {user_type firstName roles} ['ROLE_ADMIN' IN (roles {roleName})]")
 
 //  val conn = employeesDB
 //  val oql = employeesER
