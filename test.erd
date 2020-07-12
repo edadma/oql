@@ -1,5 +1,4 @@
 entity t {
  *id: integer
-  a: text
-  b: integer
+  date: timestamp
 }

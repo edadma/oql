@@ -142,19 +142,26 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private def writeQuery(resource: String,
                          select: Option[ExpressionOQL],
-                         group: Option[List[VariableExpressionOQL]],
+                         group: Option[List[ExpressionOQL]],
                          order: Option[List[(ExpressionOQL, String)]],
                          limit: Option[Int],
                          offset: Option[Int],
                          entityType: Option[String],
                          entity: Entity,
-                         projectbuf: ListBuffer[(Option[String], String, String)],
+                         projectbuf: ListBuffer[(Option[List[String]], String, String)],
                          joinbuf: ListBuffer[(String, String, String, String, String)],
                          graph: Seq[ProjectionNode]): String = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
-      case (None, e, f)    => s"$e.$f"
-      case (Some(a), e, f) => s"$a($e.$f)"
+      case (None, e, f) => s"$e.$f"
+      case (Some(fs), e, f) =>
+        def call(fs: List[String]): String =
+          fs match {
+            case Nil    => s"$e.$f"
+            case h :: t => s"$h(${call(t)})"
+          }
+
+        call(fs)
     }
 
     sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
@@ -207,7 +214,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private def executeQuery(resource: String,
                            select: Option[ExpressionOQL],
-                           group: Option[List[VariableExpressionOQL]],
+                           group: Option[List[ExpressionOQL]],
                            order: Option[List[(ExpressionOQL, String)]],
                            limit: Option[Int],
                            offset: Option[Int],
@@ -532,14 +539,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 }
               case a @ AggregateAttributeOQL(agg, attr) =>
                 if (aggset(a))
-                  problem(agg.pos, "aggregate function duplicated")
+                  problem(agg.head.pos, "function application duplicated")
 
                 aggset += a
 
                 attrType(attr) match {
                   case typ: PrimitiveEntityAttribute =>
-                    List((Some(agg.name), attr.name, typ, ProjectAllOQL(), null, false))
-                  case _ => problem(agg.pos, s"can only apply an aggregate function to a primitive attribute")
+                    List((Some(agg map (_.name) mkString "_"), attr.name, typ, ProjectAllOQL(), null, false))
+                  case _ => problem(agg.last.pos, s"can only apply a function to a primitive attribute")
                 }
               case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
               case query @ QueryOQL(attr, project, None, None, None, None, None) =>

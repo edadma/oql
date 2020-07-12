@@ -8,13 +8,13 @@ abstract class ProjectExpressionOQL extends OQLAST
 case class ProjectAttributesOQL(attrs: Seq[ProjectExpressionOQL]) extends ProjectExpressionOQL
 case class ProjectAllOQL(pos: Position = null) extends ProjectExpressionOQL
 case class ReferenceAttributeOQL(attr: Ident) extends ProjectExpressionOQL
-case class AggregateAttributeOQL(agg: Ident, attr: Ident) extends ProjectExpressionOQL
+case class AggregateAttributeOQL(agg: List[Ident], attr: Ident) extends ProjectExpressionOQL
 case class NegativeAttribute(attr: Ident) extends ProjectExpressionOQL
 case class LiftedAttribute(attr: QueryOQL) extends ProjectExpressionOQL
 case class QueryOQL(source: Ident,
                     project: ProjectExpressionOQL,
                     select: Option[ExpressionOQL],
-                    group: Option[List[VariableExpressionOQL]],
+                    group: Option[List[ExpressionOQL]],
                     order: Option[List[(ExpressionOQL, String)]],
                     limit: Option[Int],
                     offset: Option[Int])

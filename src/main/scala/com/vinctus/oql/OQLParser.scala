@@ -1,5 +1,6 @@
 package com.vinctus.oql
 
+import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
@@ -84,11 +85,23 @@ class OQLParser extends RegexParsers {
       }
 
   def attributeProject: Parser[ProjectExpressionOQL] =
-    ident ~ "(" ~ identOrStar ~ ")" ^^ {
-      case a ~ _ ~ i ~ _ => AggregateAttributeOQL(a, i)
+    applyAttribute ^^ {
+      case (fs, id) => AggregateAttributeOQL(fs, id)
     } |
       "^" ~> query ^^ LiftedAttribute |
       query
+
+  def applyAttribute: Parser[(List[Ident], Ident)] =
+    ident ~ ("(" ~> (applyAttribute | identOrStar) <~ ")") ^^ { r =>
+      //@scala.annotation.tailrec
+      def result(p: Any): (List[Ident], Ident) =
+        p match {
+          case (f: Ident) ~ (a: Ident)                    => (List(f), a)
+          case (f: Ident) ~ ((fs: List[Ident], a: Ident)) => (f +: fs, a)
+        }
+
+      result(r)
+    }
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
@@ -174,7 +187,7 @@ class OQLParser extends RegexParsers {
     case e ~ _                  => (e, "DESC")
   }
 
-  def group: Parser[List[VariableExpressionOQL]] = "(" ~> variables <~ ")"
+  def group: Parser[List[ExpressionOQL]] = "(" ~> expressions <~ ")"
 
   def variables: Parser[List[VariableExpressionOQL]] = rep1sep(variable, ",")
 

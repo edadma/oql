@@ -2,10 +2,10 @@ CREATE DATABASE test;
 
 CREATE TABLE t (
   id SERIAL PRIMARY KEY,
-  a TEXT,
-  b INTEGER
+  date TIMESTAMP
 );
 
-INSERT INTO t (a, b) VALUES
-  ('asdf', 123)
-  ;
+INSERT INTO t (date) VALUES
+  ('2020-05-01 01:01:01'),
+  ('2020-05-01 01:01:02'),
+  ('2020-05-02 01:01:01');
