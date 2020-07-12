@@ -64,7 +64,7 @@ class OQLParser extends RegexParsers {
   def star: Parser[Ident] = positioned("*" ^^ Ident)
 
   def query: Parser[QueryOQL] =
-    ident ~ opt(project) ~ opt(select) ~ opt(group) ~ opt(order) ~ opt(restrict) ^^ {
+    ident ~ opt(project) ~ opt(select) ~ opt(expressions) ~ opt(order) ~ opt(restrict) ^^ {
       case e ~ p ~ s ~ g ~ o ~ r =>
         QueryOQL(e,
                  if (p isDefined) p.get else ProjectAllOQL(),
@@ -186,8 +186,6 @@ class OQLParser extends RegexParsers {
     case e ~ (Some("/") | None) => (e, "ASC")
     case e ~ _                  => (e, "DESC")
   }
-
-  def group: Parser[List[ExpressionOQL]] = "(" ~> expressions <~ ")"
 
   def variables: Parser[List[VariableExpressionOQL]] = rep1sep(variable, ",")
 

@@ -103,7 +103,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
-    val projectbuf = new ListBuffer[(Option[String], String, String)]
+    val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
     val graph =
       branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
@@ -220,17 +220,17 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            offset: Option[Int],
                            entityType: Option[String],
                            entity: Entity,
-                           projectbuf: ListBuffer[(Option[String], String, String)],
+                           projectbuf: ListBuffer[(Option[List[String]], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
-    //print(sql)
+    print(sql)
 
     val projectmap = projectbuf
       .map {
         case (None, t, f)    => (t, f)
-        case (Some(a), t, f) => (t, s"${a}_$f")
+        case (Some(a), t, f) => (t, s"${a mkString "_"}_$f")
       }
       .zipWithIndex
       .toMap
@@ -331,7 +331,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private def subquery(entityname: String, entity: Entity, query: QueryOQL) = {
     val QueryOQL(attr, project, select, group, order, limit, offset) = query
-    val projectbuf = new ListBuffer[(Option[String], String, String)]
+    val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
     val joinbuf = new ListBuffer[(String, String, String, String, String)]
 
     entity.attributes get attr.name match {
@@ -454,7 +454,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                        entity: Entity,
                        project: ProjectExpressionOQL,
                        fk: Boolean,
-                       projectbuf: ListBuffer[(Option[String], String, String)],
+                       projectbuf: ListBuffer[(Option[List[String]], String, String)],
                        joinbuf: ListBuffer[(String, String, String, String, String)],
                        attrlist: List[String],
                        circlist: List[(String, EntityAttribute)]): Seq[ProjectionNode] = {
@@ -545,7 +545,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
                 attrType(attr) match {
                   case typ: PrimitiveEntityAttribute =>
-                    List((Some(agg map (_.name) mkString "_"), attr.name, typ, ProjectAllOQL(), null, false))
+                    List((Some(agg map (_.name)), attr.name, typ, ProjectAllOQL(), null, false))
                   case _ => problem(agg.last.pos, s"can only apply a function to a primitive attribute")
                 }
               case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
@@ -581,15 +581,15 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (_, field, attr: LiteralEntityAttribute, _, _, _) => LiteralProjectionNode(field, attr.value)
       case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))
-        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
-                                agg.map(a => s"${a}_${attr.column}").getOrElse(attr.column),
+        PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
+                                agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
                                 table,
                                 field,
                                 attr)
       case (agg, field, attr: ObjectEntityAttribute, _, _, true) =>
         projectbuf += ((agg, table, attr.column))
-        PrimitiveProjectionNode(agg.map(a => s"${a}_$field").getOrElse(field),
-                                agg.map(a => s"${a}_${attr.column}").getOrElse(attr.column),
+        PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
+                                agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
                                 table,
                                 field,
                                 attr)
@@ -615,7 +615,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             project,
             query,
             _) =>
-        val projectbuf = new ListBuffer[(Option[String], String, String)]
+        val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val ts = junction.attributes.toList.filter(
           a =>
@@ -675,7 +675,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               query
           ))
       case (_, field, attr @ ObjectArrayEntityAttribute(entityType, attrEntity), project, query, _) =>
-        val projectbuf = new ListBuffer[(Option[String], String, String)]
+        val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val es = attrEntity.attributes.toList.filter(
           a =>
@@ -712,7 +712,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               query
           ))
       case (_, field, attr @ ObjectOneEntityAttribute(entityType, attrEntity, _), project, query, _) =>
-        val projectbuf = new ListBuffer[(Option[String], String, String)]
+        val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
         val es = attrEntity.attributes.toList.filter(
           a =>
@@ -905,22 +905,23 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       extends ProjectionNode
   private case class LiftedProjectionNode(fk: Option[(String, String)], branches: Seq[ProjectionNode])
       extends ProjectionNode
-  private case class EntityArrayJunctionProjectionNode(entityType: String,
-                                                       field: String,
-                                                       tabpk: String,
-                                                       colpk: String,
-                                                       subprojectbuf: ListBuffer[(Option[String], String, String)],
-                                                       subjoinbuf: ListBuffer[(String, String, String, String, String)],
-                                                       resource: String,
-                                                       column: String,
-                                                       entity: Entity,
-                                                       branches: Seq[ProjectionNode],
-                                                       query: QueryOQL)
+  private case class EntityArrayJunctionProjectionNode(
+      entityType: String,
+      field: String,
+      tabpk: String,
+      colpk: String,
+      subprojectbuf: ListBuffer[(Option[List[String]], String, String)],
+      subjoinbuf: ListBuffer[(String, String, String, String, String)],
+      resource: String,
+      column: String,
+      entity: Entity,
+      branches: Seq[ProjectionNode],
+      query: QueryOQL)
       extends ProjectionNode
   private case class EntityArrayProjectionNode(field: String,
                                                tabpk: String,
                                                colpk: String,
-                                               subprojectbuf: ListBuffer[(Option[String], String, String)],
+                                               subprojectbuf: ListBuffer[(Option[List[String]], String, String)],
                                                subjoinbuf: ListBuffer[(String, String, String, String, String)],
                                                resource: String,
                                                column: String,
@@ -931,7 +932,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   private case class EntityOneProjectionNode(field: String,
                                              tabpk: String,
                                              colpk: String,
-                                             subprojectbuf: ListBuffer[(Option[String], String, String)],
+                                             subprojectbuf: ListBuffer[(Option[List[String]], String, String)],
                                              subjoinbuf: ListBuffer[(String, String, String, String, String)],
                                              resource: String,
                                              column: String,
