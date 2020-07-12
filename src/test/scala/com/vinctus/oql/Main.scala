@@ -58,7 +58,7 @@ object Main extends App {
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
   oql
-    .json("t {date(date) count(date(date))} (date(date))")
+    .json("t {date(date) count(date(date))} (date(date)) <date(date)>")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
 //    .json("user {firstName} ['ROLE_ADMIN' IN (roles {roleName})]")

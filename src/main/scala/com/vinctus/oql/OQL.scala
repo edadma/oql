@@ -225,7 +225,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
-    print(sql)
+    //print(sql)
 
     val projectmap = projectbuf
       .map {
