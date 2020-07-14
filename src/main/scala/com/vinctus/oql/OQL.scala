@@ -157,8 +157,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (Some(fs), e, f) =>
         def call(fs: List[String]): String =
           fs match {
-            case Nil    => s"$e.$f"
-            case h :: t => s"$h(${call(t)})"
+            case Nil               => s"$e.$f"
+            case "date_month" :: t => s"date_trunc('month', ${call(t)})"
+            case h :: t            => s"$h(${call(t)})"
           }
 
         call(fs)
