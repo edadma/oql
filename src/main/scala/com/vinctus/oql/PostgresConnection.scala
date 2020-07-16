@@ -1,12 +1,14 @@
 package com.vinctus.oql
 
-import typings.pg.mod.{Pool, PoolConfig, PoolClient, QueryArrayConfig}
+import typings.pg.mod.{Pool, PoolClient, PoolConfig, QueryArrayConfig, QueryResult}
 import typings.pg.pgStrings
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.Promise
 
 @JSExportTopLevel("PostgresConnection")
 class PostgresConnection(host: String, port: Double, database: String, user: String, password: String, ssl: js.Any)
@@ -30,6 +32,18 @@ class PostgresConnection(host: String, port: Double, database: String, user: Str
               .andThen(_ => client.release()))
         .toJSPromise
     )
+
+  def raw(sql: String, values: Array[Any] = Array()) =
+    pool
+      .connect()
+      .toFuture
+      .flatMap(
+        (client: PoolClient) =>
+          client
+            .query[js.Any, _](sql, values.toJSArray)
+            .toFuture
+            .andThen(_ => client.release()))
+      .map(_.rows)
 
   @JSExport
   def close(): Unit = pool.end()

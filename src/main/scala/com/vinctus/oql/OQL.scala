@@ -10,6 +10,10 @@ import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
 
+object OQL {
+  private val builtinSQLVariables = Set("current_date", "current_timestamp")
+}
+
 @JSExportTopLevel("OQL")
 class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
@@ -304,6 +308,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         case ApplyExpressionOQL(func, args) =>
           buf ++= func.name
           expressions(args)
+        case VariableExpressionOQL(List(Ident(name))) if OQL.builtinSQLVariables(name.toLowerCase) => buf append name
         case VariableExpressionOQL(ids) =>
           buf append reference(entityname, entity, entityType, ids, ref = false, joinbuf)
         case ReferenceExpressionOQL(ids) =>
