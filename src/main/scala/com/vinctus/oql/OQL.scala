@@ -9,6 +9,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.Promise
 
 object OQL {
   private val builtinSQLVariables = Set("current_date", "current_timestamp")
@@ -18,6 +19,12 @@ object OQL {
 class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private val model = new ERModel(erd)
+
+  @JSExport
+  def raw(sql: String, values: js.Array[js.Any]): Promise[js.Array[js.Any]] =
+    conn
+      .asInstanceOf[PostgresConnection]
+      .raw(sql, if (values == js.undefined) js.Array() else values)
 
   @JSExport("create")
   def jsCreate(): js.Promise[Unit] = create.toJSPromise

@@ -48,6 +48,8 @@ export class OQL {
 
   findOne(resource: string, id: any): Promise<any | undefined>
 
+  raw(sql: string, values?: any[]): Promise<any[]>
+
 }
 
 export class PostgresConnection extends Connection {

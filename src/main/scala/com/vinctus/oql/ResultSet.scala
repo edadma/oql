@@ -16,7 +16,7 @@ abstract class ResultRow {
 
 class PostgresArrayResultSet(promise: js.Promise[QueryArrayResult[js.Array[js.Any]]]) extends ResultSet {
   def rows =
-    promise.toFuture.map(result => result.rows.iterator map (new JSArrayResultRow(_)))
+    promise.toFuture.map(_.rows.iterator map (new JSArrayResultRow(_)))
 }
 
 class JSArrayResultRow(row: js.Array[js.Any]) extends ResultRow {

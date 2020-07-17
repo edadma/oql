@@ -8,7 +8,6 @@ import scala.scalajs.js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.Promise
 
 @JSExportTopLevel("PostgresConnection")
 class PostgresConnection(host: String, port: Double, database: String, user: String, password: String, ssl: js.Any)
@@ -33,17 +32,18 @@ class PostgresConnection(host: String, port: Double, database: String, user: Str
         .toJSPromise
     )
 
-  def raw(sql: String, values: Array[Any] = Array()) =
+  def raw(sql: String, values: js.Array[js.Any]): js.Promise[js.Array[js.Any]] =
     pool
       .connect()
       .toFuture
       .flatMap(
         (client: PoolClient) =>
           client
-            .query[js.Any, _](sql, values.toJSArray)
+            .query[js.Any, js.Any](sql, values.toJSArray)
             .toFuture
             .andThen(_ => client.release()))
       .map(_.rows)
+      .toJSPromise
 
   @JSExport
   def close(): Unit = pool.end()

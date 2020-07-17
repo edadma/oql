@@ -17,11 +17,11 @@ object Main extends App {
 
   setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
-  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
-  val oql = new OQL(conn, readFile("test.erd"))
+//  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
+//  val oql = new OQL(conn, readFile("test.erd"))
 
 //  val conn = new RDBConnection(readFile("examples/star_trek.tab"))
 //  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
@@ -58,7 +58,10 @@ object Main extends App {
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
   oql
-    .json("t {count(id)} [date(a) = current_date]")
+    .raw("select * from users where user_type = $1", js.Array("DriverUser"))
+    .toFuture
+    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2)) //_.toArray.toList.map(_.asInstanceOf[js.Dictionary[String]])
+//    .json("tenant")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
 //    .json("user {firstName} ['ROLE_ADMIN' IN (roles {roleName})]")
