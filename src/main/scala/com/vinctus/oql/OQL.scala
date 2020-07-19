@@ -398,7 +398,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
         writeQuery(
           junctionType,
-          Some(query.select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+          Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
           group,
           order,
           limit,
