@@ -299,6 +299,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         case InSubqueryExpressionOQL(expr, op, query) =>
           expression(expr)
           buf ++= s" $op (${subquery(entityname, entity, query)})"
+        case ExistsExpressionOQL(query) => buf ++= s"EXISTS(${subquery(entityname, entity, query)})"
         case BetweenExpressionOQL(expr, op, lower, upper) =>
           expression(expr)
           buf ++= s" $op "
