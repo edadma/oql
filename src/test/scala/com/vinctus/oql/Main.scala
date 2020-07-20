@@ -58,10 +58,12 @@ object Main extends App {
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
   oql
-    .raw("select * from users where user_type = 'DriverUser'", js.undefined.asInstanceOf[js.Array[js.Any]])
-    .toFuture
-    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2))
-//    .json("tenant")
+//  .raw("select * from users where user_type = 'DriverUser'", js.undefined.asInstanceOf[js.Array[js.Any]])
+//    .raw("select * from users where user_type = $1", js.Array("DriverUser"))
+//    .toFuture
+//    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2)) //_.toArray.toList.map(_.asInstanceOf[js.Dictionary[String]])
+//    .json("tenant [exists(stations [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])])]")
+    .json("station [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])]")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
 //    .json("user {firstName} ['ROLE_ADMIN' IN (roles {roleName})]")
