@@ -58,9 +58,9 @@ object Main extends App {
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
   oql
-    .raw("select * from users where user_type = $1", js.Array("DriverUser"))
+    .raw("select * from users where user_type = 'DriverUser'", js.undefined.asInstanceOf[js.Array[js.Any]])
     .toFuture
-    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2)) //_.toArray.toList.map(_.asInstanceOf[js.Dictionary[String]])
+    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2))
 //    .json("tenant")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
