@@ -10,6 +10,12 @@ scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:post
 
 organization := "com.vinctus"
 
+githubOwner := "vinctustech"
+
+githubRepository := "oql"
+
+githubTokenSource := TokenSource.GitConfig("github.token")
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 resolvers += "Typesafe Repository" at "https://repo.typesafe.com/typesafe/releases/"
@@ -27,8 +33,8 @@ Test / scalaJSUseTestModuleInitializer := false
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 npmDependencies in Compile ++= Seq(
-  "pg" -> "8.2.1",
-  "@types/pg" -> "7.14.3"
+  "pg" -> "8.3.0",
+  "@types/pg" -> "7.14.4"
 )
 
 libraryDependencies ++= Seq(
@@ -52,7 +58,7 @@ mainClass in (Compile, run) := Some( "com.vinctus." + "oql" + ".Main" )
 
 lazy val packageName = SettingKey[String]("packageName", "package name")
 
-packageName := (name.value indexOf '/' match {case -1 => name.value case idx => name.value.substring(idx + 1)}).replace('-', '_')
+packageName := "oql"
 
 publishMavenStyle := true
 
