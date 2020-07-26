@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.0-q.beta.7.9-i.alpha.3"
+version := "0.1.0-q.beta.7.11-i.alpha.3"
 
 description := "Object Query Language"
 
@@ -14,7 +14,7 @@ githubOwner := "vinctustech"
 
 githubRepository := "oql"
 
-githubTokenSource := TokenSource.GitConfig("github.token")
+//githubTokenSource := TokenSource.GitConfig("github.token")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 

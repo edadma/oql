@@ -16,7 +16,7 @@ export class QueryBuilder {
   
   project(resource: string, ...attributes: string[]): QueryBuilder
 
-  query(oql: string): QueryBuilder
+  query(oql: string, parameters?: any): QueryBuilder
 
   select(oql: string, parameters?: any): QueryBuilder
 
