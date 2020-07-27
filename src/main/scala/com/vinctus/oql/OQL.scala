@@ -176,7 +176,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         call(fs)
     }
 
-    sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
+    sql append s"SELECT DISTINCT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
 
     if (projects.tail nonEmpty)
