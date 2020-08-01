@@ -176,7 +176,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         call(fs)
     }
 
-    sql append s"SELECT DISTINCT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n"
+    sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n" // todo: DISTINCT
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
 
     if (projects.tail nonEmpty)
@@ -442,7 +442,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 else
                   problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
               } else {
-                val attrlist1 = entity.table :: attrlist
+                val attrlist1 = column :: attrlist  // entity.table :: attrlist
 
                 joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
@@ -611,7 +611,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         if (attr.entity.pk isEmpty)
           problem(null, s"entity '${attr.typ}' is referenced as a type but has no primary key")
 
-        val attrlist1 = attr.entity.table :: attrlist
+        val attrlist1 = attr.column :: attrlist // attr.entity.table :: attrlist
 
         joinbuf += ((table, attr.column, attr.entity.table, attrlist1 mkString "$", attr.entity.pk.get))
 
