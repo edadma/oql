@@ -153,7 +153,21 @@ class OQLParser extends RegexParsers {
       } |
       applyExpression
 
-  def multiplicativeExpression =
+  def multiplicativeExpression: Parser[ExpressionOQL] =
+    additiveExpression ~ rep(("*" | "/") ~ additiveExpression) ^^ {
+      case e ~ l =>
+        l.foldLeft(e) {
+          case (x, op ~ y) => InfixExpressionOQL(x, op, y)
+        }
+    }
+
+  def additiveExpression: Parser[ExpressionOQL] =
+    applyExpression ~ rep(("+" | "-") ~ applyExpression) ^^ {
+      case e ~ l =>
+        l.foldLeft(e) {
+          case (x, op ~ y) => InfixExpressionOQL(x, op, y)
+        }
+    }
 
   def expressions: Parser[List[ExpressionOQL]] = "(" ~> rep1sep(expression, ",") <~ ")"
 
