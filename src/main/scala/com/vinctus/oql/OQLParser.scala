@@ -50,9 +50,12 @@ class OQLParser extends RegexParsers {
       case n                   => IntegerLiteralOQL(n)
     })
 
+  def singleQuoteString: Parser[String] =
+    ("'" ~> """(?:''|[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'")
+
   def string: Parser[StringLiteralOQL] =
     positioned(
-      (("'" ~> """(?:''|[^'\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "'") |
+      (singleQuoteString |
         ("\"" ~> """(?:""|[^"\x00-\x1F\x7F\\]|\\[\\'"bfnrt]|\\u[a-fA-F0-9]{4})*""".r <~ "\"")) ^^ StringLiteralOQL)
 
   def ident: Parser[Ident] =
@@ -150,6 +153,8 @@ class OQLParser extends RegexParsers {
       } |
       applyExpression
 
+  def multiplicativeExpression =
+
   def expressions: Parser[List[ExpressionOQL]] = "(" ~> rep1sep(expression, ",") <~ ")"
 
   def applyExpression: Parser[ExpressionOQL] =
@@ -161,10 +166,11 @@ class OQLParser extends RegexParsers {
   def primaryExpression: Parser[ExpressionOQL] =
     number |
       string |
-      ("TRUE" | "true" | "FALSE" | "false") ^^ BooleanLiteralOQL |
+      ("TRUE" | "true" | "FALSE" | "false") ^^ (b => BooleanLiteralOQL(b.toLowerCase == "true")) |
       "&" ~> rep1sep(ident, ".") ^^ ReferenceExpressionOQL |
       variable |
       caseExpression |
+      ("INTERVAL" | "interval") ~> singleQuoteString ^^ IntervalLiteralOQL |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
 
   def caseExpression: Parser[CaseExpressionOQL] =

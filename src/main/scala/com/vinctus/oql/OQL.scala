@@ -170,6 +170,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           fs match {
             case Nil               => s"$e.$f"
             case "date_month" :: t => s"date_trunc('month', ${call(t)})"
+            case "date_day" :: t   => s"date_trunc('day', ${call(t)})"
             case h :: t            => s"$h(${call(t)})"
           }
 
@@ -306,9 +307,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           expression(lower)
           buf ++= " AND "
           expression(upper)
-        case FloatLiteralOQL(n)   => buf append n
-        case IntegerLiteralOQL(n) => buf append n
-        case StringLiteralOQL(s)  => buf append s"'$s'"
+        case FloatLiteralOQL(n)    => buf append n
+        case IntegerLiteralOQL(n)  => buf append n
+        case StringLiteralOQL(s)   => buf append s"'$s'"
+        case BooleanLiteralOQL(b)  => buf append b.toString.toUpperCase
+        case IntervalLiteralOQL(s) => buf append s"INTERVAL '$s'"
         case GroupedExpressionOQL(expr) =>
           buf += '('
           expression(expr)
@@ -442,7 +445,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 else
                   problem(attr.pos, s"attribute '${attr.name}' has non-primitive data type")
               } else {
-                val attrlist1 = column :: attrlist  // entity.table :: attrlist
+                val attrlist1 = column :: attrlist
 
                 joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
                 reference(entityType, entity, tail, attrlist1)
