@@ -31,17 +31,24 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   def create: Future[Unit] = {
     def typ2db(typ: String) =
-      typ match {
-        case "text"    => "TEXT"
-        case "integer" => "INTEGER"
-        case "bigint"  => "BIGINT"
+      typ.toLowerCase match {
+        case "text"      => "TEXT"
+        case "integer"   => "INTEGER"
+        case "int"       => "INTEGER"
+        case "bigint"    => "BIGINT"
+        case "boolean"   => "BOOLEAN"
+        case "timestamp" => "TIMESTAMP"
+        case "float"     => "FLOAT"
+        case "float8"    => "FLOAT"
+        case "uuid"      => "UUID"
       }
 
     def pktyp2db(typ: String) =
-      typ match {
+      typ.toLowerCase match {
         case "text"    => "TEXT"
         case "integer" => "SERIAL"
         case "bigint"  => "BIGSERIAL"
+        case "uuid"    => "UUID"
       }
 
     val futures =
@@ -64,7 +71,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           } mkString ",\n")
           buf append ")"
 
-          //println(buf.toString)
+          println(buf.toString)
           conn.command(buf.toString).rows map (_ => {})
       }
 
