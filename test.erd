@@ -1,4 +1,5 @@
 entity t {
  *id: integer
-  a: date
+  a (aa): integer
+  b: integer
 }

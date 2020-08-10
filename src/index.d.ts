@@ -4,6 +4,12 @@ export class Resource {
 
   insert(obj: any): Promise<any>
 
+  link(id1: any, resource: string, id2: any): Promise<void>
+
+  set(attribute: string, value: any, id: any)
+
+  set(attribute: string, value: any, select: string)
+
 }
 
 export class QueryBuilder {

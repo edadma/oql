@@ -135,34 +135,34 @@ class OQLParser extends RegexParsers {
 
   def comparisonExpression: Parser[ExpressionOQL] =
     ("EXISTS" | "exists") ~> "(" ~> query <~ ")" ^^ ExistsExpressionOQL |
-      applyExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ applyExpression ^^ {
+      additiveExpression ~ ("<=" | ">=" | "<" | ">" | "=" | "!=" | ("LIKE" | "like" | "ILIKE" | "ilike") | (("NOT" | "not") ~ ("LIKE" | "like" | "ILIKE" | "ilike")) ^^^ "NOT LIKE") ~ additiveExpression ^^ {
         case l ~ o ~ r => InfixExpressionOQL(l, o, r)
       } |
-      applyExpression ~ opt("NOT" | "not") ~ ("BETWEEN" | "between") ~ applyExpression ~ ("AND" | "and") ~ applyExpression ^^ {
+      additiveExpression ~ opt("NOT" | "not") ~ ("BETWEEN" | "between") ~ additiveExpression ~ ("AND" | "and") ~ additiveExpression ^^ {
         case a ~ None ~ _ ~ b ~ _ ~ c    => BetweenExpressionOQL(a, "BETWEEN", b, c)
         case a ~ Some(_) ~ _ ~ b ~ _ ~ c => BetweenExpressionOQL(a, "NOT BETWEEN", b, c)
       } |
-      applyExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
+      additiveExpression ~ ((("IS" | "is") ~ ("NULL" | "null") ^^^ "IS NULL") | (("IS" | "is") ~ ("NOT" | "not") ~ ("NULL" | "null")) ^^^ "IS NOT NULL") ^^ {
         case l ~ o => PostfixExpressionOQL(l, o)
       } |
-      applyExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ expressions ^^ {
+      additiveExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ expressions ^^ {
         case e ~ o ~ l => InExpressionOQL(e, o, l)
       } |
-      applyExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ ("(" ~> query <~ ")") ^^ {
+      additiveExpression ~ ((("IN" | "in") ^^^ "IN") | (("NOT" | "not") ~ ("IN" | "in")) ^^^ "NOT IN") ~ ("(" ~> query <~ ")") ^^ {
         case e ~ o ~ q => InSubqueryExpressionOQL(e, o, q)
       } |
-      applyExpression
+      additiveExpression
 
-  def multiplicativeExpression: Parser[ExpressionOQL] =
-    additiveExpression ~ rep(("*" | "/") ~ additiveExpression) ^^ {
+  def additiveExpression: Parser[ExpressionOQL] =
+    multiplicativeExpression ~ rep(("+" | "-") ~ multiplicativeExpression) ^^ {
       case e ~ l =>
         l.foldLeft(e) {
           case (x, op ~ y) => InfixExpressionOQL(x, op, y)
         }
     }
 
-  def additiveExpression: Parser[ExpressionOQL] =
-    applyExpression ~ rep(("+" | "-") ~ applyExpression) ^^ {
+  def multiplicativeExpression: Parser[ExpressionOQL] =
+    applyExpression ~ rep(("*" | "/") ~ applyExpression) ^^ {
       case e ~ l =>
         l.foldLeft(e) {
           case (x, op ~ y) => InfixExpressionOQL(x, op, y)
@@ -182,9 +182,9 @@ class OQLParser extends RegexParsers {
       string |
       ("TRUE" | "true" | "FALSE" | "false") ^^ (b => BooleanLiteralOQL(b.toLowerCase == "true")) |
       "&" ~> rep1sep(ident, ".") ^^ ReferenceExpressionOQL |
-      variable |
-      caseExpression |
       ("INTERVAL" | "interval") ~> singleQuoteString ^^ IntervalLiteralOQL |
+      caseExpression |
+      variable |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
 
   def caseExpression: Parser[CaseExpressionOQL] =

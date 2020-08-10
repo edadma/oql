@@ -4,8 +4,9 @@ import scala.scalajs.js
 import js.Dynamic.{global => g}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
-
 import typings.pg.mod.types.setTypeParser
+
+import scala.collection.immutable.ListMap
 
 object Main extends App {
 
@@ -15,34 +16,28 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
-
-  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-  val oql = new OQL(conn, readFile("sc.erd"))
+//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//
+//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+//  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
 
-//  val conn = new RDBConnection(readFile("examples/star_trek.tab"))
-//  val oql = new OQL(conn, readFile("examples/star_trek.erd"))
+  val conn = new RDBConnection(readFile("examples/student.tab"))
+  val oql = new OQL(conn, readFile("examples/student.erd"))
 
 //  val conn = new RDBConnection(null)
-//  val oql = new OQL(conn, readFile("examples/un.erd"))
-//
-//  for {
+//  val oql = new OQL(conn, readFile("test.erd"))
+
+  for {
 //    _ <- oql.create
-//    asdf <- oql.country.insert(Map("name" -> "asdf"))
-//    _ <- oql.rep.insert(
-//      Map("name" -> "rep1", "country" -> ListMap("id" -> asdf.asInstanceOf[ListMap[String, Any]]("id"))))
-//    //    _ <- oql.rep.insert(Map("name" -> "rep2")) //, "country" -> Map("name" -> "zxcv")))
-//    //    _ <- oql.country.insert(Map("name" -> "asdf"))
-//    //    _ <- oql.country.insert(Map("name" -> "zxcv"))
-//    result1 <- oql.json("country {* rep.name}")
-//    result2 <- oql.json("rep")
-//  } {
-//    println(result1, result2)
-//    conn.close()
-//  }
+    r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
+    r2 <- oql.json("user [firstName = 'asdf']")
+  } {
+    println(r1, r2)
+    conn.close()
+  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
@@ -57,16 +52,16 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("examples/un.tab"))
 //  val oql = new OQL(conn, readFile("examples/un.erd"))
 
-  oql
+//  oql
 //  .raw("select * from users where user_type = 'DriverUser'", js.undefined.asInstanceOf[js.Array[js.Any]])
 //    .raw("select * from users where user_type = $1", js.Array("DriverUser"))
 //    .toFuture
 //    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2)) //_.toArray.toList.map(_.asInstanceOf[js.Dictionary[String]])
 //    .json("tenant [exists(stations [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])])]")
-    .json("station [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])]")
+//    .json("station [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])]")
 //    .json("rep { name country.name }")
 //    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
-//    .json("user {firstName} ['ROLE_ADMIN' IN (roles {roleName})]")
+//    .json("trip {createdTime} [createdTime >= current_date - interval '30 days']")
 
 //  val conn = employeesDB
 //  val oql = employeesER
@@ -74,7 +69,7 @@ object Main extends App {
 //  oql
 //    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
 
-    //  val conn = new PostgresConnection("postgres", "docker")
+  //  val conn = new PostgresConnection("postgres", "docker")
 
 //  val conn = ordersDB
 //  val oql = ordersER
@@ -95,11 +90,11 @@ object Main extends App {
 //    .json
 //    .json("student { * classes { * students } <name> } [name = 'John']")
 //    .json("enrollment { ^student { * classes } } [&class = 9]")
-    .onComplete {
-      case Failure(exception) => throw exception
-      case Success(value) =>
-        println(value)
-        conn.close()
-    }
+//    .onComplete {
+//      case Failure(exception) => throw exception
+//      case Success(value) =>
+//        println(value)
+//        conn.close()
+//    }
 
 }
