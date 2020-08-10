@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.0-snapshot.2"
+version := "0.1.0-snapshot.3"
 
 description := "Object Query Language"
 

@@ -27,17 +27,26 @@ object Main extends App {
   val conn = new RDBConnection(readFile("examples/student.tab"))
   val oql = new OQL(conn, readFile("examples/student.erd"))
 
-//  val conn = new RDBConnection(null)
-//  val oql = new OQL(conn, readFile("test.erd"))
-
   for {
-//    _ <- oql.create
-    r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
-    r2 <- oql.json("user [firstName = 'asdf']")
+    //r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
+    r1 <- oql.student.link(2, "classes", 3)
+    r2 <- oql.json("enrollment [student.name = 'Debbie']")
   } {
     println(r1, r2)
     conn.close()
   }
+
+//  val conn = new RDBConnection(null)
+//  val oql = new OQL(conn, readFile("test.erd"))
+
+//  for {
+////    _ <- oql.create
+//    r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
+//    r2 <- oql.json("user [firstName = 'asdf']")
+//  } {
+//    println(r1, r2)
+//    conn.close()
+//  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
