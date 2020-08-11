@@ -102,7 +102,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
           entity.pk match {
             case None => sys.error(s"entity '$typ' has no declared primary key attribute")
             case Some(pk) =>
-              if (js.typeOf(obj(k)) == "object")
+              if (!obj(k).isInstanceOf[Long] && js.typeOf(obj(k)) == "object")
                 List(k -> render(obj(k).asInstanceOf[collection.Map[String, Any]](pk)))
               else
                 List(k -> render(obj(k)))

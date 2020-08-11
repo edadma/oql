@@ -52,11 +52,11 @@ object Main extends App {
   for {
     _ <- oql.create
     r1 <- oql.tenant.insert(Map("domain" -> "asdf", "active" -> true))
-    r2 <- oql.json("tenant")
-//    ////    r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
-////    r2 <- oql.json("user [firstName = 'asdf']")
+    r2 <- oql.user.insert(
+      Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1L))
+    r3 <- oql.json("user [firstName = 'asdf']")
   } {
-    println(r1, r2)
+    println(r1, r2, r3)
     conn.close()
   }
 
