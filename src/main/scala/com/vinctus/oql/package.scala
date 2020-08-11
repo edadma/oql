@@ -41,8 +41,9 @@ package object oql {
 
   def render(a: Any): String =
     a match {
-      case s: String => s"'$s'"
-      case _         => String.valueOf(a)
+      case s: String  => s"'$s'"
+      case d: js.Date => s"'${d.toISOString}'"
+      case _          => String.valueOf(a)
     }
 
   def toPromise[T](result: Future[T]): js.Promise[js.Any] = result map toJS toJSPromise

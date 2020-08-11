@@ -71,7 +71,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           } mkString ",\n")
           buf append ")"
 
-          println(buf.toString)
+          //println(buf.toString)
           conn.command(buf.toString).rows map (_ => {})
       }
 
