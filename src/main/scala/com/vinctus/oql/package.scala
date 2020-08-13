@@ -37,13 +37,16 @@ package object oql {
         }
       )
 
-  def toMap(obj: js.Any): Map[String, Any] = {
-    def toMap(obj: js.Any): Map[String, Any] = {
-      var map = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
+  def toMap(obj: js.Any): ListMap[String, Any] = {
+    def toMap(obj: js.Any): ListMap[String, Any] = {
+      var map: ListMap[String, Any] = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
 
-      for ((k, v) <- map)
-        if (js.typeOf(v) == "object" && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date])
-          map = map + (k -> toMap(v))
+      for ((k, v) <- map) {
+        if ((v != null) && js.typeOf(v) == "object" && !v
+              .isInstanceOf[Long] && !v.isInstanceOf[js.Date]) {
+          map = map + ((k, toMap(v.asInstanceOf[js.Any])))
+        }
+      }
 
       map
     }

@@ -89,7 +89,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     // check if object contains all required column attribute properties
     if (!(attrsRequiredKeys subsetOf keyset))
-      sys.error(s"missing properties: ${attrsRequiredKeys.diff(keyset) map (p => s"'$p'") mkString ", "}")
+      sys.error(s"missing required properties: ${attrsRequiredKeys.diff(keyset) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
 
@@ -101,10 +101,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
           entity.pk match {
             case None => sys.error(s"entity '$typ' has no declared primary key attribute")
             case Some(pk) =>
-              if (!obj(k).isInstanceOf[Long] && js.typeOf(obj(k)) == "object")
-                List(k -> render(obj(k).asInstanceOf[collection.Map[String, Any]](pk)))
+              val v = obj(k)
+
+              if (js.typeOf(v) == "object" && (v != null) && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date])
+                List(k -> render(v.asInstanceOf[collection.Map[String, Any]](pk)))
               else
-                List(k -> render(obj(k)))
+                List(k -> render(v))
           }
         case (k, _) => if (attrsRequiredKeys(k)) sys.error(s"attribute '$k' is required") else Nil
       }
@@ -128,7 +130,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"  RETURNING $pk\n"
     }
 
-    //print(command.toString)
+    // print(command.toString)
 
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row => {
