@@ -37,27 +37,70 @@ object Main extends App {
 //  }
 
   val conn = new RDBConnection(null)
-  val oql = new OQL(conn, readFile("sc.erd"))
+  val oql = new OQL(
+    conn,
+    """
+      |entity organization (organizations) {
+      |    *id: uuid
+      |    name: text!
+      |    industry: text!
+      |    phoneNumber (phone_number): text
+      |    country: text!
+      |    uom: text!
+      |    workspace: text!
+      |    stripeCustomerId (stripe_customer_id): text
+      |    stripeSubscriptionId (stripe_subscription_id): text
+      |    stripeSubscriptionItemId (stripe_subscription_item_id): text
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |  }
+      |""".stripMargin
+  )
 
-//  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
-//    case Failure(exception) => println(exception)
-//    case Success(value)     => println(value)
-//  }
+  oql.create.onComplete {
+    case Failure(exception) => println(exception)
+    case Success(value)     => println(value)
+  }
+
+  oql.organization
+    .insert(
+      Map("name" -> "asdf",
+          "industry" -> "asdf",
+          "country" -> "ca",
+          "uom" -> "METRIC",
+          "workspace" -> "asdf",
+          "createdAt" -> new js.Date))
+    .onComplete {
+      case Failure(exception) => println(exception)
+      case Success(value)     => println(value)
+    }
 
   for {
-    _ <- oql.create
-    r1 <- oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date))
-    r2 <- oql.json("tenant")
-    r3 <- oql.user.insert(
-      Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> r1))
-//    r3 <- oql.role.insert(Map("roleName" -> "a_role"))
-//    r4 <- oql.json("role")
-//    r5 <- oql.user.link(1, "roles", 1)
-    r6 <- oql.json("user")
+    q <- oql.json("organization")
   } {
-    println(r1, r2, r3, r6)
+    println(q)
     conn.close()
   }
+
+//  val conn = new RDBConnection(null)
+//  val oql = new OQL(conn, readFile("sc.erd"))
+//
+////  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
+////    case Failure(exception) => println(exception)
+////    case Success(value)     => println(value)
+////  }
+//
+//  for {
+//    _ <- oql.create
+//    t1 <- oql.tenant.insert(Map("domain" -> "tenant-1", "active" -> true, "createdAt" -> new js.Date))
+//    s1 <- oql.station.insert(Map("name" -> "station-1", "tenant" -> t1))
+////    tr1 <- oql.trip.insert(Map("state" -> "trip-1", "station" -> s1))
+//    q <- oql.json("station")
+//  } {
+//    println(t1)
+//    println(q)
+//    conn.close()
+//  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")

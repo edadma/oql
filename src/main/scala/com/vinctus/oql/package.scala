@@ -42,7 +42,7 @@ package object oql {
       var map = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
 
       for ((k, v) <- map)
-        if (js.typeOf(obj) == "object" && !obj.isInstanceOf[Long] && !obj.isInstanceOf[js.Date])
+        if (js.typeOf(v) == "object" && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date])
           map = map + (k -> toMap(v))
 
       map
@@ -55,7 +55,7 @@ package object oql {
   def render(a: Any): String =
     a match {
       case s: String  => s"'$s'"
-      case d: js.Date => s"'${d.toISOString()}'"
+      case d: js.Date => s"'${d.toISOString}'"
       case _          => String.valueOf(a)
     }
 
