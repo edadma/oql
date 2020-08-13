@@ -16,12 +16,10 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  println(toMap(js.Dynamic.literal(a = 3, b = js.Dynamic.literal(c = 4))))
+  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
-//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
-//
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -39,70 +37,24 @@ object Main extends App {
 //  }
 
 //  val conn = new RDBConnection(null)
-//  val oql = new OQL(
-//    conn,
-//    """
-//      |entity organization (organizations) {
-//      |    *id: uuid
-//      |    name: text!
-//      |    industry: text!
-//      |    phoneNumber (phone_number): text
-//      |    country: text!
-//      |    uom: text!
-//      |    workspace: text!
-//      |    stripeCustomerId (stripe_customer_id): text
-//      |    stripeSubscriptionId (stripe_subscription_id): text
-//      |    stripeSubscriptionItemId (stripe_subscription_item_id): text
-//      |    createdAt (created_at): timestamp!
-//      |    updatedAt (updated_at): timestamp
-//      |  }
-//      |""".stripMargin
-//  )
-//
-//  oql.create.onComplete {
-//    case Failure(exception) => println(exception)
-//    case Success(value)     => println(value)
-//  }
-//
-//  oql.organization
-//    .insert(
-//      Map("name" -> "asdf",
-//          "industry" -> "asdf",
-//          "country" -> "ca",
-//          "uom" -> "METRIC",
-//          "workspace" -> "asdf",
-//          "createdAt" -> new js.Date))
-//    .onComplete {
-//      case Failure(exception) => println(exception)
-//      case Success(value)     => println(value)
-//    }
-//
-//  for {
-//    q <- oql.json("organization")
-//  } {
-//    println(q)
-//    conn.close()
-//  }
-
-//  val conn = new RDBConnection(null)
 //  val oql = new OQL(conn, readFile("sc.erd"))
 //
 ////  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
 ////    case Failure(exception) => println(exception)
 ////    case Success(value)     => println(value)
 ////  }
-//
-//  for {
+
+  for {
 //    _ <- oql.create
-//    t1 <- oql.tenant.insert(Map("domain" -> "tenant-1", "active" -> true, "createdAt" -> new js.Date))
-//    s1 <- oql.station.insert(Map("name" -> "station-1", "tenant" -> t1))
-////    tr1 <- oql.trip.insert(Map("state" -> "trip-1", "station" -> s1))
-//    q <- oql.json("station")
-//  } {
-//    println(t1)
-//    println(q)
-//    conn.close()
-//  }
+    t1 <- oql.tenant.insert(Map("domain" -> "tenant-1", "active" -> true, "createdAt" -> new js.Date))
+    s1 <- oql.station.insert(Map("name" -> "station-1", "tenant" -> t1))
+//    tr1 <- oql.trip.insert(Map("state" -> "trip-1", "station" -> s1))
+    q <- oql.json("station")
+  } {
+    println(t1)
+    println(q)
+    conn.close()
+  }
 
 //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")

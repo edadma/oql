@@ -48,7 +48,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("insert")
   def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(toMap(obj)))
 
-  def insert(obj: Map[String, Any]): Future[Any] = {
+  def insert(obj: collection.Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
     entity.pk match {
       case None     =>
@@ -83,9 +83,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // get object's key set
     val keyset = obj.keySet
 
-    // check if object contains extrinsic attributes
-    if ((keyset diff entity.attributes.keySet).nonEmpty)
-      sys.error(s"extrinsic properties: ${keyset.diff(attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
+    // get key set of all attributes
+    val allKeys = entity.attributes.keySet
+
+    // check if object contains undefined attributes
+    if ((keyset diff allKeys).nonEmpty)
+      sys.error(s"undefined properties: ${(keyset diff allKeys) map (p => s"'$p'") mkString ", "}")
 
     // check if object contains all required column attribute properties
     if (!(attrsRequiredKeys subsetOf keyset))
@@ -142,6 +145,60 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
       }
     })
+  }
+
+  @JSExport("set")
+  def jsSet(id: js.Any, updates: js.Any): js.Promise[Unit] = set(id, toMap(updates)).toJSPromise
+
+  def set(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
+    // check if the object has a primary key
+    entity.pk match {
+      case None     =>
+      case Some(pk) =>
+        // object being updated should not have it's primary key changed
+        if (updates.contains(pk))
+          sys.error(s"Resource.set: primary key may not be changed: $pk")
+    }
+
+    // get sub-map of all column attributes
+    val attrs =
+      entity.attributes
+        .filter {
+          case (_, _: EntityColumnAttribute) => true
+          case _                             => false
+        }
+        .asInstanceOf[ListMap[String, EntityColumnAttribute]]
+
+    // get sub-map of column attributes excluding primary key
+    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
+
+    // get key set of column attributes excluding primary key
+    val attrsNoPKKeys = attrsNoPK.keySet
+
+    // get object's key set
+    val keyset = updates.keySet
+
+    // check if object contains extrinsic attributes
+    if ((keyset diff attrsNoPKKeys).nonEmpty)
+      sys.error(s"extrinsic properties: ${(keyset diff attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
+
+    // build list of attributes to update
+    val pairs =
+      updates map {
+        case (k, v) => k -> render(v)
+      }
+
+    val command = new StringBuilder
+
+    // build update command
+    command append s"UPDATE ${entity.table}\n"
+    command append s"  SET (${pairs map { case (k, v) => s"$k = $v" } mkString ", "}\n"
+    command append s"  WHERE ${entity.pk} = '$id'\n"
+
+    // print(command.toString)
+
+    // execute update command (to get a future)
+    oql.conn.command(command.toString).rows map (_ => ())
   }
 
 }

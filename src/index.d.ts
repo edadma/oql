@@ -6,8 +6,8 @@ export class Resource {
 
   link(id1: any, resource: string, id2: any): Promise<void>
 
-//   set(attribute: string, value: any, id: any)
-//
+  set(id: any, updates: any): Promise<void>
+
 //   set(attribute: string, value: any, select: string)
 
 }
