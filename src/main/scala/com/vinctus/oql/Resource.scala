@@ -46,8 +46,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("insert")
-  def jsInsert(obj: js.Any): js.Promise[js.Any] =
-    toPromise(insert(obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)))
+  def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(toMap(obj)))
 
   def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
@@ -84,9 +83,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // get object's key set
     val keyset = obj.keySet
 
-    // check if object contains superfluous attributes
-    if ((keyset diff attrsNoPKKeys).nonEmpty)
-      sys.error(s"superfluous properties: ${keyset.diff(attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
+    // check if object contains extrinsic attributes
+    if ((keyset diff entity.attributes.keySet).nonEmpty)
+      sys.error(s"extrinsic properties: ${keyset.diff(attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
 
     // check if object contains all required column attribute properties
     if (!(attrsRequiredKeys subsetOf keyset))

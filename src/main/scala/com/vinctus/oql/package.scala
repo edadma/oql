@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import scala.scalajs.js
 import js.JSConverters._
+import scala.collection.immutable.ListMap
 import scala.scalajs.js.{JSON, |}
 import scala.concurrent.Future
 import scala.util.parsing.input.Position
@@ -36,13 +37,25 @@ package object oql {
         }
       )
 
-  def toMap(obj: js.Any): Map[String, Any] =
-    if (obj == js.undefined) null else obj.asInstanceOf[js.Dictionary[String]].toMap
+  def toMap(obj: js.Any): Map[String, Any] = {
+    def toMap(obj: js.Any): Map[String, Any] = {
+      var map = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
+
+      for ((k, v) <- map)
+        if (js.typeOf(obj) == "object" && !obj.isInstanceOf[Long] && !obj.isInstanceOf[js.Date])
+          map = map + (k -> toMap(v))
+
+      map
+    }
+
+    if (obj == js.undefined) null
+    else toMap(obj)
+  }
 
   def render(a: Any): String =
     a match {
       case s: String  => s"'$s'"
-      case d: js.Date => s"'${d.toISOString}'"
+      case d: js.Date => s"'${d.toISOString()}'"
       case _          => String.valueOf(a)
     }
 

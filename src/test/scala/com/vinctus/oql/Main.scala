@@ -16,10 +16,10 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
-
-  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-  val oql = new OQL(conn, readFile("sc.erd"))
+//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//
+//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+//  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -36,26 +36,26 @@ object Main extends App {
 //    conn.close()
 //  }
 
-//  val conn = new RDBConnection(null)
-//  val oql = new OQL(conn, readFile("sc.erd"))
+  val conn = new RDBConnection(null)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
-  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
-    case Failure(exception) => println(exception)
-    case Success(value)     => println(value)
-  }
+//  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
+//    case Failure(exception) => println(exception)
+//    case Success(value)     => println(value)
+//  }
 
   for {
-//    _ <- oql.create
-    //r1 <- oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date))
+    _ <- oql.create
+    r1 <- oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date))
     r2 <- oql.json("tenant")
-//    r2 <- oql.user.insert(
-//      Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1L))
+    r3 <- oql.user.insert(
+      Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> r1))
 //    r3 <- oql.role.insert(Map("roleName" -> "a_role"))
 //    r4 <- oql.json("role")
 //    r5 <- oql.user.link(1, "roles", 1)
-//    r6 <- oql.json("user {roles}")
+    r6 <- oql.json("user")
   } {
-    println(r2)
+    println(r1, r2, r3, r6)
     conn.close()
   }
 
