@@ -44,19 +44,31 @@ object Main extends App {
 ////    case Success(value)     => println(value)
 ////  }
 
+  /*
+  set() test
+   */
+//  for {
+//    q1 <- oql.json("tenant")
+//    t1opt <- oql.queryOne("tenant")
+//    t1 <- t1opt
+//    _ <- oql.tenant.set(t1("id"), Map("domain" -> "poop"))
+//    q2 <- oql.json("tenant")
+//  } {
+//    println(q1, t1, q2)
+//    conn.close()
+//  }
+
+  /*
+  unlink() test
+   */
   for {
-//    _ <- oql.create
-    t1 <- oql.tenant.insert(Map("domain" -> "tenant-1", "active" -> true, "createdAt" -> new js.Date))
-    s1 <- oql.station.insert(Map("name" -> "station-1", "tenant" -> t1))
-//    tr1 <- oql.trip.insert(Map("state" -> "trip-1", "station" -> s1))
-    q <- oql.json("station")
+    q1 <- oql.json("station {name users.firstName}")
   } {
-    println(t1)
-    println(q)
+    println(q1)
     conn.close()
   }
 
-//  conn
+  //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
 //    .rowSet
 //    .onComplete {

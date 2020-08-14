@@ -21,7 +21,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def link(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
-      case Some(ObjectArrayJunctionEntityAttribute(entityType, otherEntity, junctionType, junction)) =>
+      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, junctionType, junction)) =>
         val thisAttr =
           junction.attributes
             .find {
@@ -41,6 +41,49 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             ._1
 
         oql.entity(junctionType).insert(Map(thisAttr -> id1, thatAttr -> id2)) map (_ => ())
+      case Some(_) => sys.error(s" attribute '$attribute' is not many-to-many")
+      case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
+    }
+
+  @JSExport("unlink")
+  def jsUnlink(id1: js.Any, resource: String, id2: js.Any): js.Promise[Unit] = link(id1, resource, id2).toJSPromise
+
+  def unlink(id1: Any, attribute: String, id2: Any): Future[Unit] =
+    entity.attributes get attribute match {
+      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, junctionType, junction)) =>
+        val thisCol =
+          junction.attributes
+            .find {
+              case (_, attr) =>
+                attr.isInstanceOf[ObjectEntityAttribute] && attr.asInstanceOf[ObjectEntityAttribute].entity == entity
+            }
+            .get
+            ._2
+            .asInstanceOf[ObjectEntityAttribute]
+            .column
+
+        val thatCol =
+          junction.attributes
+            .find {
+              case (_, attr) =>
+                attr
+                  .isInstanceOf[ObjectEntityAttribute] && attr.asInstanceOf[ObjectEntityAttribute].entity == otherEntity
+            }
+            .get
+            ._2
+            .asInstanceOf[ObjectEntityAttribute]
+            .column
+
+        val command = new StringBuilder
+
+        // build delete command
+        command append s"DELETE FROM ${entity.table}\n"
+        command append s"  WHERE $thisCol = ${render(id1)} AND $thatCol = ${render(id2)}\n"
+
+        //print(command.toString)
+
+        // execute update command (to get a future)
+        oql.conn.command(command.toString).rows map (_ => ())
       case Some(_) => sys.error(s" attribute '$attribute' is not many-to-many")
       case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
     }
@@ -151,13 +194,13 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def jsSet(id: js.Any, updates: js.Any): js.Promise[Unit] = set(id, toMap(updates)).toJSPromise
 
   def set(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
-    // check if the object has a primary key
+    // check if updates has a primary key
     entity.pk match {
       case None     =>
       case Some(pk) =>
         // object being updated should not have it's primary key changed
         if (updates.contains(pk))
-          sys.error(s"Resource.set: primary key may not be changed: $pk")
+          sys.error(s"Resource.set: primary key can not be changed: $pk")
     }
 
     // get sub-map of all column attributes
@@ -175,7 +218,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // get key set of column attributes excluding primary key
     val attrsNoPKKeys = attrsNoPK.keySet
 
-    // get object's key set
+    // get updates key set
     val keyset = updates.keySet
 
     // check if object contains extrinsic attributes
@@ -192,13 +235,50 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     // build update command
     command append s"UPDATE ${entity.table}\n"
-    command append s"  SET (${pairs map { case (k, v) => s"$k = $v" } mkString ", "}\n"
-    command append s"  WHERE ${entity.pk} = '$id'\n"
+    command append s"  SET ${pairs map { case (k, v) => s"$k = $v" } mkString ", "}\n"
+    command append s"  WHERE ${entity.pk.get} = ${render(id)}\n"
 
-    // print(command.toString)
+    //print(command.toString)
 
     // execute update command (to get a future)
     oql.conn.command(command.toString).rows map (_ => ())
   }
 
 }
+
+/*
+    // check if updates has a primary key
+    val id =
+      entity.pk match {
+        case None     => sys.error(s"Resource.set: entity $name has no primary key")
+        case Some(pk) =>
+          // object being updated should not have it's primary key changed
+          if (!updates.contains(pk))
+            sys.error(s"Resource.set: primary key must be given: $pk")
+
+          updates(pk)
+      }
+
+    // get sub-map of all column attributes
+    val attrs =
+      entity.attributes
+        .filter {
+          case (_, _: EntityColumnAttribute) => true
+          case _                             => false
+        }
+        .asInstanceOf[ListMap[String, EntityColumnAttribute]]
+
+    // get sub-map of column attributes excluding primary key
+    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
+
+    // get key set of column attributes excluding primary key
+    val attrsNoPKKeys = attrsNoPK.keySet
+
+    // get updates key set
+    val keyset = updates.keySet
+
+    // check if object contains extrinsic attributes
+    if ((keyset diff attrsNoPKKeys).nonEmpty)
+      sys.error(s"extrinsic properties: ${(keyset diff attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
+
+ */
