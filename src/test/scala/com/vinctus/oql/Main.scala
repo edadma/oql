@@ -61,10 +61,17 @@ object Main extends App {
   /*
   unlink() test
    */
+//  oql.station.unlink(1, "users", 1).onComplete {
+//    case Failure(exception) => println(exception)
+//    case Success(value)     => println(value)
+//  }
+
   for {
-    q1 <- oql.json("station {name users.firstName}")
+    q1 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
+    _ <- oql.station.unlink(1, "users", 2)
+    q2 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
   } {
-    println(q1)
+    println(q1, q2)
     conn.close()
   }
 

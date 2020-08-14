@@ -41,7 +41,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             ._1
 
         oql.entity(junctionType).insert(Map(thisAttr -> id1, thatAttr -> id2)) map (_ => ())
-      case Some(_) => sys.error(s" attribute '$attribute' is not many-to-many")
+      case Some(_) => sys.error(s"attribute '$attribute' is not many-to-many")
       case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
     }
 
@@ -77,14 +77,14 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         val command = new StringBuilder
 
         // build delete command
-        command append s"DELETE FROM ${entity.table}\n"
+        command append s"DELETE FROM ${junction.table}\n"
         command append s"  WHERE $thisCol = ${render(id1)} AND $thatCol = ${render(id2)}\n"
 
         //print(command.toString)
 
         // execute update command (to get a future)
         oql.conn.command(command.toString).rows map (_ => ())
-      case Some(_) => sys.error(s" attribute '$attribute' is not many-to-many")
+      case Some(_) => sys.error(s"attribute '$attribute' is not many-to-many")
       case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
     }
 
