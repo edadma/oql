@@ -10,6 +10,8 @@ export class Resource {
 
   set(id: any, updates: any): Promise<void>
 
+  delete(id: any): Promise<void>
+
 }
 
 export class QueryBuilder {

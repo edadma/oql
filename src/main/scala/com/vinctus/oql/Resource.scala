@@ -46,7 +46,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("unlink")
-  def jsUnlink(id1: js.Any, resource: String, id2: js.Any): js.Promise[Unit] = link(id1, resource, id2).toJSPromise
+  def jsUnlink(id1: js.Any, resource: String, id2: js.Any): js.Promise[Unit] = unlink(id1, resource, id2).toJSPromise
 
   def unlink(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
@@ -87,6 +87,22 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       case Some(_) => sys.error(s"attribute '$attribute' is not many-to-many")
       case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
     }
+
+  @JSExport("delete")
+  def jsDelete(id: js.Any): js.Promise[Unit] = delete(id).toJSPromise
+
+  def delete(id: Any): Future[Unit] = {
+    val command = new StringBuilder
+
+    // build delete command
+    command append s"DELETE FROM ${entity.table}\n"
+    command append s"  WHERE ${entity.pk.get} = ${render(id)}\n"
+
+    //print(command.toString)
+
+    // execute update command (to get a future)
+    oql.conn.command(command.toString).rows map (_ => ())
+  }
 
   @JSExport("insert")
   def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(toMap(obj)))
