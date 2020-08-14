@@ -32,15 +32,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def create: Future[Unit] = {
     def typ2db(typ: String) =
       typ.toLowerCase match {
-        case "text"      => "TEXT"
-        case "integer"   => "INTEGER"
-        case "int"       => "INTEGER"
-        case "bigint"    => "BIGINT"
-        case "boolean"   => "BOOLEAN"
-        case "timestamp" => "TIMESTAMP"
-        case "float"     => "FLOAT"
-        case "float8"    => "FLOAT"
-        case "uuid"      => "UUID"
+        case "text"             => "TEXT"
+        case "integer" | "int"  => "INTEGER"
+        case "bigint"           => "BIGINT"
+        case "bool" | "boolean" => "BOOLEAN"
+        case "timestamp"        => "TIMESTAMP"
+        case "float" | "float8" => "FLOAT"
+        case "uuid"             => "UUID"
       }
 
     def pktyp2db(typ: String) =

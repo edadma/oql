@@ -228,7 +228,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // build list of attributes to update
     val pairs =
       updates map {
-        case (k, v) => k -> render(v)
+        case (k, v) => attrs(k).column -> render(v)
       }
 
     val command = new StringBuilder

@@ -47,16 +47,14 @@ object Main extends App {
   /*
   set() test
    */
-//  for {
-//    q1 <- oql.json("tenant")
-//    t1opt <- oql.queryOne("tenant")
-//    t1 <- t1opt
-//    _ <- oql.tenant.set(t1("id"), Map("domain" -> "poop"))
-//    q2 <- oql.json("tenant")
-//  } {
-//    println(q1, t1, q2)
-//    conn.close()
-//  }
+  for {
+    q1 <- oql.json("user [id = 7]")
+    _ <- oql.user.set(7, Map("firstName" -> "amoray", "lastName" -> "PREMIUM"))
+    q2 <- oql.json("user [id = 7]")
+  } {
+    println(q1, q2)
+    conn.close()
+  }
 
   /*
   unlink() test
@@ -66,14 +64,14 @@ object Main extends App {
 //    case Success(value)     => println(value)
 //  }
 
-  for {
-    q1 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
-    _ <- oql.station.unlink(1, "users", 2)
-    q2 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
-  } {
-    println(q1, q2)
-    conn.close()
-  }
+//  for {
+//    q1 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
+//    _ <- oql.station.unlink(1, "users", 2)
+//    q2 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
+//  } {
+//    println(q1, q2)
+//    conn.close()
+//  }
 
   //  conn
 //    .query("insert into t (a, b) values ('zxcv', 789) returning id")
