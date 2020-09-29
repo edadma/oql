@@ -44,6 +44,7 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
 	"org.scala-lang.modules" %%% "scala-parser-combinators" % "1.1.2",
+//  "org.scala-lang.modules" %%% "scala-async" % "1.0.0-M1"
 )
 
 //libraryDependencies ++= Seq(

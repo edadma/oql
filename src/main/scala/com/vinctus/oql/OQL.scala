@@ -173,7 +173,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (Some(fs), e, f) =>
         def call(fs: List[String]): String =
           fs match {
-            case Nil               => s"$e.$f"
+            case Nil               => if (f == "*") "*" else s"$e.$f"
             case "date_month" :: t => s"date_trunc('month', ${call(t)})"
             case "date_day" :: t   => s"date_trunc('day', ${call(t)})"
             case h :: t            => s"$h(${call(t)})"
@@ -480,11 +480,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                        joinbuf: ListBuffer[(String, String, String, String, String)],
                        attrlist: List[String],
                        circlist: List[(String, EntityAttribute)]): Seq[ProjectionNode] = {
-    def attrType(attr: Ident) =
-      entity.attributes get attr.name match {
-        case None      => problem(attr.pos, s"entity '$entityname' does not have attribute: '${attr.name}'")
-        case Some(typ) => typ
-      }
+    def attrType(attr: Ident, allowAny: Boolean = false) =
+      if (allowAny && attr.name == "*")
+        AnyAttribute
+      else
+        entity.attributes get attr.name match {
+          case None      => problem(attr.pos, s"entity '$entityname' does not have attribute: '${attr.name}'")
+          case Some(typ) => typ
+        }
 
     project match {
       case ProjectAttributesOQL(attrs) =>
@@ -565,10 +568,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
                 aggset += a
 
-                attrType(attr) match {
-                  case typ: PrimitiveEntityAttribute =>
+                attrType(attr, allowAny = true) match {
+                  case typ @ (_: PrimitiveEntityAttribute | AnyAttribute) =>
                     List((Some(agg map (_.name)), attr.name, typ, ProjectAllOQL(), null, false))
-                  case _ => problem(agg.last.pos, s"can only apply a function to a primitive attribute")
+                  case _ => problem(agg.last.pos, s"can only apply a function to a primitive attribute or '*'")
                 }
               case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
               case query @ QueryOQL(attr, project, None, None, None, None, None) =>
@@ -601,8 +604,17 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
     attrs map {
       case (_, field, attr: LiteralEntityAttribute, _, _, _) => LiteralProjectionNode(field, attr.value)
+      case (Some(List("count")), "*", AnyAttribute, _, _, _) =>
+        projectbuf += ((Some(List("count")), table, "*"))
+        PrimitiveProjectionNode("count_", "count_", table, "*", AnyAttribute)
       case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))
+//        println(
+//          PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
+//                                  agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
+//                                  table,
+//                                  field,
+//                                  attr))
         PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
                                 agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
                                 table,

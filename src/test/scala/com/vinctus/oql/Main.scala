@@ -34,23 +34,39 @@ object Main extends App {
 //    conn.close()
 //  }
 
+//  val conn = new RDBConnection(
+//    """
+//      |t
+//      | id: integer, pk  a: timestamp
+//      | 1                2020-09-29T13:02:14.338Z
+//      | 2                2020-09-29T13:02:35.699Z
+//      |""".stripMargin
+//  )
+//  val oql = new OQL(conn,
+//                    """
+//      |entity t {
+//      | *id: integer
+//      |  a: date
+//      |}
+//      |""".stripMargin)
+
   val conn = new RDBConnection(
     """
       |t
-      | id: integer, pk  a: timestamp
-      | 1                2020-09-29T13:02:14.338Z
-      | 2                2020-09-29T13:02:35.699Z
+      | id: integer, pk  a: integer
+      | 1                3
+      | 2                4
       |""".stripMargin
   )
   val oql = new OQL(conn,
                     """
       |entity t {
       | *id: integer
-      |  a: date
+      |  a: integer
       |}
       |""".stripMargin)
 
-//  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
+  //  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
 //    case Failure(exception) => println(exception)
 //    case Success(value)     => println(value)
 //  }
@@ -68,7 +84,7 @@ object Main extends App {
 //  }
 
   for {
-    q1 <- oql.queryMany("t")
+    q1 <- oql.queryOne("t {count(*)}")
   } {
     println(q1)
     conn.close()
