@@ -1,5 +1,16 @@
-entity t {
+entity x {
  *id: integer
-  a (aa): integer
-  b: integer
+  a: text
+  ys: [y] (xy)
+}
+
+entity y {
+ *id: integer
+  b: text
+  xs: [x] (xy)
+}
+
+entity xy {
+  x: x
+  y: y
 }

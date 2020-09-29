@@ -6,8 +6,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import typings.pg.mod.types.setTypeParser
 
-import scala.collection.immutable.ListMap
-
 object Main extends App {
 
   private val fs = g.require("fs")
@@ -16,10 +14,10 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
-  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-  val oql = new OQL(conn, readFile("sc.erd"))
+//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+//  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -36,23 +34,43 @@ object Main extends App {
 //    conn.close()
 //  }
 
-//  val conn = new RDBConnection(null)
-//  val oql = new OQL(conn, readFile("sc.erd"))
-//
-////  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
-////    case Failure(exception) => println(exception)
-////    case Success(value)     => println(value)
-////  }
+  val conn = new RDBConnection(
+    """
+      |t
+      | id: integer, pk  a: timestamp
+      | 1                2020-09-29T13:02:14.338Z
+      | 2                2020-09-29T13:02:35.699Z
+      |""".stripMargin
+  )
+  val oql = new OQL(conn,
+                    """
+      |entity t {
+      | *id: integer
+      |  a: date
+      |}
+      |""".stripMargin)
+
+//  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
+//    case Failure(exception) => println(exception)
+//    case Success(value)     => println(value)
+//  }
 
   /*
   set() test
    */
+//  for {
+//    q1 <- oql.json("user [id = 7]")
+//    _ <- oql.user.set(7, Map("firstName" -> "amoray", "lastName" -> "PREMIUM"))
+//    q2 <- oql.json("user [id = 7]")
+//  } {
+//    println(q1, q2)
+//    conn.close()
+//  }
+
   for {
-    q1 <- oql.json("user [id = 7]")
-    _ <- oql.user.set(7, Map("firstName" -> "amoray", "lastName" -> "PREMIUM"))
-    q2 <- oql.json("user [id = 7]")
+    q1 <- oql.queryMany("t")
   } {
-    println(q1, q2)
+    println(q1)
     conn.close()
   }
 

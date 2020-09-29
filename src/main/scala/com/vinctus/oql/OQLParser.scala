@@ -203,10 +203,17 @@ class OQLParser extends RegexParsers {
 
   def orderExpressions: Parser[List[(ExpressionOQL, String)]] = rep1sep(orderExpression, ",")
 
-  def orderExpression: Parser[(ExpressionOQL, String)] = expression ~ opt("/" | "\\") ^^ {
-    case e ~ (Some("/") | None) => (e, "ASC")
-    case e ~ _                  => (e, "DESC")
+  def orderExpression: Parser[(ExpressionOQL, String)] = expression ~ ordering ^^ {
+    case e ~ o => (e, o)
   }
+
+  def ordering: Parser[String] =
+    opt("ASC" | "asc" | "DESC" | "desc") ~ opt("NULLS" ~ ("FIRST" | "LAST") | "nulls" ~ ("first" | "last")) ^^ {
+      case None ~ None | Some("ASC" | "asc") ~ None => "ASC NULLS FIRST"
+      case None ~ Some(_ ~ nulls)                   => s"ASC NULLS ${nulls.toUpperCase}"
+      case Some("DESC" | "desc") ~ None             => "DESC NULLS LAST"
+      case Some(dir) ~ Some(_ ~ nulls)              => s"${dir.toUpperCase} NULLS ${nulls.toUpperCase}"
+    }
 
   def variables: Parser[List[VariableExpressionOQL]] = rep1sep(variable, ",")
 
