@@ -84,7 +84,7 @@ object Main extends App {
 //  }
 
   for {
-    q1 <- oql.queryOne("t {count(*)}")
+    q1 <- oql.queryBuilder().query("t").getCount //queryOne("t {count(*)}")
   } {
     println(q1)
     conn.close()

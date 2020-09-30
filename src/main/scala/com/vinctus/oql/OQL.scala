@@ -69,7 +69,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           } mkString ",\n")
           buf append ")"
 
-          //println(buf.toString)
           conn.command(buf.toString).rows map (_ => {})
       }
 
@@ -117,7 +116,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     queryMany(OQLParser.parseQuery(template(oql, parameters)))
 
   def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
-    println(q)
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
@@ -607,15 +605,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (_, field, attr: LiteralEntityAttribute, _, _, _) => LiteralProjectionNode(field, attr.value)
       case (Some(List("count")), "*", AnyAttribute, _, _, _) =>
         projectbuf += ((Some(List("count")), table, "*"))
-        PrimitiveProjectionNode("count_", "count_", table, "*", AnyAttribute)
+        PrimitiveProjectionNode("count_*", "count_*", table, "*", AnyAttribute)
       case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))
-//        println(
-//          PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
-//                                  agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
-//                                  table,
-//                                  field,
-//                                  attr))
         PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
                                 agg.map(a => s"${a mkString "_"}_${attr.column}").getOrElse(attr.column),
                                 table,
