@@ -117,6 +117,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     queryMany(OQLParser.parseQuery(template(oql, parameters)))
 
   def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
+    println(q)
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
