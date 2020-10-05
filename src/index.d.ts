@@ -46,6 +46,8 @@ export class OQL {
 
   constructor(conn: Connection, erd: string)
 
+  trace: boolean
+
   entity(resource: string): Resource
 
   queryBuilder(): QueryBuilder

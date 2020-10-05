@@ -14,10 +14,9 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
-
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
+  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -50,21 +49,21 @@ object Main extends App {
 //      |}
 //      |""".stripMargin)
 
-  val conn = new RDBConnection(
-    """
-      |t
-      | id: integer, pk  a: integer
-      | 1                3
-      | 2                4
-      |""".stripMargin
-  )
-  val oql = new OQL(conn,
-                    """
-      |entity t {
-      | *id: integer
-      |  a: integer
-      |}
-      |""".stripMargin)
+//  val conn = new RDBConnection(
+//    """
+//      |t
+//      | id: integer, pk  a: text
+//      | 1                asdf
+//      | 2                zxcv
+//      |""".stripMargin
+//  )
+//  val oql = new OQL(conn,
+//                    """
+//      |entity t {
+//      | *id: integer
+//      |  a: text
+//      |}
+//      |""".stripMargin)
 
   //  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
 //    case Failure(exception) => println(exception)
@@ -84,7 +83,7 @@ object Main extends App {
 //  }
 
   for {
-    q1 <- oql.queryBuilder().query("t").getCount //queryOne("t {count(*)}")
+    q1 <- oql.queryMany("user <email desc>")
   } {
     println(q1)
     conn.close()

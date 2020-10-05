@@ -21,6 +21,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   private val model = new ERModel(erd)
 
   @JSExport
+  var trace = false
+
+  @JSExport
   def raw(sql: String, values: js.Array[js.Any]): Promise[js.Array[js.Any]] =
     conn
       .asInstanceOf[PostgresConnection]
@@ -242,7 +245,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
-    //print(sql)
+    if (trace)
+      print(sql)
 
     val projectmap = projectbuf
       .map {
