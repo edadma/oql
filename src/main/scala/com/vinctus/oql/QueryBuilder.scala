@@ -133,8 +133,9 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
 
   def getCount: Future[Int] =
     new QueryBuilder(oql,
-                     q.copy(project = ProjectAttributesOQL(
-                       List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))))).getOne map (_.get("count_*")
+                     q.copy(project =
+                              ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
+                            order = None)).getOne map (_.get("count_*")
       .asInstanceOf[Int])
 
   def json: Future[String] =
