@@ -15,6 +15,7 @@ object Main extends App {
   }
 
   setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+
   val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
   val oql = new OQL(conn, readFile("sc.erd"))
 
@@ -83,7 +84,7 @@ object Main extends App {
 //  }
 
   for {
-    q1 <- oql.queryMany("user <email desc>")
+    q1 <- oql.queryMany("tenant <createdAt DESC>")
   } {
     println(q1)
     conn.close()

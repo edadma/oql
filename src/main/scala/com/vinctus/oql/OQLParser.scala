@@ -208,11 +208,11 @@ class OQLParser extends RegexParsers {
   }
 
   def ordering: Parser[String] =
-    opt("ASC" | "asc" | "DESC" | "desc") ~ opt("NULLS" ~ ("FIRST" | "LAST") | "nulls" ~ ("first" | "last")) ^^ {
+    opt("ASC" | "asc" | "DESC" | "desc") ~ opt("NULLS" ~> ("FIRST" | "LAST") | "nulls" ~> ("first" | "last")) ^^ {
       case None ~ None | Some("ASC" | "asc") ~ None => "ASC NULLS FIRST"
-      case None ~ Some(_ ~ nulls)                   => s"ASC NULLS ${nulls.toUpperCase}"
+      case None ~ Some(nulls)                       => s"ASC NULLS ${nulls.toUpperCase}"
       case Some("DESC" | "desc") ~ None             => "DESC NULLS LAST"
-      case Some(dir) ~ Some(_ ~ nulls)              => s"${dir.toUpperCase} NULLS ${nulls.toUpperCase}"
+      case Some(dir) ~ Some(nulls)                  => s"${dir.toUpperCase} NULLS ${nulls.toUpperCase}"
     }
 
   def variables: Parser[List[VariableExpressionOQL]] = rep1sep(variable, ",")
