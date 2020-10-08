@@ -16,8 +16,11 @@ object Main extends App {
 
   setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
-  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-  val oql = new OQL(conn, readFile("sc.erd"))
+  val conn = new PostgresConnection("localhost", 5432, "mobility", "mobility", "mobility", false)
+  val oql = new OQL(conn, readFile("mobility.erd"))
+
+  //  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+//  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("test.erd"))
@@ -83,10 +86,19 @@ object Main extends App {
 //    conn.close()
 //  }
 
+  val qb = oql
+    .queryBuilder()
+    .query("""customer
+             |  {id firstName lastName email language phoneNumber station {id name} createdAt}
+             |  [station.id IN ('762225a5-b4ba-4933-8f3c-9092a25e8947', '68bd2f8b-3003-4e23-8f3c-a1f3ef0bd58b')]
+             |  <createdAt DESC>""".stripMargin)
+
   for {
-    q1 <- oql.queryMany("tenant <createdAt DESC>")
+    customers <- qb.offset(0).limit(10).getMany
+    count <- qb.getCount
   } {
-    println(q1)
+    println(customers)
+    println(count)
     conn.close()
   }
 
