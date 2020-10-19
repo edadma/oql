@@ -19,6 +19,7 @@ project/plugins/project/
 *~
 .directory
 .idea/
+.bsp
 
 sc.erd
 mobility.erd

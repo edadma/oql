@@ -20,9 +20,11 @@ object Main extends App {
   oql.trace = true
 
   for {
-    q1 <- oql.json("y {xs}")
+    q1 <- oql.json("x")
+    q2 <- oql.json("y {xs}")
   } {
     println(q1)
+    println(q2)
     conn.close()
   }
 

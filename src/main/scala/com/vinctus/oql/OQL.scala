@@ -184,7 +184,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         call(fs)
     }
 
-    println(projects)
     sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n" // todo: DISTINCT
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
 
@@ -601,8 +600,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
     // add the primary key to projectbuf if an array type attribute is being projected and not a subquery
     if (attrs.exists {
-          case (_, _, _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute, _, _, _) => true
-          case _                                                                                      => false
+          case (_,
+                _,
+                _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute | _: ObjectOneEntityAttribute,
+                _,
+                _,
+                _) =>
+            true
+          case _ => false
         } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
       projectbuf += ((None, table, entity.pk.get))
 
