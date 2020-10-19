@@ -3,7 +3,7 @@ department
  1001                 FINANCE         SYDNEY             
  2001                 AUDIT           MELBOURNE          
  3001                 MARKETING       PERTH              
- 4001                 PRODUCTION      BRISBANE           
+ 4001                 PRODUCTION      BRISBANE
 
 employee
  emp_id: integer, pk  emp_name: text  job_name: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: currency  dep_id: integer, fk, department, dep_id 

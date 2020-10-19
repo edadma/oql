@@ -184,6 +184,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         call(fs)
     }
 
+    println(projects)
     sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n" // todo: DISTINCT
     sql append (projects.tail map ("       " ++ _) mkString ",\n")
 
@@ -742,18 +743,28 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               ),
               query
           ))
-      case (_, field, attr @ ObjectOneEntityAttribute(entityType, attrEntity, _), project, query, _) =>
+      case (_, field, attr @ ObjectOneEntityAttribute(entityType, attrEntity, attrEntityAttr), project, query, _) =>
         val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
-        val es = attrEntity.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
         val column =
-          es.length match {
-            case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
-            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-            case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
+          if (attrEntityAttr.isDefined) {
+            attrEntity.attributes get attrEntityAttr.get match {
+              case None                           => problem(null, s"'${attrEntityAttr.get}' is not an attribute of entity '$entityType'")
+              case Some(a: EntityColumnAttribute) => a.column
+              case Some(a)                        => problem(null, s"'${a.typ}' is not a column attribute of entity '$entityType'")
+            }
+          } else {
+            val es = attrEntity.attributes.toList.filter(
+              a =>
+                a._2
+                  .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+
+            es.length match {
+              case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
+              case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+              case _ =>
+                problem(null, s"'$entityType' contains more than one attribute of type '$entityname'") //todo: allow field to be selected
+            }
           }
 
         entityNode(field, attr, circlist)(

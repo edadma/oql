@@ -66,7 +66,7 @@
     createdBy (created_by): user
     updatedBy (updated_by): user
     stations: [station] (users_stations)
-    vehicle: <vehicle>
+    vehicle: <vehicle.driver>
   }
 
   entity users_stations {

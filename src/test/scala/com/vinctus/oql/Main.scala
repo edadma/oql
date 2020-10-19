@@ -14,26 +14,51 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+  val conn = new RDBConnection(readFile("m2o.tab"))
+  val oql = new OQL(conn, readFile("m2o.erd"))
 
-  val conn = new PostgresConnection("localhost", 5432, "mobility", "mobility", "mobility", false)
-  val oql = new OQL(conn, readFile("mobility.erd"))
+  oql.trace = true
+
+  for {
+    q1 <- oql.json("y {xs}")
+  } {
+    println(q1)
+    conn.close()
+  }
+
+  //  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//
+//  val conn = new PostgresConnection("localhost", 5432, "mobility", "mobility", "mobility", false)
+//  val oql = new OQL(conn, readFile("mobility.erd"))
+//
+//  for {
+////    q1 <- oql.json("vehicle {driver.firstName}")
+//    q1 <- oql.json("user {vehicle {type}}")
+////    _ <- oql.vehicle
+////      .set("9d6143a4-10ea-4968-abb6-aac9a9770370", Map("driver" -> "1df5e6d8-2e16-4053-9f21-faaabc0c8d0f"))
+////    q1 <- oql.json("user {firstName vehicle.driver.firstName} [role = 'DRIVER' and firstName = 'Edward']")
+//  } {
+//    println(q1)
+////    println(q2)
+//    conn.close()
+//  }
 
   //  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
 //  val oql = new OQL(conn, readFile("sc.erd"))
 
 //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
-//  val oql = new OQL(conn, readFile("test.erd"))
+//  val oql = new OQL(conn, readFile("m2m.erd"))
 
-//  val conn = new RDBConnection(readFile("examples/student.tab"))
-//  val oql = new OQL(conn, readFile("examples/student.erd"))
+//  val conn = new RDBConnection(readFile("examples/northwind.tab"))
+//  val oql = new OQL(conn, readFile("examples/northwind.erd"))
+//
+//  oql.trace = true
 //
 //  for {
-//    //r1 <- oql.user.insert(Map("firstName" -> "asdf", "lastName" -> "zxcv", "user_type" -> "RegularUser", "tenant" -> 1))
-//    r1 <- oql.student.link(2, "classes", 3)
-//    r2 <- oql.json("enrollment [student.name = 'Debbie']")
+////    q1 <- oql.json("Suppliers {CompanyName} [Products]")
+//    q1 <- oql.json("Products {SupplierID.CompanyName} [UnitPrice = 22]")
 //  } {
-//    println(r1, r2)
+//    println(q1)
 //    conn.close()
 //  }
 
@@ -86,21 +111,21 @@ object Main extends App {
 //    conn.close()
 //  }
 
-  val qb = oql
-    .queryBuilder()
-    .query("""customer
-             |  {id firstName lastName email language phoneNumber station {id name} createdAt}
-             |  [station.id IN ('762225a5-b4ba-4933-8f3c-9092a25e8947', '68bd2f8b-3003-4e23-8f3c-a1f3ef0bd58b')]
-             |  <createdAt DESC>""".stripMargin)
-
-  for {
-    customers <- qb.offset(0).limit(10).getMany
-    count <- qb.getCount
-  } {
-    println(customers)
-    println(count)
-    conn.close()
-  }
+//  val qb = oql
+//    .queryBuilder()
+//    .query("""customer
+//             |  {id firstName lastName email language phoneNumber station {id name} createdAt}
+//             |  [station.id IN ('762225a5-b4ba-4933-8f3c-9092a25e8947', '68bd2f8b-3003-4e23-8f3c-a1f3ef0bd58b')]
+//             |  <createdAt DESC>""".stripMargin)
+//
+//  for {
+//    customers <- qb.offset(0).limit(10).getMany
+//    count <- qb.getCount
+//  } {
+//    println(customers)
+//    println(count)
+//    conn.close()
+//  }
 
   /*
   unlink() test
