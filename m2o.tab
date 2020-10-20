@@ -1,8 +1,9 @@
 y
  id: integer, pk  b: text 
- 1                basdf1  
- 2                basdf2  
+ 1                bsdf1   
+ 2                bsdf2   
 
 x
- id: integer, pk  a: text  y1: integer, fk, y, id  y2: integer, fk, y, id 
- 1                aasdf    1                       2                      
+ id: integer, pk  a: text  y: integer, fk, y, id 
+ 1                asdf     1                     
+ 2                zxcv     2                     

@@ -130,10 +130,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   }
 
   @JSExport("findOne")
-  def jsFindOne(resource: String, id: js.Any): js.Promise[js.Any] =
-    toPromiseOne(findOne(resource, id))
+  def jsFindOne(resource: String, id: js.Any): js.Promise[js.Any] = toPromiseOne(findOne(resource, id))
 
-  def findOne(resource: String, id: Any): Future[Option[ListMap[String, Any]]] = {
+  def findOne(resource: String, id: Any): Future[Option[ListMap[String, Any]]] =
     model.get(resource) match {
       case Some(entity) =>
         entity.pk match {
@@ -156,7 +155,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         }
       case None => sys.error(s"findOne: unknown resource '$resource'")
     }
-  }
 
   private def writeQuery(resource: String,
                          select: Option[ExpressionOQL],
@@ -362,6 +360,54 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     entity.attributes get attr.name match {
       case None =>
         problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+      case Some(ObjectArrayEntityAttribute(entityType, attrEntity)) =>
+        val es = attrEntity.attributes.toList.filter(
+          a =>
+            a._2
+              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+        val (projAttr, column) =
+          es.length match {
+            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+            case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
+            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+          }
+        val graph =
+          branches(
+            entityType,
+            attrEntity,
+            ProjectAttributesOQL(
+              List(
+                QueryOQL(
+                  Ident(projAttr),
+                  project,
+                  None,
+                  None,
+                  None,
+                  None,
+                  None
+                ))),
+            fk = false,
+            projectbuf,
+            joinbuf,
+            List(attrEntity.table),
+            Nil
+          )
+
+        val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${attrEntity.table}.$column") // todo: entity.pk.get could be improved
+
+        writeQuery(
+          entityType,
+          Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+          group,
+          order,
+          limit,
+          offset,
+          None,
+          attrEntity,
+          projectbuf,
+          joinbuf,
+          graph
+        )
       case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
         val ts = junction.attributes.toList.filter(
           a =>
@@ -459,8 +505,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 reference(entityType, entity, tail, attrlist1)
               }
             case Some(
-                _: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute |
-                _: ObjectOneEntityAttribute) => // todo: figure out how to add support for ObjectOneEntityAttribute here
+                _: ObjectArrayEntityAttribute | _: ObjectArrayJunctionEntityAttribute | _: ObjectOneEntityAttribute) =>
               problem(attr.pos, s"attribute '${attr.name}' is an array type and may not be referenced")
           }
       }
@@ -515,12 +560,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       project match {
         case _: ProjectAllOQL =>
           entity.attributes filter {
-            case (_,
-                  _: ObjectArrayJunctionEntityAttribute | _: ObjectArrayEntityAttribute |
-                  _: ObjectOneEntityAttribute) =>
-              false
-            case _            => true
-          } map { case (k, v) => (None, k, v, ProjectAllOQL(), null, false) } toList
+            case (_, _: EntityColumnAttribute) => true
+            case _                             => false
+          } map { case (k, v)                  => (None, k, v, ProjectAllOQL(), null, false) } toList
         case ProjectAttributesOQL(attrs) =>
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]

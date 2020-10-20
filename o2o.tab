@@ -1,0 +1,8 @@
+y
+ id: integer, pk  b: text 
+ 1                basdf1  
+ 2                basdf2  
+
+x
+ id: integer, pk  a: text  y1: integer, fk, y, id  y2: integer, fk, y, id 
+ 1                aasdf    1                       2                      

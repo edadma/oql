@@ -1,11 +1,12 @@
 entity x {
  *id: integer
   a: text
-  y: y
+  y1: y
+  y2: y
 }
 
 entity y {
  *id: integer
   b: text
-  xs: [x]
+  xs: <x.y2>
 }

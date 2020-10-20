@@ -20,11 +20,9 @@ object Main extends App {
   oql.trace = true
 
   for {
-    q1 <- oql.json("x")
-    q2 <- oql.json("y {xs}")
+    q <- oql.json("y {id xs} [EXISTS (xs [a = 'zxcv'])]")
   } {
-    println(q1)
-    println(q2)
+    println(q)
     conn.close()
   }
 
