@@ -6,4 +6,4 @@ y
 x
  id: integer, pk  a: text  y: integer, fk, y, id 
  1                asdf     1                     
- 2                zxcv     2                     
+ 3                dfgh     2                     

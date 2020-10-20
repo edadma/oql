@@ -156,6 +156,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case None => sys.error(s"findOne: unknown resource '$resource'")
     }
 
+  private val INDENT = 2
+
   private def writeQuery(resource: String,
                          select: Option[ExpressionOQL],
                          group: Option[List[ExpressionOQL]],
@@ -166,7 +168,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                          entity: Entity,
                          projectbuf: ListBuffer[(Option[List[String]], String, String)],
                          joinbuf: ListBuffer[(String, String, String, String, String)],
-                         graph: Seq[ProjectionNode]): String = {
+                         graph: Seq[ProjectionNode],
+                         preindent: Int = 0): String = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f) => s"$e.$f"
@@ -181,14 +184,245 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
         call(fs)
     }
+    var spaces = preindent
 
-    sql append s"SELECT ${projects.head}${if (projects.tail nonEmpty) "," else ""}\n" // todo: DISTINCT
-    sql append (projects.tail map ("       " ++ _) mkString ",\n")
+    def nl = {
+      sql += '\n'
+      sql ++= " " * spaces
+    }
 
-    if (projects.tail nonEmpty)
-      sql append '\n'
+    def indent(n: Int = INDENT): Unit = spaces += n
 
-    sql append s"  FROM ${entity.table}\n"
+    def dedent(n: Int = INDENT): Unit = spaces -= n
+
+    def expression(entityname: String,
+                   entity: Entity,
+                   entityType: Option[String],
+                   expr: ExpressionOQL,
+                   joinbuf: ListBuffer[(String, String, String, String, String)]): String = {
+      val sql = new StringBuilder
+
+      def expressions(list: List[ExpressionOQL]): Unit = {
+        sql += '('
+        expression(list.head)
+
+        for (e <- list.tail) {
+          sql ++= ", "
+          expression(e)
+        }
+
+        sql += ')'
+      }
+
+      def expression(expr: ExpressionOQL): Unit =
+        expr match {
+          case EqualsExpressionOQL(table, column, value) => sql append s"$table.$column = $value"
+          case InfixExpressionOQL(left, op, right) =>
+            expression(left)
+            sql append s" ${op.toUpperCase} "
+            expression(right)
+          case PrefixExpressionOQL(op, expr) =>
+            sql append s"${op.toUpperCase} "
+            expression(expr)
+          case PostfixExpressionOQL(expr, op) =>
+            expression(expr)
+            sql append s" ${op.toUpperCase}"
+          case InExpressionOQL(expr, op, list) =>
+            expression(expr)
+            sql ++= s" $op "
+            expressions(list)
+          case InSubqueryExpressionOQL(expr, op, query) =>
+            expression(expr)
+            sql ++= s" $op (${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
+          case ExistsExpressionOQL(query) =>
+            sql ++= s"EXISTS(\n${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
+          case BetweenExpressionOQL(expr, op, lower, upper) =>
+            expression(expr)
+            sql ++= s" $op "
+            expression(lower)
+            sql ++= " AND "
+            expression(upper)
+          case FloatLiteralOQL(n)    => sql append n
+          case IntegerLiteralOQL(n)  => sql append n
+          case StringLiteralOQL(s)   => sql append s"'$s'"
+          case BooleanLiteralOQL(b)  => sql append b.toString.toUpperCase
+          case IntervalLiteralOQL(s) => sql append s"INTERVAL '$s'"
+          case GroupedExpressionOQL(expr) =>
+            sql += '('
+            expression(expr)
+            sql += ')'
+          case ApplyExpressionOQL(func, args) =>
+            sql ++= func.name
+            expressions(args)
+          case VariableExpressionOQL(List(Ident(name))) if OQL.builtinSQLVariables(name.toLowerCase) => sql append name
+          case VariableExpressionOQL(ids) =>
+            sql append reference(entityname, entity, entityType, ids, ref = false, joinbuf)
+          case ReferenceExpressionOQL(ids) =>
+            sql append reference(entityname, entity, entityType, ids, ref = true, joinbuf)
+          case CaseExpressionOQL(whens, els) =>
+            sql ++= "CASE"
+
+            for ((c, r) <- whens) {
+              sql ++= " WHEN "
+              expression(c)
+              sql ++= " THEN "
+              expression(r)
+            }
+
+            els foreach (e => {
+              sql ++= " ELSE "
+              expression(e)
+            })
+
+            sql ++= " END"
+        }
+
+      expression(expr)
+      sql.toString
+    }
+
+    def subquery(entityname: String, entity: Entity, query: QueryOQL, preindent: Int) = {
+      val QueryOQL(attr, project, select, group, order, limit, offset) = query
+      val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
+      val joinbuf = new ListBuffer[(String, String, String, String, String)]
+
+      entity.attributes get attr.name match {
+        case None =>
+          problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+        case Some(ObjectArrayEntityAttribute(entityType, attrEntity)) =>
+          val es = attrEntity.attributes.toList.filter(
+            a =>
+              a._2
+                .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+          val (projAttr, column) =
+            es.length match {
+              case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+              case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
+              case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+            }
+          val graph =
+            branches(
+              entityType,
+              attrEntity,
+              ProjectAttributesOQL(
+                List(
+                  QueryOQL(
+                    Ident(projAttr),
+                    project,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                  ))),
+              fk = false,
+              projectbuf,
+              joinbuf,
+              List(attrEntity.table),
+              Nil
+            )
+
+          val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${attrEntity.table}.$column") // todo: entity.pk.get could be improved
+
+          writeQuery(
+            entityType,
+            Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+            group,
+            order,
+            limit,
+            offset,
+            None,
+            attrEntity,
+            projectbuf,
+            joinbuf,
+            graph,
+            preindent
+          )
+        case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
+          val ts = junction.attributes.toList.filter(
+            a =>
+              a._2
+                .isInstanceOf[ObjectEntityAttribute] && a._2
+                .asInstanceOf[ObjectEntityAttribute]
+                .entity == attrEntity)
+          val junctionAttr =
+            ts.length match {
+              case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
+              case 1 => ts.head._1
+              case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
+            }
+          val es = junction.attributes.toList.filter(
+            a =>
+              a._2
+                .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+          val column =
+            es.length match {
+              case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+              case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+              case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+            }
+          val graph =
+            branches(
+              junctionType,
+              junction,
+              ProjectAttributesOQL(
+                List(
+                  QueryOQL(
+                    Ident(junctionAttr),
+                    project,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                  ))),
+              fk = false,
+              projectbuf,
+              joinbuf,
+              List(junction.table),
+              Nil
+            )
+
+          val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
+          writeQuery(
+            junctionType,
+            Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
+            group,
+            order,
+            limit,
+            offset,
+            None,
+            junction,
+            projectbuf,
+            joinbuf,
+            graph
+          )
+      }
+    }
+
+    sql append s"${" " * preindent}SELECT ${projects.head}" // todo: DISTINCT
+
+    if (projects.tail.nonEmpty) {
+      var indented = false
+
+      for (p <- projects.tail) {
+        sql += ','
+
+        if (!indented) {
+          indent(7)
+          indented = true
+        }
+
+        nl
+        sql append s"$p"
+      }
+
+      dedent(7)
+    }
+
+    indent()
+    nl
+    sql append s"FROM ${entity.table}"
 
     val where =
       if (select isDefined)
@@ -208,23 +442,41 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       else
         null
 
-    for ((lt, lf, rt, rta, rf) <- joinbuf.distinct)
-      sql append s"    LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf\n"
+    if (joinbuf nonEmpty) {
+      indent()
 
-    if (select isDefined)
-      sql append s"  WHERE $where\n"
+      for ((lt, lf, rt, rta, rf) <- joinbuf.distinct) {
+        nl
+        sql append s"LEFT OUTER JOIN $rt AS $rta ON $lt.$lf = $rta.$rf"
+      }
 
-    if (group isDefined)
-      sql append s"  GROUP BY $groupby\n"
+      dedent()
+    }
 
-    if (order isDefined)
-      sql append s"  ORDER BY $orderby\n"
+    if (select isDefined) {
+      nl
+      sql append s"WHERE $where"
+    }
 
-    (limit, offset) match {
-      case (None, None)       =>
-      case (Some(l), None)    => sql append s"  LIMIT $l"
-      case (Some(l), Some(o)) => sql append s"  LIMIT $l OFFSET $o"
-      case (None, Some(o))    => sql append s"  OFFSET $o"
+    if (group isDefined) {
+      nl
+      sql append s"GROUP BY $groupby"
+    }
+
+    if (order isDefined) {
+      nl
+      sql append s"ORDER BY $orderby"
+    }
+
+    if ((limit, offset) != (None, None)) {
+      nl
+
+      (limit, offset) match {
+        case (None, None)       =>
+        case (Some(l), None)    => sql append s"LIMIT $l"
+        case (Some(l), Some(o)) => sql append s"LIMIT $l OFFSET $o"
+        case (None, Some(o))    => sql append s"OFFSET $o"
+      }
     }
 
     sql.toString
@@ -244,7 +496,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
 
     if (trace)
-      print(sql)
+      println(sql)
 
     val projectmap = projectbuf
       .map {
@@ -265,209 +517,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         list foreach (futures(_, futurebuf, futuremap, projectmap, graph))
         Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph)))
       })
-  }
-
-  private def expression(entityname: String,
-                         entity: Entity,
-                         entityType: Option[String],
-                         expr: ExpressionOQL,
-                         joinbuf: ListBuffer[(String, String, String, String, String)]) = {
-    val buf = new StringBuilder
-
-    def expressions(list: List[ExpressionOQL]): Unit = {
-      buf += '('
-      expression(list.head)
-
-      for (e <- list.tail) {
-        buf ++= ", "
-        expression(e)
-      }
-
-      buf += ')'
-    }
-
-    def expression(expr: ExpressionOQL): Unit =
-      expr match {
-        case EqualsExpressionOQL(table, column, value) => buf append s"$table.$column = $value"
-        case InfixExpressionOQL(left, op, right) =>
-          expression(left)
-          buf append s" ${op.toUpperCase} "
-          expression(right)
-        case PrefixExpressionOQL(op, expr) =>
-          buf append s"${op.toUpperCase} "
-          expression(expr)
-        case PostfixExpressionOQL(expr, op) =>
-          expression(expr)
-          buf append s" ${op.toUpperCase}"
-        case InExpressionOQL(expr, op, list) =>
-          expression(expr)
-          buf ++= s" $op "
-          expressions(list)
-        case InSubqueryExpressionOQL(expr, op, query) =>
-          expression(expr)
-          buf ++= s" $op (${subquery(entityname, entity, query)})"
-        case ExistsExpressionOQL(query) => buf ++= s"EXISTS(${subquery(entityname, entity, query)})"
-        case BetweenExpressionOQL(expr, op, lower, upper) =>
-          expression(expr)
-          buf ++= s" $op "
-          expression(lower)
-          buf ++= " AND "
-          expression(upper)
-        case FloatLiteralOQL(n)    => buf append n
-        case IntegerLiteralOQL(n)  => buf append n
-        case StringLiteralOQL(s)   => buf append s"'$s'"
-        case BooleanLiteralOQL(b)  => buf append b.toString.toUpperCase
-        case IntervalLiteralOQL(s) => buf append s"INTERVAL '$s'"
-        case GroupedExpressionOQL(expr) =>
-          buf += '('
-          expression(expr)
-          buf += ')'
-        case ApplyExpressionOQL(func, args) =>
-          buf ++= func.name
-          expressions(args)
-        case VariableExpressionOQL(List(Ident(name))) if OQL.builtinSQLVariables(name.toLowerCase) => buf append name
-        case VariableExpressionOQL(ids) =>
-          buf append reference(entityname, entity, entityType, ids, ref = false, joinbuf)
-        case ReferenceExpressionOQL(ids) =>
-          buf append reference(entityname, entity, entityType, ids, ref = true, joinbuf)
-        case CaseExpressionOQL(whens, els) =>
-          buf ++= "CASE"
-
-          for ((c, r) <- whens) {
-            buf ++= " WHEN "
-            expression(c)
-            buf ++= " THEN "
-            expression(r)
-          }
-
-          els foreach (e => {
-            buf ++= " ELSE "
-            expression(e)
-          })
-
-          buf ++= " END"
-      }
-
-    expression(expr)
-    buf.toString
-  }
-
-  private def subquery(entityname: String, entity: Entity, query: QueryOQL) = {
-    val QueryOQL(attr, project, select, group, order, limit, offset) = query
-    val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
-    val joinbuf = new ListBuffer[(String, String, String, String, String)]
-
-    entity.attributes get attr.name match {
-      case None =>
-        problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
-      case Some(ObjectArrayEntityAttribute(entityType, attrEntity)) =>
-        val es = attrEntity.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
-        val (projAttr, column) =
-          es.length match {
-            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
-            case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
-            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
-          }
-        val graph =
-          branches(
-            entityType,
-            attrEntity,
-            ProjectAttributesOQL(
-              List(
-                QueryOQL(
-                  Ident(projAttr),
-                  project,
-                  None,
-                  None,
-                  None,
-                  None,
-                  None
-                ))),
-            fk = false,
-            projectbuf,
-            joinbuf,
-            List(attrEntity.table),
-            Nil
-          )
-
-        val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${attrEntity.table}.$column") // todo: entity.pk.get could be improved
-
-        writeQuery(
-          entityType,
-          Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
-          group,
-          order,
-          limit,
-          offset,
-          None,
-          attrEntity,
-          projectbuf,
-          joinbuf,
-          graph
-        )
-      case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
-        val ts = junction.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2
-              .asInstanceOf[ObjectEntityAttribute]
-              .entity == attrEntity)
-        val junctionAttr =
-          ts.length match {
-            case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
-            case 1 => ts.head._1
-            case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
-          }
-        val es = junction.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
-        val column =
-          es.length match {
-            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
-            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
-          }
-        val graph =
-          branches(
-            junctionType,
-            junction,
-            ProjectAttributesOQL(
-              List(
-                QueryOQL(
-                  Ident(junctionAttr),
-                  project,
-                  None,
-                  None,
-                  None,
-                  None,
-                  None
-                ))),
-            fk = false,
-            projectbuf,
-            joinbuf,
-            List(junction.table),
-            Nil
-          )
-
-        val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
-        writeQuery(
-          junctionType,
-          Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
-          group,
-          order,
-          limit,
-          offset,
-          None,
-          junction,
-          projectbuf,
-          joinbuf,
-          graph
-        )
-    }
   }
 
   private def reference(
