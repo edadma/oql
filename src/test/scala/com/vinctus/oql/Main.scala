@@ -20,7 +20,7 @@ object Main extends App {
   oql.trace = true
 
   for {
-    q <- oql.json("y {id xs} [EXISTS (xs [a like '%h%'])]")
+    q <- oql.json("y {id xs} [EXISTS (xs [a in :choices])]", Map("choices" -> Array("zxcv", "dfgh")))
   } {
     println(q)
     conn.close()

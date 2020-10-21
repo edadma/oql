@@ -16,7 +16,7 @@ package object oql {
   private val varRegex = ":([a-zA-Z]+)" r
   private val specialRegex = """(['\\\r\n])""" r
 
-  def template(s: String, vars: Map[String, Any]): String =
+  def template(s: String, vars: Map[String, Any]): String = // todo: unit tests for parameters
     if (vars eq null)
       s
     else
@@ -31,9 +31,12 @@ package object oql {
 
   def render(a: Any): String =
     a match {
-      case s: String  => s"'${quote(s)}'"
-      case d: js.Date => s"'${d.toISOString}'"
-      case _          => String.valueOf(a)
+      case s: String              => s"'${quote(s)}'"
+      case d: js.Date             => s"'${d.toISOString}'"
+      case a: js.Array[Any]       => s"(${a map render mkString ","})"
+      case a: collection.Seq[Any] => s"(${a map render mkString ","})"
+      case a: Array[Any]          => s"(${a map render mkString ","})"
+      case _                      => String.valueOf(a)
     }
 
   def quote(s: String): String =
