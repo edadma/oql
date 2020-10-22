@@ -14,20 +14,20 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("m2o.tab"))
-  val oql = new OQL(conn, readFile("m2o.erd"))
-
-  oql.trace = true
-
-  for {
-    q <- oql.json("y {id xs} [EXISTS (xs [a in :choices])]", Map("choices" -> Array("zxcv", "dfgh")))
-  } {
-    println(q)
-    conn.close()
-  }
-
-  //  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//  val conn = new RDBConnection(readFile("m2o.tab"))
+//  val oql = new OQL(conn, readFile("m2o.erd"))
 //
+//  oql.trace = true
+//
+//  for {
+//    q <- oql.json("z {id} [exists (ys [exists (xs [a = 'a2'])])]")
+//  } {
+//    println(q)
+//    conn.close()
+//  }
+
+  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+
 //  val conn = new PostgresConnection("localhost", 5432, "mobility", "mobility", "mobility", false)
 //  val oql = new OQL(conn, readFile("mobility.erd"))
 //
@@ -43,10 +43,34 @@ object Main extends App {
 //    conn.close()
 //  }
 
-  //  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 
-//  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
+  oql.trace = true
+
+  val back28days = "2020-09-23T20:25:25.026Z"
+  val back15days = "2020-10-07T20:25:25.026Z"
+  val back14days = "2020-10-08T20:25:25.026Z"
+
+  for {
+//    q <- oql.queryOne(s"""
+//        |tenant {count(*)} [active and
+//        |  exists(stations [
+//        |    exists(trips [createdTime between '${back28days}' and '${back15days}']) and
+//        |    not exists(trips [createdTime > '${back14days}'])
+//        |  ])
+//        |]
+//        |""".stripMargin)
+    q <- oql.queryOne(s"""
+                         |tenant {count(*)} [not exists(stations)]
+                         |""".stripMargin)
+//    q <- oql.json("trip")
+  } {
+    println(q)
+    conn.close()
+  }
+
+  //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("m2m.erd"))
 
 //  val conn = new RDBConnection(readFile("examples/northwind.tab"))

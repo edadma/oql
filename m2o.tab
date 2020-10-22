@@ -1,9 +1,14 @@
+z
+ id: integer, pk  c: text 
+ 1                c1      
+ 2                c2      
+
 y
- id: integer, pk  b: text 
- 1                bsdf1   
- 2                bsdf2   
+ id: integer, pk  b: text  z: integer, fk, z, id 
+ 1                b1       1                     
+ 2                b2       2                     
 
 x
  id: integer, pk  a: text  y: integer, fk, y, id 
- 1                asdf     1                     
- 3                dfgh     2                     
+ 1                a1       1                     
+ 2                a2       2                     

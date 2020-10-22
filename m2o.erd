@@ -7,5 +7,12 @@ entity x {
 entity y {
  *id: integer
   b: text
+  z: z
   xs: [x]
+}
+
+entity z {
+ *id: integer
+  c: text
+  ys: [y]
 }
