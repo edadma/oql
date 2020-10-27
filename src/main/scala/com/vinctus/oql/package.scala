@@ -97,4 +97,10 @@ package object oql {
       case _ => a.asInstanceOf[js.Any]
     }
 
+//  def rowCount(oql: OQL, q: QueryOQL): Future[Int] =
+//    new QueryBuilder(oql,
+//                     q.copy(project =
+//                              ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
+//                            order = None)).getOne map (_.get("count_*").asInstanceOf[Int])
+
 }

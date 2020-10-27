@@ -131,11 +131,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
 
   def getOne: Future[Option[ListMap[String, Any]]] = check.oql.queryOne(q)
 
-  def getCount: Future[Int] =
-    new QueryBuilder(oql,
-                     q.copy(project =
-                              ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
-                            order = None)).getOne map (_.get("count_*").asInstanceOf[Int])
+  def getCount: Future[Int] = oql.count(q)
 
   def json: Future[String] =
     getMany.map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))

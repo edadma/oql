@@ -103,6 +103,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
 
+  @JSExport("count")
+  def jsCount(oql: String, parameters: js.Any = js.undefined): js.Promise[Int] =
+    count(oql, toMap(parameters)) toJSPromise
+
   def json(oql: String, parameters: Map[String, Any] = null): Future[String] = toJSON(queryMany(oql, parameters))
 
   def queryOne(oql: String, parameters: Map[String, Any] = null): Future[Option[ListMap[String, Any]]] =
@@ -114,6 +118,19 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case List(row) => Some(row)
       case _         => sys.error("queryOne: more than one was found")
     }
+
+  def count(oql: String, parameters: Map[String, Any] = null): Future[Int] =
+    count(OQLParser.parseQuery(template(oql, parameters)))
+
+  def count(q: QueryOQL): Future[Int] = {
+    queryMany(
+      q.copy(project = ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
+             order = None)) map {
+      case Nil       => sys.error("count: zero rows were found")
+      case List(row) => row("count_*").asInstanceOf[Int]
+      case _         => sys.error("count: more than one row was found")
+    }
+  }
 
   def queryMany(oql: String, parameters: Map[String, Any] = null): Future[List[ListMap[String, Any]]] =
     queryMany(OQLParser.parseQuery(template(oql, parameters)))
