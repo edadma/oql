@@ -1,5 +1,5 @@
 entity Suppliers {
- *SupplierID: integer
+ *ID: integer
   CompanyName: text
   Products: [Products]
 }

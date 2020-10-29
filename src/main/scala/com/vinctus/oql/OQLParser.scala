@@ -1,6 +1,5 @@
 package com.vinctus.oql
 
-import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{CharSequenceReader, Position, Positional}
@@ -35,7 +34,7 @@ object OQLParser {
 
 class OQLParser extends RegexParsers {
 
-  override protected val whiteSpace: Regex = """(\s|#.*)+""".r
+  override protected val whiteSpace: Regex = """(\s|//.*)+""".r
 
   def pos: Parser[Position] = positioned(success(new Positional {})) ^^ {
     _.pos
@@ -96,7 +95,6 @@ class OQLParser extends RegexParsers {
 
   def applyAttribute: Parser[(List[Ident], Ident)] =
     ident ~ ("(" ~> (applyAttribute | identOrStar) <~ ")") ^^ { r =>
-      //@scala.annotation.tailrec
       def result(p: Any): (List[Ident], Ident) =
         p match {
           case (f: Ident) ~ (a: Ident)                    => (List(f), a)

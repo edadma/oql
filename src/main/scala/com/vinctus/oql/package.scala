@@ -53,7 +53,7 @@ package object oql {
 
       for ((k, v) <- map) {
         if ((v != null) && js.typeOf(v) == "object" && !v
-              .isInstanceOf[Long] && !v.isInstanceOf[js.Date]) {
+              .isInstanceOf[Long] && !v.isInstanceOf[js.Date] && !v.isInstanceOf[js.Array[_]]) {
           map = map + ((k, toMap(v.asInstanceOf[js.Any])))
         }
       }

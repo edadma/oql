@@ -670,8 +670,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 propidset += attr
 
                 attrType(attr) match {
-                  case _: ObjectEntityAttribute => List((None, attr.name, attrType(attr), null, null, true))
-                  case _                        => problem(attr.pos, s"can only apply a reference operator to an object attribute")
+                  case _: ObjectEntityAttribute | _: ObjectArrayEntityAttribute =>
+                    List((None, attr.name, attrType(attr), null, null, true))
+                  case a => problem(attr.pos, s"can only apply a reference operator to an object attribute: $a")
                 }
               case a @ AggregateAttributeOQL(agg, attr) =>
                 if (aggset(a))

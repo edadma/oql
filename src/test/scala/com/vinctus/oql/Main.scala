@@ -14,13 +14,13 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new RDBConnection(readFile("m2o.tab"))
-//  val oql = new OQL(conn, readFile("m2o.erd"))
+//  val conn = new RDBConnection(readFile("examples/northwind.tab"))
+//  val oql = new OQL(conn, readFile("examples/northwind.erd"))
 //
 //  oql.trace = true
 //
 //  for {
-//    q <- oql.json("z {id} [exists (ys [exists (xs [a = 'a2'])])]")
+//    q <- oql.json("Suppliers {CompanyName} [ID IN (Products {&SupplierID} [UnitPrice = 22])]")
 //  } {
 //    println(q)
 //    conn.close()
@@ -45,26 +45,15 @@ object Main extends App {
 
   val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
   val oql = new OQL(conn, readFile("sc.erd"))
+//
+//  oql.trace = true
+
+  val names = js.Array("Cedrick")
 
   oql.trace = true
 
-  val back28days = "2020-09-23T20:25:25.026Z"
-  val back15days = "2020-10-07T20:25:25.026Z"
-  val back14days = "2020-10-08T20:25:25.026Z"
-
   for {
-//    q <- oql.queryOne(s"""
-//        |tenant {count(*)} [active and
-//        |  exists(stations [
-//        |    exists(trips [createdTime between '${back28days}' and '${back15days}']) and
-//        |    not exists(trips [createdTime > '${back14days}'])
-//        |  ])
-//        |]
-//        |""".stripMargin)
-    q <- oql.queryOne(s"""
-                         |tenant {count(*)} [not exists(stations)]
-                         |""".stripMargin)
-//    q <- oql.json("trip")
+    q <- oql.json("user {id firstName} [firstName in :names]", toMap(js.Dynamic.literal(names = names)))
   } {
     println(q)
     conn.close()
