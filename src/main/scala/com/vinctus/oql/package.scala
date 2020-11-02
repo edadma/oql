@@ -13,12 +13,11 @@ import scala.util.matching.Regex
 
 package object oql {
 
-  private val varRegex = ":([a-zA-Z]+)" r
+  private val varRegex = ":([a-zA-Z_][a-zA-Z0-9_]*)" r
   private val specialRegex = """(['\\\r\n])""" r
 
   def template(s: String, vars: Map[String, Any]): String = // todo: unit tests for parameters
-    if (vars eq null)
-      s
+    if (vars eq null) s
     else
       varRegex.replaceAllIn(
         s,
@@ -32,8 +31,8 @@ package object oql {
   def render(a: Any): String =
     a match {
       case s: String              => s"'${quote(s)}'"
-      case d: js.Date             => s"'${d.toISOString}'"
-      case a: js.Array[Any]       => s"(${a map render mkString ","})"
+      case d: js.Date             => s"'${d.toISOString()}'"
+      case a: js.Array[_]         => s"(${a map render mkString ","})"
       case a: collection.Seq[Any] => s"(${a map render mkString ","})"
       case a: Array[Any]          => s"(${a map render mkString ","})"
       case _                      => String.valueOf(a)
@@ -47,16 +46,17 @@ package object oql {
       case "\n" => """\\n"""
     })
 
+  def jsObject(v: Any): Boolean =
+    js.typeOf(v) == "object" && (v != null) && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date] && !v
+      .isInstanceOf[js.Array[_]]
+
   def toMap(obj: js.Any): ListMap[String, Any] = {
     def toMap(obj: js.Any): ListMap[String, Any] = {
       var map: ListMap[String, Any] = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
 
-      for ((k, v) <- map) {
-        if ((v != null) && js.typeOf(v) == "object" && !v
-              .isInstanceOf[Long] && !v.isInstanceOf[js.Date] && !v.isInstanceOf[js.Array[_]]) {
+      for ((k, v) <- map)
+        if (jsObject(v))
           map = map + ((k, toMap(v.asInstanceOf[js.Any])))
-        }
-      }
 
       map
     }
@@ -82,25 +82,16 @@ package object oql {
 
   def toJS(a: Any): js.Any =
     a match {
-      case Some(a) => a.asInstanceOf[js.Any]
-      case None    => js.undefined
-      case date: LocalDate =>
-        val jsdate = new js.Date(date.getYear, date.getMonthValue - 1, date.getDayOfMonth)
-
-        jsdate
-      case d: BigDecimal => d.toDouble
-      case l: Seq[_]     => l map toJS toJSArray
+      case Some(a)         => a.asInstanceOf[js.Any]
+      case None            => js.undefined
+      case date: LocalDate => new js.Date(date.getYear, date.getMonthValue - 1, date.getDayOfMonth)
+      case d: BigDecimal   => d.toDouble
+      case l: Seq[_]       => l map toJS toJSArray
       case m: Map[_, _] =>
         (m map { case (k, v) => k -> toJS(v) })
           .asInstanceOf[Map[String, Any]]
           .toJSDictionary
       case _ => a.asInstanceOf[js.Any]
     }
-
-//  def rowCount(oql: OQL, q: QueryOQL): Future[Int] =
-//    new QueryBuilder(oql,
-//                     q.copy(project =
-//                              ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
-//                            order = None)).getOne map (_.get("count_*").asInstanceOf[Int])
 
 }

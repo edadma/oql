@@ -17,7 +17,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def getMany: Future[List[ListMap[String, Any]]] = builder.getMany
 
   @JSExport("link")
-  def jsLink(id1: js.Any, resource: String, id2: js.Any): js.Promise[Unit] = link(id1, resource, id2).toJSPromise
+  def jsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
+    val id1 = if (jsObject(e1)) e1.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e1
+    val id2 = if (jsObject(e2)) e2.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e2
+
+    link(id1, resource, id2).toJSPromise
+  }
 
   def link(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
@@ -107,7 +112,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("insert")
   def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(toMap(obj)))
 
-  def insert(obj: collection.Map[String, Any]): Future[Any] = {
+  def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
     entity.pk match {
       case None     =>
@@ -165,8 +170,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             case Some(pk) =>
               val v = obj(k)
 
-              if (js.typeOf(v) == "object" && (v != null) && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date])
-                List(k -> render(v.asInstanceOf[collection.Map[String, Any]](pk)))
+              if (jsObject(v))
+                List(k -> render(v.asInstanceOf[collection.Map[String, Any]](pk))) // todo: this might have to be js.Dictionary
               else
                 List(k -> render(v))
           }
