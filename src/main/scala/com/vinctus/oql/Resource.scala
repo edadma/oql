@@ -51,7 +51,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("unlink")
-  def jsUnlink(id1: js.Any, resource: String, id2: js.Any): js.Promise[Unit] = unlink(id1, resource, id2).toJSPromise
+  def jsUnlink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
+    val id1 = if (jsObject(e1)) e1.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e1
+    val id2 = if (jsObject(e2)) e2.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e2
+
+    unlink(id1, resource, id2).toJSPromise
+  }
 
   def unlink(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
