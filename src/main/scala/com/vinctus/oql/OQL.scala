@@ -250,7 +250,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             expressions(list)
           case InSubqueryExpressionOQL(expr, op, query) =>
             expression(expr)
-            sql ++= s" $op (${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
+            sql ++= s" $op (\n${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
           case ExistsExpressionOQL(query) =>
             sql ++= s"EXISTS(\n${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
           case BetweenExpressionOQL(expr, op, lower, upper) =>
@@ -311,7 +311,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             a =>
               a._2
                 .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
-          val (projAttr, column) =
+          val (_, column) =
             es.length match {
               case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
               case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
@@ -321,17 +321,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             branches(
               entityType,
               attrEntity,
-              ProjectAttributesOQL(
-                List(
-                  QueryOQL(
-                    Ident(projAttr),
-                    project,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None
-                  ))),
+              project,
               fk = false,
               projectbuf,
               joinbuf,

@@ -12,3 +12,4 @@ x
  id: integer, pk  a: text  y: integer, fk, y, id 
  1                a1       1                     
  2                a2       2                     
+ 3                a3       1                     
