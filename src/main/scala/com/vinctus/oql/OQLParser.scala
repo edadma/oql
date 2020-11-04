@@ -97,8 +97,8 @@ class OQLParser extends RegexParsers {
     ident ~ ("(" ~> (applyAttribute | identOrStar) <~ ")") ^^ { r =>
       def result(p: Any): (List[Ident], Ident) =
         p match {
-          case (f: Ident) ~ (a: Ident)                    => (List(f), a)
-          case (f: Ident) ~ ((fs: List[Ident], a: Ident)) => (f +: fs, a)
+          case (f: Ident) ~ (a: Ident)                => (List(f), a)
+          case (f: Ident) ~ ((fs: List[_], a: Ident)) => (f +: fs.asInstanceOf[List[Ident]], a)
         }
 
       result(r)
@@ -209,7 +209,7 @@ class OQLParser extends RegexParsers {
     opt("ASC" | "asc" | "DESC" | "desc") ~ opt("NULLS" ~> ("FIRST" | "LAST") | "nulls" ~> ("first" | "last")) ^^ {
       case None ~ None | Some("ASC" | "asc") ~ None => "ASC NULLS FIRST"
       case None ~ Some(nulls)                       => s"ASC NULLS ${nulls.toUpperCase}"
-      case Some("DESC" | "desc") ~ None             => "DESC NULLS LAST"
+      case /*Some("DESC" | "desc")*/ _ ~ None       => "DESC NULLS LAST"
       case Some(dir) ~ Some(nulls)                  => s"${dir.toUpperCase} NULLS ${nulls.toUpperCase}"
     }
 

@@ -14,19 +14,19 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("m2o.tab"))
-  val oql = new OQL(conn, readFile("m2o.erd"))
+//  val conn = new RDBConnection(readFile("m2o.tab"))
+//  val oql = new OQL(conn, readFile("m2o.erd"))
+//
+//  oql.trace = true
+//
+//  for {
+//    q <- oql.json("y {id b xs} [2 IN (xs {id} [a like 'a%'])]") // {a}
+//  } {
+//    println(q)
+//    conn.close()
+//  }
 
-  oql.trace = true
-
-  for {
-    q <- oql.json("y {id b xs} [2 IN (xs {id} [a like 'a%'])]") // {a}
-  } {
-    println(q)
-    conn.close()
-  }
-
-//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
 //  val conn = new PostgresConnection("localhost", 5432, "mobility", "mobility", "mobility", false)
 //  val oql = new OQL(conn, readFile("mobility.erd"))
@@ -43,21 +43,22 @@ object Main extends App {
 //    conn.close()
 //  }
 
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
-////
-////  oql.trace = true
-//
-//  val names = js.Array("Cedrick")
+  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+  val oql = new OQL(conn, readFile("sc.erd"))
 //
 //  oql.trace = true
-//
-//  for {
+
+//  val names = js.Array("Cedrick")
+
+  oql.trace = true
+
+  for {
 //    q <- oql.json("user {id firstName} [firstName in :names]", toMap(js.Dynamic.literal(names = names)))
-//  } {
-//    println(q)
-//    conn.close()
-//  }
+    q <- oql.json("tenant [active and exists(stations [exists(trips [createdTime > '2020-09-04T17:30:36.673169Z'])])]")
+  } {
+    println(q)
+    conn.close()
+  }
 
   //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
 //  val oql = new OQL(conn, readFile("m2m.erd"))

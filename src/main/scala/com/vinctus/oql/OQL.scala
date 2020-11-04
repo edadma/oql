@@ -185,7 +185,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                          entity: Entity,
                          projectbuf: ListBuffer[(Option[List[String]], String, String)],
                          joinbuf: ListBuffer[(String, String, String, String, String)],
-                         graph: Seq[ProjectionNode],
+//                         graph: Seq[ProjectionNode],
                          preindent: Int = 0): String = {
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
@@ -250,9 +250,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             expressions(list)
           case InSubqueryExpressionOQL(expr, op, query) =>
             expression(expr)
-            sql ++= s" $op (\n${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
+            sql ++= s" $op (\n${subquery(entityname, entity, query, true, preindent + 2 * INDENT)})"
           case ExistsExpressionOQL(query) =>
-            sql ++= s"EXISTS(\n${subquery(entityname, entity, query, preindent + 2 * INDENT)})"
+            sql ++= s"EXISTS(\n${subquery(entityname, entity, query, false, preindent + 2 * INDENT)})"
           case BetweenExpressionOQL(expr, op, lower, upper) =>
             expression(expr)
             sql ++= s" $op "
@@ -298,7 +298,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       sql.toString
     }
 
-    def subquery(entityname: String, entity: Entity, query: QueryOQL, preindent: Int) = { // todo: unit tests for subqueries
+    def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = { // todo: unit tests for subqueries
       val QueryOQL(attr, project, select, group, order, limit, offset) = query
       val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
       val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -317,7 +317,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
               case _ => problem(null, s"contains more than one attribute of type '$entityname'")
             }
-          val graph =
+//          val graph =
+
+          if (results)
             branches(
               entityType,
               attrEntity,
@@ -342,7 +344,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             attrEntity,
             projectbuf,
             joinbuf,
-            graph,
+//            graph,
             preindent
           )
         case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
@@ -368,27 +370,27 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
               case _ => problem(null, s"contains more than one attribute of type '$entityname'")
             }
-          val graph =
-            branches(
-              junctionType,
-              junction,
-              ProjectAttributesOQL(
-                List(
-                  QueryOQL(
-                    Ident(junctionAttr),
-                    project,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None
-                  ))),
-              fk = false,
-              projectbuf,
-              joinbuf,
-              List(junction.table),
-              Nil
-            )
+//          val graph =
+//            branches(
+//              junctionType,
+//              junction,
+//              ProjectAttributesOQL(
+//                List(
+//                  QueryOQL(
+//                    Ident(junctionAttr),
+//                    project,
+//                    None,
+//                    None,
+//                    None,
+//                    None,
+//                    None
+//                  ))),
+//              fk = false,
+//              projectbuf,
+//              joinbuf,
+//              List(junction.table),
+//              Nil
+//            )
 
           val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
           writeQuery(
@@ -402,14 +404,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             junction,
             projectbuf,
             joinbuf,
-            graph
+//            graph
           )
       }
     }
 
-    sql append s"${" " * preindent}SELECT ${projects.head}" // todo: DISTINCT
+    sql append s"${" " * preindent}SELECT ${projects.headOption.getOrElse("*")}" // todo: DISTINCT
 
-    if (projects.tail.nonEmpty) {
+    if (projects.nonEmpty && projects.tail.nonEmpty) {
       var indented = false
 
       for (p <- projects.tail) {
@@ -500,7 +502,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            projectbuf: ListBuffer[(Option[List[String]], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
-    val sql = writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, graph)
+    val sql =
+      writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf /*, graph*/ )
 
     if (trace)
       println(sql)
