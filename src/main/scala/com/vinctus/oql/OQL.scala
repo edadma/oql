@@ -187,7 +187,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                          joinbuf: ListBuffer[(String, String, String, String, String)],
                          junction: Option[(String, String)],
                          preindent: Int = 0): String = {
-    println("writeQuery", resource, select)
+    //println("writeQuery", resource, select)
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f) => s"$e.$f"
@@ -300,7 +300,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     }
 
     def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = { // todo: unit tests for subqueries
-      println("subquery", entityname)
+      //println("subquery", entityname)
       val QueryOQL(attr, project, select, group, order, limit, offset) = query
       val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
       val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -350,17 +350,17 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             preindent
           )
         case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
-          println("subquery m2m", entityType)
+          //println("subquery m2m", entityType)
           val ts = junction.attributes.toList.filter(
             a =>
               a._2
                 .isInstanceOf[ObjectEntityAttribute] && a._2
                 .asInstanceOf[ObjectEntityAttribute]
                 .entity == attrEntity)
-          val junctionAttr =
+          val (junctionAttr, junctionAttrColumn) =
             ts.length match {
               case 0 => problem(null, s"'$junctionType' does not contain an attribute of type '$entityType'")
-              case 1 => ts.head._1
+              case 1 => (ts.head._1, ts.head._2.asInstanceOf[ObjectEntityAttribute].column)
               case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
             }
           val es = junction.attributes.toList.filter(
@@ -373,7 +373,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
               case _ => problem(null, s"contains more than one attribute of type '$entityname'")
             }
-          println(junctionAttr, es.head._1)
+          //println(junctionAttr, es.head._1)
 
           if (results)
             branches(
@@ -410,7 +410,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             attrEntity,
             projectbuf,
             joinbuf,
-            Some((junction.table, junctionAttr)),
+            Some((junction.table, junctionAttrColumn)),
             preindent
           )
       }
