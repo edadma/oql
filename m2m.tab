@@ -1,0 +1,18 @@
+y
+ id: integer, pk  b: text 
+ 1                b1      
+ 2                b2      
+ 3                b3      
+
+x
+ id: integer, pk  a: text 
+ 1                a1      
+ 2                a2      
+ 3                a3      
+
+xy
+ x: integer, fk, x, id  y: integer, fk, y, id 
+ 1                      2                     
+ 2                      3                     
+ 1                      1                     
+ 2                      1                     

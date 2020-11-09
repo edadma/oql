@@ -128,7 +128,7 @@ class OQLParser extends RegexParsers {
     }
 
   def notExpression: Parser[ExpressionOQL] =
-    "NOT\\W|not\\W".r ~> comparisonExpression ^^ (p => PrefixExpressionOQL("NOT", p)) |
+    "(NOT|not)\\b".r ~> comparisonExpression ^^ (p => PrefixExpressionOQL("NOT", p)) |
       comparisonExpression
 
   def comparisonExpression: Parser[ExpressionOQL] =

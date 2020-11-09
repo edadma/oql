@@ -185,8 +185,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                          entity: Entity,
                          projectbuf: ListBuffer[(Option[List[String]], String, String)],
                          joinbuf: ListBuffer[(String, String, String, String, String)],
-//                         graph: Seq[ProjectionNode],
+                         junction: Option[(String, String)],
                          preindent: Int = 0): String = {
+    println("writeQuery", resource, select)
     val sql = new StringBuilder
     val projects: Seq[String] = projectbuf.toList map {
       case (None, e, f) => s"$e.$f"
@@ -299,6 +300,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     }
 
     def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = { // todo: unit tests for subqueries
+      println("subquery", entityname)
       val QueryOQL(attr, project, select, group, order, limit, offset) = query
       val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
       val joinbuf = new ListBuffer[(String, String, String, String, String)]
@@ -344,10 +346,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             attrEntity,
             projectbuf,
             joinbuf,
-//            graph,
+            None,
             preindent
           )
         case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
+          println("subquery m2m", entityType)
           val ts = junction.attributes.toList.filter(
             a =>
               a._2
@@ -370,41 +373,45 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
               case _ => problem(null, s"contains more than one attribute of type '$entityname'")
             }
-//          val graph =
-//            branches(
-//              junctionType,
-//              junction,
-//              ProjectAttributesOQL(
-//                List(
-//                  QueryOQL(
-//                    Ident(junctionAttr),
-//                    project,
-//                    None,
-//                    None,
-//                    None,
-//                    None,
-//                    None
-//                  ))),
-//              fk = false,
-//              projectbuf,
-//              joinbuf,
-//              List(junction.table),
-//              Nil
-//            )
+          println(junctionAttr, es.head._1)
+
+          if (results)
+            branches(
+              entityType,
+              attrEntity,
+              ProjectAttributesOQL(
+                List(
+                  QueryOQL(
+                    Ident(junctionAttr),
+                    project,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                  ))),
+              fk = false,
+              projectbuf,
+              joinbuf,
+              List(junction.table),
+              Nil
+            )
 
           val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
+
           writeQuery(
-            junctionType,
+            entityType,
             Some(select.fold(pkwhere.asInstanceOf[ExpressionOQL])(c => InfixExpressionOQL(pkwhere, "AND", c))),
             group,
             order,
             limit,
             offset,
             None,
-            junction,
+            attrEntity,
             projectbuf,
             joinbuf,
-//            graph
+            Some((junction.table, junctionAttr)),
+            preindent
           )
       }
     }
@@ -432,6 +439,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     indent()
     nl
     sql append s"FROM ${entity.table}"
+
+    if (junction nonEmpty) {
+      indent()
+      nl
+      sql append s"JOIN ${junction.get._1} ON ${entity.table}.${entity.pk.get} = ${junction.get._1}.${junction.get._2}"
+      dedent()
+    }
 
     val where =
       if (select isDefined)
@@ -503,7 +517,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            joinbuf: ListBuffer[(String, String, String, String, String)],
                            graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
     val sql =
-      writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf /*, graph*/ )
+      writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, None)
 
     if (trace)
       println(sql)
