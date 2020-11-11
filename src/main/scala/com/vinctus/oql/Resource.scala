@@ -101,12 +101,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("delete")
   def jsDelete(id: js.Any): js.Promise[Unit] = delete(id).toJSPromise
 
-  def delete(id: Any): Future[Unit] = {
+  def delete(id: Any): Future[Unit] = { //todo:'id' is assumed to be a column name (doesn't respect aliasing)
     val command = new StringBuilder
 
     // build delete command
     command append s"DELETE FROM ${entity.table}\n"
-    command append s"  WHERE ${entity.pk.get} = ${render(id)}\n"
+    command append s"  WHERE ${entity.pkcolumn.get} = ${render(id)}\n"
 
     //print(command.toString)
 
@@ -119,12 +119,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
-    entity.pk match {
-      case None     =>
-      case Some(pk) =>
-        // object being inserted should not have a primary key property
-        if (obj.contains(pk))
-          sys.error(s"Resource.insert: object has a primary key property: $pk = ${obj(pk)}")
+    entity.pk foreach { pk =>
+      // object being inserted should not have a primary key property
+      if (obj contains pk)
+        sys.error(s"Resource.insert: object has a primary key property: $pk = ${obj(pk)}")
     }
 
     // get sub-map of all column attributes
@@ -140,7 +138,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
 
     // get key set of column attributes excluding primary key
-    val attrsNoPKKeys = attrsNoPK.keySet
+//    val attrsNoPKKeys = attrsNoPK.keySet
 
     // get key set of all column attributes that are required
     val attrsRequiredKeys =
@@ -171,7 +169,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         case (k, _: PrimitiveEntityAttribute) if obj contains k => List(k -> render(obj(k)))
         case (k, ObjectEntityAttribute(_, typ, entity, _)) if obj contains k =>
           entity.pk match {
-            case None => sys.error(s"entity '$typ' has no declared primary key attribute")
+            case None => sys.error(s"entity '$typ' has no declared primary key")
             case Some(pk) =>
               val v = obj(k)
 
@@ -196,11 +194,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     command append s"INSERT INTO ${entity.table} (${columns mkString ", "}) VALUES\n"
     command append s"  (${values mkString ", "})\n"
 
-    entity.pk match {
-      case None =>
-      case Some(pk) =>
-        command append s"  RETURNING $pk\n"
-    }
+    entity.pkcolumn foreach (pk => command append s"  RETURNING $pk\n")
 
     // print(command.toString)
 
@@ -209,7 +203,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       entity.pk match {
         case None => obj
         case Some(pk) =>
-          val res = obj + (pk -> row.next().apply(0))
+          val res = obj + (pk -> row
+            .next()
+            .apply(0)) //todo: suspicious: how do i know that '.apply(0)' gets the primary key
 
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
       }
@@ -219,15 +215,12 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("set")
   def jsSet(id: js.Any, updates: js.Any): js.Promise[Unit] = set(id, toMap(updates)).toJSPromise
 
-  def set(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
+  def set(id: Any, updates: collection.Map[String, Any]): Future[Unit] = { //todo: 'id' is assumed to be a column name (doesn't respect aliasing)
     // check if updates has a primary key
-    entity.pk match {
-      case None     =>
-      case Some(pk) =>
-        // object being updated should not have it's primary key changed
-        if (updates.contains(pk))
-          sys.error(s"Resource.set: primary key can not be changed: $pk")
-    }
+    entity.pk foreach (pk =>
+      // object being updated should not have it's primary key changed
+      if (updates.contains(pk))
+        sys.error(s"Resource.set: primary key can not be changed: $pk"))
 
     // get sub-map of all column attributes
     val attrs =
@@ -262,7 +255,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // build update command
     command append s"UPDATE ${entity.table}\n"
     command append s"  SET ${pairs map { case (k, v) => s"$k = $v" } mkString ", "}\n"
-    command append s"  WHERE ${entity.pk.get} = ${render(id)}\n"
+    command append s"  WHERE ${entity.pkcolumn.get} = ${render(id)}\n"
 
     //print(command.toString)
 

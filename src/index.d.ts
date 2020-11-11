@@ -58,8 +58,6 @@ export class OQL {
 
   count(oql: string, parameters?: any): Promise<number>
 
-  findOne(resource: string, id: any): Promise<any | undefined>
-
   raw(sql: string, values?: any[]): Promise<any[]>
 
 }

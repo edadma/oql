@@ -15,13 +15,14 @@ class ERModel(defn: String) {
         if (entityMap contains entity.name)
           problem(entity.pos, s"entity '${entity.name}' already defined")
         else
-          entityMap(entity.name) = new Entity(null, null, null)
+          entityMap(entity.name) = new Entity(entity.name, null, null, null, null)
       case _ =>
     }
 
     erDefinition.blocks foreach {
       case EntityBlockERD(entity, actual, fields) =>
         var epk: String = null
+        var epkcolumn: String = null
         val attrs = mutable.LinkedHashMap.empty[String, EntityAttribute]
 
         for (EntityAttributeERD(attr, column, typ, pk, required) <- fields) {
@@ -60,13 +61,16 @@ class ERModel(defn: String) {
           if (pk) {
             if (epk ne null)
               problem(attr.pos, "there is already a primary key defined for this entity")
-            else
-              epk = column.name
+            else {
+              epk = attr.name
+              epkcolumn = column.name
+            }
           }
         }
 
         entityMap(entity.name).table = actual.name
         entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
+        entityMap(entity.name).pkcolumn = if (epkcolumn ne null) Some(epkcolumn) else None
         entityMap(entity.name).attributes = attrs.to(ListMap)
 //      case TypeBlockERD(name, underlying, condition) =>
     }

@@ -2,7 +2,11 @@ package com.vinctus.oql
 
 import scala.collection.immutable.ListMap
 
-class Entity(var table: String, var pk: Option[String], var attributes: ListMap[String, EntityAttribute]) {}
+class Entity(val name: String,
+             var table: String,
+             var pk: Option[String],
+             var pkcolumn: Option[String],
+             var attributes: ListMap[String, EntityAttribute])
 
 sealed abstract class EntityAttribute { val typ: String }
 case object AnyAttribute extends EntityAttribute { val typ: Null = null }

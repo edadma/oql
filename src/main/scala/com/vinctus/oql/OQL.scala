@@ -146,33 +146,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
   }
 
-  @JSExport("findOne")
-  def jsFindOne(resource: String, id: js.Any): js.Promise[js.Any] = toPromiseOne(findOne(resource, id))
-
-  def findOne(resource: String, id: Any): Future[Option[ListMap[String, Any]]] =
-    model.get(resource) match {
-      case Some(entity) =>
-        entity.pk match {
-          case None => sys.error(s"findOne: resource '$resource' doesn't have a declared primary key")
-          case Some(pk) =>
-            queryOne(
-              QueryOQL(
-                Ident(resource),
-                ProjectAllOQL(),
-                Some(
-                  EqualsExpressionOQL(entity.table,
-                                      entity.attributes(pk).asInstanceOf[PrimitiveEntityAttribute].column,
-                                      s"'$id'")),
-                None,
-                None,
-                None,
-                None
-              )
-            )
-        }
-      case None => sys.error(s"findOne: unknown resource '$resource'")
-    }
-
   private val INDENT = 2
 
   private def writeQuery(resource: String,
@@ -333,7 +306,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               Nil
             )
 
-          val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${attrEntity.table}.$column") // todo: entity.pk.get could be improved
+          if (entity.pkcolumn.isEmpty)
+            sys.error(s"entity '$entityname' doesn't have a declared primary key")
+
+          val pkwhere = EqualsExpressionOQL(entity.table, entity.pkcolumn.get, s"${attrEntity.table}.$column")
 
           writeQuery(
             entityType,
@@ -397,7 +373,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               Nil
             )
 
-          val pkwhere = EqualsExpressionOQL(entity.table, entity.pk.get, s"${junction.table}.$column") // entity.pk.get could be improved
+          if (entity.pkcolumn.isEmpty)
+            sys.error(s"entity '$entityname' doesn't have a declared primary key")
+
+          val pkwhere = EqualsExpressionOQL(entity.table, entity.pkcolumn.get, s"${junction.table}.$column")
 
           writeQuery(
             entityType,
@@ -443,7 +422,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     if (junction nonEmpty) {
       indent()
       nl
-      sql append s"JOIN ${junction.get._1} ON ${entity.table}.${entity.pk.get} = ${junction.get._1}.${junction.get._2}"
+
+      if (entity.pkcolumn.isEmpty)
+        sys.error(s"entity '${entity.name}' doesn't have a declared primary key")
+
+      sql append s"JOIN ${junction.get._1} ON ${entity.table}.${entity.pkcolumn.get} = ${junction.get._1}.${junction.get._2}"
       dedent()
     }
 
@@ -574,7 +557,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               } else {
                 val attrlist1 = column :: attrlist
 
-                joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pk.get))
+                joinbuf += ((attrlist mkString "$", column, entity.table, attrlist1 mkString "$", entity.pkcolumn.get))
                 reference(entityType, entity, tail, attrlist1)
               }
             case Some(
@@ -725,7 +708,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             true
           case _ => false
         } && entity.pk.isDefined && !attrs.exists(_._2 == entity.pk.get))
-      projectbuf += ((None, table, entity.pk.get))
+      projectbuf += ((None, table, entity.pkcolumn.get))
 
     attrs map {
       case (_, field, attr: LiteralEntityAttribute, _, _, _) => LiteralProjectionNode(field, attr.value)
@@ -748,11 +731,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                                 attr)
       case (_, field, attr: ObjectEntityAttribute, project, _, false) =>
         if (attr.entity.pk isEmpty)
-          problem(null, s"entity '${attr.typ}' is referenced as a type but has no primary key")
+          problem(null, s"entity '${attr.typ}' is referenced as a type but has no declared primary key")
 
         val attrlist1 = attr.column :: attrlist // attr.entity.table :: attrlist
 
-        joinbuf += ((table, attr.column, attr.entity.table, attrlist1 mkString "$", attr.entity.pk.get))
+        joinbuf += ((table, attr.column, attr.entity.table, attrlist1 mkString "$", attr.entity.pkcolumn.get))
 
         if (fk)
           projectbuf += ((None, table, attr.column))
@@ -799,7 +782,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               entityType,
               field,
               table,
-              entity.pk.get,
+              entity.pkcolumn.get,
               projectbuf,
               subjoinbuf,
               junctionType,
@@ -846,7 +829,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             EntityArrayProjectionNode(
               field,
               table,
-              entity.pk.get,
+              entity.pkcolumn.get,
               projectbuf,
               subjoinbuf,
               entityType,
@@ -893,7 +876,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             EntityOneProjectionNode(
               field,
               table,
-              entity.pk.get,
+              entity.pkcolumn.get,
               projectbuf,
               subjoinbuf,
               entityType,

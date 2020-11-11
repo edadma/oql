@@ -33,5 +33,5 @@ case class ArrayTypeERD(typ: Ident) extends TypeSpecifierERD
 case class LiteralTypeERD(value: ExpressionERD) extends TypeSpecifierERD
 
 case class EntityBlockERD(entity: Ident, actualTable: Ident, fields: List[EntityAttributeERD]) extends BlockERD
-case class EntityAttributeERD(name: Ident, actualField: Ident, typ: TypeSpecifierERD, pk: Boolean, required: Boolean)
+case class EntityAttributeERD(attr: Ident, actualField: Ident, typ: TypeSpecifierERD, pk: Boolean, required: Boolean)
     extends ERDAST
