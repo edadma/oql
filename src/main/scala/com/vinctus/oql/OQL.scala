@@ -322,7 +322,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             None,
             preindent
           )
-        case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction)) =>
+        case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, attrEntityAttr, junctionType, junction)) => //todo
           //println("subquery m2m", entityType)
           val ts = junction.attributes.toList.filter(
             a =>
@@ -747,7 +747,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                                  branches(attr.typ, attr.entity, project, fk, projectbuf, joinbuf, attrlist1, c)))
       case (_,
             field,
-            attr @ ObjectArrayJunctionEntityAttribute(entityType, attrEntity, junctionType, junction),
+            attr @ ObjectArrayJunctionEntityAttribute(entityType, attrEntity, attrEntityAttr, junctionType, junction),
             project,
             query,
             _) =>
@@ -765,15 +765,23 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             case 1 => ts.head._1
             case _ => problem(null, s"'$junctionType' contains more than one attribute of type '$entityType'")
           }
-        val es = junction.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
         val column =
-          es.length match {
-            case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
-            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-            case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+          if (attrEntityAttr.isDefined) {
+            junction.attributes get attrEntityAttr.get match {
+              case None                           => problem(null, s"'${attrEntityAttr.get}' is not an attribute of entity '$entityType'")
+              case Some(a: EntityColumnAttribute) => a.column
+              case Some(a)                        => problem(null, s"'${a.typ}' is not a column attribute of entity '$entityType'")
+            }
+          } else {
+            val es = junction.attributes.toList.filter(
+              a =>
+                a._2
+                  .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+            es.length match {
+              case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+              case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+              case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+            }
           }
 
         entityNode(field, attr, circlist)(

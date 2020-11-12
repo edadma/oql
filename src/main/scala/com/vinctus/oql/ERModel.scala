@@ -47,9 +47,10 @@ class ERModel(defn: String) {
                   }
                 case JunctionArrayTypeERD(typ, attr, junction) =>
                   (entityMap get typ.name, entityMap get junction.name) match {
-                    case (Some(t), Some(j)) => ObjectArrayJunctionEntityAttribute(typ.name, t, junction.name, j)
-                    case (None, _)          => problem(typ.pos, s"not an entity: ${typ.name}")
-                    case (_, None)          => problem(junction.pos, s"not an entity: ${junction.name}")
+                    case (Some(t), Some(j)) =>
+                      ObjectArrayJunctionEntityAttribute(typ.name, t, attr map (_.name), junction.name, j)
+                    case (None, _) => problem(typ.pos, s"not an entity: ${typ.name}")
+                    case (_, None) => problem(junction.pos, s"not an entity: ${junction.name}")
                   }
                 case ArrayTypeERD(typ, attr) =>
                   entityMap get typ.name match {

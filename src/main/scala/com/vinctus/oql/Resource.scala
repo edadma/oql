@@ -24,9 +24,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     link(id1, resource, id2).toJSPromise
   }
 
+  //todo:
   def link(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
-      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, junctionType, junction)) =>
+      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, attrEntityAttr, junctionType, junction)) =>
         val thisAttr =
           junction.attributes
             .find {
@@ -58,9 +59,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     unlink(id1, resource, id2).toJSPromise
   }
 
+  //todo:
   def unlink(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
-      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, junctionType, junction)) =>
+      case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, attrEntityAttr, junctionType, junction)) =>
         val thisCol =
           junction.attributes
             .find {

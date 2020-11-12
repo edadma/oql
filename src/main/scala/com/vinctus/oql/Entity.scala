@@ -17,6 +17,7 @@ case class ObjectEntityAttribute(column: String, typ: String, entity: Entity, re
 case class ObjectOneEntityAttribute(typ: String, entity: Entity, attr: Option[String]) extends EntityAttribute
 case class ObjectArrayJunctionEntityAttribute(entityType: String,
                                               entity: Entity,
+                                              attr: Option[String],
                                               junctionType: String,
                                               junction: Entity)
     extends EntityAttribute { val typ = s"[$entityType]" }
