@@ -20,7 +20,8 @@ case class ObjectArrayJunctionEntityAttribute(entityType: String,
                                               junctionType: String,
                                               junction: Entity)
     extends EntityAttribute { val typ = s"[$entityType]" }
-case class ObjectArrayEntityAttribute(entityType: String, entity: Entity) extends EntityAttribute {
+case class ObjectArrayEntityAttribute(entityType: String, entity: Entity, attr: Option[String])
+    extends EntityAttribute {
   val typ = s"[$entityType]"
 }
 case class LiteralEntityAttribute(value: Any) extends EntityAttribute { val typ = "literal" }

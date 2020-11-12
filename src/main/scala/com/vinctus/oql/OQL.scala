@@ -270,7 +270,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       entity.attributes get attr.name match {
         case None =>
           problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
-        case Some(ObjectArrayEntityAttribute(entityType, attrEntity)) =>
+        case Some(ObjectArrayEntityAttribute(entityType, attrEntity, attr)) => //todo :'attr' is not used
           val es = attrEntity.attributes.toList.filter(
             a =>
               a._2
@@ -381,6 +381,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             Some((junction.table, junctionAttrColumn)),
             preindent
           )
+        case Some(_: ObjectOneEntityAttribute) =>
+          problem(attr.pos, "one-to-one virtual attributes not yet supported") // todo
+        case _ => problem(attr.pos, s"'${attr.name}' is not a virtual attribute")
       }
     }
 
@@ -799,18 +802,26 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               ),
               query
           ))
-      case (_, field, attr @ ObjectArrayEntityAttribute(entityType, attrEntity), project, query, _) =>
+      case (_, field, attr @ ObjectArrayEntityAttribute(entityType, attrEntity, attrEntityAttr), project, query, _) =>
         val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
         val subjoinbuf = new ListBuffer[(String, String, String, String, String)]
-        val es = attrEntity.attributes.toList.filter(
-          a =>
-            a._2
-              .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
         val column =
-          es.length match {
-            case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
-            case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-            case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
+          if (attrEntityAttr.isDefined) {
+            attrEntity.attributes get attrEntityAttr.get match {
+              case None                           => problem(null, s"'${attrEntityAttr.get}' is not an attribute of entity '$entityType'")
+              case Some(a: EntityColumnAttribute) => a.column
+              case Some(a)                        => problem(null, s"'${a.typ}' is not a column attribute of entity '$entityType'")
+            }
+          } else {
+            val es = attrEntity.attributes.toList.filter(
+              a =>
+                a._2
+                  .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+            es.length match {
+              case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
+              case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+              case _ => problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
+            }
           }
 
         entityNode(field, attr, circlist)(
@@ -856,7 +867,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 0 => problem(null, s"'$entityType' does not contain an attribute of type '$entityname'")
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
               case _ =>
-                problem(null, s"'$entityType' contains more than one attribute of type '$entityname'") //todo: allow field to be selected
+                problem(null, s"'$entityType' contains more than one attribute of type '$entityname'")
             }
           }
 

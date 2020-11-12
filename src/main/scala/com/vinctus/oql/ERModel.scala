@@ -51,9 +51,9 @@ class ERModel(defn: String) {
                     case (None, _)          => problem(typ.pos, s"not an entity: ${typ.name}")
                     case (_, None)          => problem(junction.pos, s"not an entity: ${junction.name}")
                   }
-                case ArrayTypeERD(typ) =>
+                case ArrayTypeERD(typ, attr) =>
                   entityMap get typ.name match {
-                    case Some(t) => ObjectArrayEntityAttribute(typ.name, t)
+                    case Some(t) => ObjectArrayEntityAttribute(typ.name, t, attr map (_.name))
                     case None    => problem(typ.pos, s"not an entity: ${typ.name}")
                   }
                 case LiteralTypeERD(value) => LiteralEntityAttribute(eval(value))

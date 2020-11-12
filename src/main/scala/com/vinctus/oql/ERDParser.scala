@@ -73,7 +73,10 @@ class ERDParser extends RegexParsers {
       ("[" ~> ident <~ "]") ~ ("(" ~> ident <~ ")") ^^ {
         case e ~ j => JunctionArrayTypeERD(e, j)
       } |
-      ("[" ~> ident <~ "]") ^^ ArrayTypeERD |
+      ("[" ~> ident ~ opt("." ~> ident) <~ "]") ^^ {
+        case e ~ a =>
+          ArrayTypeERD(e, a)
+      } |
       ("<" ~> ident ~ opt("." ~> ident) <~ ">") ^^ {
         case e ~ a => OneToOneTypeERD(e, a)
       }

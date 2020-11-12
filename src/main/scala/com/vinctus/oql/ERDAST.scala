@@ -29,7 +29,7 @@ abstract class TypeSpecifierERD extends ERDAST with Positional
 case class SimpleTypeERD(typ: Ident) extends TypeSpecifierERD
 case class OneToOneTypeERD(typ: Ident, attr: Option[Ident]) extends TypeSpecifierERD
 case class JunctionArrayTypeERD(typ: Ident, junction: Ident) extends TypeSpecifierERD
-case class ArrayTypeERD(typ: Ident) extends TypeSpecifierERD
+case class ArrayTypeERD(typ: Ident, attr: Option[Ident]) extends TypeSpecifierERD
 case class LiteralTypeERD(value: ExpressionERD) extends TypeSpecifierERD
 
 case class EntityBlockERD(entity: Ident, actualTable: Ident, fields: List[EntityAttributeERD]) extends BlockERD
