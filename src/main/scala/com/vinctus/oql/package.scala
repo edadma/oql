@@ -80,6 +80,20 @@ package object oql {
     else
       sys.error(s"${pos.line}: $error\n${pos.longString}")
 
+  def typ2db(typ: String): Option[String] =
+    typ.toLowerCase match {
+      case "text"                     => Some("TEXT")
+      case "integer" | "int" | "int4" => Some("INTEGER")
+      case "bigint"                   => Some("BIGINT")
+      case "bool" | "boolean"         => Some("BOOLEAN")
+      case "decimal"                  => Some("DECIMAL")
+      case "date"                     => Some("DATE")
+      case "timestamp"                => Some("TIMESTAMP")
+      case "float" | "float8"         => Some("FLOAT")
+      case "uuid"                     => Some("UUID")
+      case _                          => None
+    }
+
   def toJS(a: Any): js.Any =
     a match {
       case Some(a)         => a.asInstanceOf[js.Any]

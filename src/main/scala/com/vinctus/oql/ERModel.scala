@@ -34,7 +34,11 @@ class ERModel(defn: String) {
                 case SimpleTypeERD(typ) =>
                   entityMap get typ.name match {
                     case Some(e) => ObjectEntityAttribute(column.name, typ.name, e, required)
-                    case None    => PrimitiveEntityAttribute(column.name, typ.name, required)
+                    case None =>
+                      typ2db(typ.name) match {
+                        case None    => problem(typ.pos, s"type '${typ.name}' not recognized")
+                        case Some(t) => PrimitiveEntityAttribute(column.name, t, required)
+                      }
                   }
                 case OneToOneTypeERD(typ, attr) =>
                   entityMap get typ.name match {
@@ -102,7 +106,3 @@ class ERModel(defn: String) {
     get(resource, pos).attributes.toList
 
 }
-
-// todo: check validity of entity types
-// todo: implement boolean type; should be able to write 'a = true'
-// todo: implement timestamp (without timezone); should be able to write 't <= timestamp'

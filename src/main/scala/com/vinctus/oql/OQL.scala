@@ -33,17 +33,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def jsCreate(): js.Promise[Unit] = create.toJSPromise
 
   def create: Future[Unit] = {
-    def typ2db(typ: String) =
-      typ.toLowerCase match {
-        case "text"             => "TEXT"
-        case "integer" | "int"  => "INTEGER"
-        case "bigint"           => "BIGINT"
-        case "bool" | "boolean" => "BOOLEAN"
-        case "timestamp"        => "TIMESTAMP"
-        case "float" | "float8" => "FLOAT"
-        case "uuid"             => "UUID"
-      }
-
     def pktyp2db(typ: String) =
       typ.toLowerCase match {
         case "text"    => "TEXT"
@@ -64,7 +53,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 if (entity.pk.isDefined && name == entity.pk.get)
                   s"  $column ${pktyp2db(typ)} PRIMARY KEY"
                 else
-                  s"  $column ${typ2db(typ)}${if (required) " NOT NULL" else ""}")
+                  s"  $column ${typ2db(typ).get}${if (required) " NOT NULL" else ""}")
             case (_, ObjectEntityAttribute(column, typ, entity, required)) =>
               List(
                 s"  $column ${typ2db(model.entities(typ).attributes(model.entities(typ).pk.get).typ)} REFERENCES ${entity.table}${if (required) " NOT NULL" else ""}")

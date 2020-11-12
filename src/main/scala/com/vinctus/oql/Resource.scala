@@ -205,7 +205,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         case Some(pk) =>
           val res = obj + (pk -> row
             .next()
-            .apply(0)) //todo: suspicious: how do i know that '.apply(0)' gets the primary key
+            .apply(0)) //todo: suspicious: how do i know that '.apply(0)' always gets the primary key
 
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
       }

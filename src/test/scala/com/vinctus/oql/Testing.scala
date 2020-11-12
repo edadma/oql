@@ -47,7 +47,7 @@ object Testing {
         | 4001                 PRODUCTION      BRISBANE           
         |
         |employee
-        | emp_id: integer, pk  emp_name: text  job_title: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: currency  commission: currency  dep_id: integer, fk, department, dep_id
+        | emp_id: integer, pk  emp_name: text  job_title: text  manager_id: integer, fk, employee, emp_id  hire_date: date  salary: decimal  commission: decimal  dep_id: integer, fk, department, dep_id
         | 68319                KAYLING         PRESIDENT        null                                       1991-11-18       6000.00           null                  1001
         | 66928                BLAZE           MANAGER          68319                                      1991-05-01       2750.00           null                  3001
         | 67832                CLARE           MANAGER          68319                                      1991-06-09       2550.00           null                  1001
@@ -64,7 +64,7 @@ object Testing {
         | 69324                MARKER          CLERK            67832                                      1992-01-23       1400.00           null                  1001
         |
         |salary_grade
-        | grade: integer, pk  min_sal: currency  max_sal: currency 
+        | grade: integer, pk  min_sal: decimal  max_sal: decimal
         | 1                   800                1300              
         | 2                   1301               1500              
         | 3                   1501               2100              
@@ -81,8 +81,8 @@ object Testing {
         |  job_title: text
         |  manager (manager_id): employee
         |  hire_date: date
-        |  salary: currency
-        |  commission: currency
+        |  salary: decimal
+        |  commission: decimal
         |  department (dep_id): department
         |}
         |
@@ -104,7 +104,7 @@ object Testing {
     new RDBConnection(
       """
         |agent
-        | agent_code: text, pk  agent_name: text  working_area: text  commission: currency  phone_no: text
+        | agent_code: text, pk  agent_name: text  working_area: text  commission: decimal  phone_no: text
         | A007                  Ramasundar        Bangalore           0.15                  077-25814763
         | A003                  Alex              London              0.13                  075-12458969
         | A008                  Alford            New York            0.12                  044-25874365
@@ -156,7 +156,7 @@ object Testing {
         | C00012               C00012 asdf
         |
         |order
-        | ord_num: integer, pk  ord_amount: currency  advance_amount: currency  ord_date: text  cust_code: text, fk, customer, cust_code  agent_code: text, fk, agent, agent_code
+        | ord_num: integer, pk  ord_amount: decimal  advance_amount: decimal  ord_date: text  cust_code: text, fk, customer, cust_code  agent_code: text, fk, agent, agent_code
         | 200114                3500                  2000                      15-AUG-08       C00002                                    A008
         | 200122                2500                  400                       16-SEP-08       C00003                                    A004
         | 200118                500                   100                       20-JUL-08       C00023                                    A006
