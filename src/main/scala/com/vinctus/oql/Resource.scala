@@ -212,10 +212,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     })
   }
 
-  @JSExport("set")
-  def jsSet(id: js.Any, updates: js.Any): js.Promise[Unit] = set(id, toMap(updates)).toJSPromise
+  @JSExport("update")
+  def jsUpdate(id: js.Any, updates: js.Any): js.Promise[Unit] = update(id, toMap(updates)).toJSPromise
 
-  def set(id: Any, updates: collection.Map[String, Any]): Future[Unit] = { //todo: 'id' is assumed to be a column name (doesn't respect aliasing)
+  def update(id: Any, updates: collection.Map[String, Any]): Future[Unit] = { //todo: 'id' is assumed to be a column name (doesn't respect aliasing)
     // check if updates has a primary key
     entity.pk foreach (pk =>
       // object being updated should not have it's primary key changed

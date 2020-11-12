@@ -28,7 +28,7 @@ case class OrExpressionERD(left: ExpressionERD, right: ExpressionERD) extends Ex
 abstract class TypeSpecifierERD extends ERDAST with Positional
 case class SimpleTypeERD(typ: Ident) extends TypeSpecifierERD
 case class OneToOneTypeERD(typ: Ident, attr: Option[Ident]) extends TypeSpecifierERD
-case class JunctionArrayTypeERD(typ: Ident, junction: Ident) extends TypeSpecifierERD
+case class JunctionArrayTypeERD(typ: Ident, attr: Option[Ident], junction: Ident) extends TypeSpecifierERD
 case class ArrayTypeERD(typ: Ident, attr: Option[Ident]) extends TypeSpecifierERD
 case class LiteralTypeERD(value: ExpressionERD) extends TypeSpecifierERD
 

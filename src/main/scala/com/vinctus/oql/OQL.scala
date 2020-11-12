@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.Promise
 
 object OQL {
-  private val builtinSQLVariables = Set("current_date", "current_timestamp")
+  private val builtinSQLVariables = Set("CURRENT_DATE", "CURRENT_TIMESTAMP", "CURRENT_TIME")
 }
 
 @JSExportTopLevel("OQL")
@@ -234,7 +234,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           case ApplyExpressionOQL(func, args) =>
             sql ++= func.name
             expressions(args)
-          case VariableExpressionOQL(List(Ident(name))) if OQL.builtinSQLVariables(name.toLowerCase) => sql append name
+          case VariableExpressionOQL(List(Ident(name))) if OQL.builtinSQLVariables(name.toUpperCase) => sql append name
           case VariableExpressionOQL(ids) =>
             sql append reference(entityname, entity, entityType, ids, ref = false, joinbuf)
           case ReferenceExpressionOQL(ids) =>
@@ -270,16 +270,24 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       entity.attributes get attr.name match {
         case None =>
           problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
-        case Some(ObjectArrayEntityAttribute(entityType, attrEntity, attr)) => //todo :'attr' is not used
-          val es = attrEntity.attributes.toList.filter(
-            a =>
-              a._2
-                .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
-          val (_, column) =
-            es.length match {
-              case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
-              case 1 => (es.head._1, es.head._2.asInstanceOf[ObjectEntityAttribute].column)
-              case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+        case Some(ObjectArrayEntityAttribute(entityType, attrEntity, attrEntityAttr)) =>
+          val column =
+            if (attrEntityAttr.isDefined) {
+              attrEntity.attributes get attrEntityAttr.get match {
+                case None                           => problem(null, s"'${attrEntityAttr.get}' is not an attribute of entity '$entityType'")
+                case Some(a: EntityColumnAttribute) => a.column
+                case Some(a)                        => problem(null, s"'${a.typ}' is not a column attribute of entity '$entityType'")
+              }
+            } else {
+              val es = attrEntity.attributes.toList.filter(
+                a =>
+                  a._2
+                    .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
+              es.length match {
+                case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+                case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
+                case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+              }
             }
 //          val graph =
 
