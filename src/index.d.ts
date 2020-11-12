@@ -8,7 +8,7 @@ export class Resource {
 
   unlink(id1: any, resource: string, id2: any): Promise<void>
 
-  set(id: any, updates: any): Promise<void>
+  update(id: any, updates: any): Promise<void>
 
   delete(id: any): Promise<void>
 
