@@ -47,10 +47,6 @@ libraryDependencies ++= Seq(
 //  "org.scala-lang.modules" %%% "scala-async" % "1.0.0-M1"
 )
 
-//libraryDependencies ++= Seq(
-//  "com.typesafe" % "config" % "1.3.4"
-//)
-
 libraryDependencies ++= Seq(
   "org.scala-js" %%% "scalajs-java-time" % "1.0.0"
 )
