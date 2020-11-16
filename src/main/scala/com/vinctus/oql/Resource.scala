@@ -101,9 +101,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("delete")
-  def jsDelete(id: js.Any): js.Promise[Unit] = delete(id).toJSPromise
+  def jsDelete(e: js.Any): js.Promise[Unit] =
+    delete(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e).toJSPromise
 
-  def delete(id: Any): Future[Unit] = { //todo:'id' is assumed to be a column name (doesn't respect aliasing)
+  def delete(id: Any): Future[Unit] = {
     val command = new StringBuilder
 
     // build delete command
@@ -215,9 +216,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   }
 
   @JSExport("update")
-  def jsUpdate(id: js.Any, updates: js.Any): js.Promise[Unit] = update(id, toMap(updates)).toJSPromise
+  def jsUpdate(e: js.Any, updates: js.Any): js.Promise[Unit] =
+    update(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e, toMap(updates)).toJSPromise
 
-  def update(id: Any, updates: collection.Map[String, Any]): Future[Unit] = { //todo: 'id' is assumed to be a column name (doesn't respect aliasing)
+  def update(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
     // check if updates has a primary key
     entity.pk foreach (pk =>
       // object being updated should not have it's primary key changed
@@ -266,40 +268,3 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   }
 
 }
-
-/*
-    // check if updates has a primary key
-    val id =
-      entity.pk match {
-        case None     => sys.error(s"Resource.set: entity $name has no primary key")
-        case Some(pk) =>
-          // object being updated should not have it's primary key changed
-          if (!updates.contains(pk))
-            sys.error(s"Resource.set: primary key must be given: $pk")
-
-          updates(pk)
-      }
-
-    // get sub-map of all column attributes
-    val attrs =
-      entity.attributes
-        .filter {
-          case (_, _: EntityColumnAttribute) => true
-          case _                             => false
-        }
-        .asInstanceOf[ListMap[String, EntityColumnAttribute]]
-
-    // get sub-map of column attributes excluding primary key
-    val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
-
-    // get key set of column attributes excluding primary key
-    val attrsNoPKKeys = attrsNoPK.keySet
-
-    // get updates key set
-    val keyset = updates.keySet
-
-    // check if object contains extrinsic attributes
-    if ((keyset diff attrsNoPKKeys).nonEmpty)
-      sys.error(s"extrinsic properties: ${(keyset diff attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
-
- */

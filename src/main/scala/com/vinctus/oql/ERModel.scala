@@ -107,3 +107,4 @@ class ERModel(defn: String) {
     get(resource, pos).attributes.toList
 
 }
+// todo: check attribute aliases and column names for uniqueness
