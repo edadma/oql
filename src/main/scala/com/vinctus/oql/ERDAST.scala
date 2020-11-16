@@ -35,3 +35,4 @@ case class LiteralTypeERD(value: ExpressionERD) extends TypeSpecifierERD
 case class EntityBlockERD(entity: Ident, actualTable: Ident, fields: List[EntityAttributeERD]) extends BlockERD
 case class EntityAttributeERD(attr: Ident, actualField: Ident, typ: TypeSpecifierERD, pk: Boolean, required: Boolean)
     extends ERDAST
+    with Positional

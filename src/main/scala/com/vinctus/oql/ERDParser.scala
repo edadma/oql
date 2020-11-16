@@ -52,13 +52,14 @@ class ERDParser extends RegexParsers {
     }
 
   def attribute: Parser[EntityAttributeERD] =
-    opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ~ opt("!") ^^ {
-      case pk ~ n ~ a ~ _ ~ t ~ r =>
-        EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined, r isDefined)
-    } |
-      ident ~ "=" ~ jsonLiteral ^^ {
-        case n ~ _ ~ v => EntityAttributeERD(n, n, LiteralTypeERD(v), pk = false, required = true)
-      }
+    positioned(
+      opt("*") ~ ident ~ opt("(" ~> ident <~ ")") ~ ":" ~ typeSpec ~ opt("!") ^^ {
+        case pk ~ n ~ a ~ _ ~ t ~ r =>
+          EntityAttributeERD(n, if (a isDefined) a.get else n, t, pk isDefined, r isDefined)
+      } |
+        ident ~ "=" ~ jsonLiteral ^^ {
+          case n ~ _ ~ v => EntityAttributeERD(n, n, LiteralTypeERD(v), pk = false, required = true)
+        })
 
   def jsonLiteral: Parser[ExpressionERD] = number | string | boolean | "null" ^^^ NullLiteralERD | array | jsonObject
 

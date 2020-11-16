@@ -27,41 +27,50 @@ class ERModel(defn: String) {
 
         for (EntityAttributeERD(attr, column, typ, pk, required) <- fields) {
           if (attrs contains attr.name)
-            problem(attr.pos, s"attribute '${attr.name}' already exists for this entity'")
-          else {
-            val fieldtype =
-              typ match {
-                case SimpleTypeERD(typ) =>
-                  entityMap get typ.name match {
-                    case Some(e) => ObjectEntityAttribute(column.name, typ.name, e, required)
-                    case None =>
-                      typ2db(typ.name) match {
-                        case None    => problem(typ.pos, s"type '${typ.name}' not recognized")
-                        case Some(t) => PrimitiveEntityAttribute(column.name, t, required)
+            problem(attr.pos, s"attribute '${attr.name}' already exists for this entity")
+          else
+            attrs.find {
+              case (_, v) =>
+                v.isInstanceOf[EntityColumnAttribute] && v
+                  .asInstanceOf[EntityColumnAttribute]
+                  .column == column.name
+            } match {
+              case Some((k, _)) =>
+                problem(attr.pos, s"attribute '${attr.name}' refers to the same column as attribute '$k'")
+              case None =>
+                val fieldtype =
+                  typ match {
+                    case SimpleTypeERD(typ) =>
+                      entityMap get typ.name match {
+                        case Some(e) => ObjectEntityAttribute(column.name, typ.name, e, required)
+                        case None =>
+                          typ2db(typ.name) match {
+                            case None    => problem(typ.pos, s"type '${typ.name}' not recognized")
+                            case Some(t) => PrimitiveEntityAttribute(column.name, t, required)
+                          }
                       }
+                    case OneToOneTypeERD(typ, attr) =>
+                      entityMap get typ.name match {
+                        case Some(t) => ObjectOneEntityAttribute(typ.name, t, attr map (_.name))
+                        case None    => problem(typ.pos, s"not an entity: ${typ.name}")
+                      }
+                    case JunctionArrayTypeERD(typ, attr, junction) =>
+                      (entityMap get typ.name, entityMap get junction.name) match {
+                        case (Some(t), Some(j)) =>
+                          ObjectArrayJunctionEntityAttribute(typ.name, t, attr map (_.name), junction.name, j)
+                        case (None, _) => problem(typ.pos, s"not an entity: ${typ.name}")
+                        case (_, None) => problem(junction.pos, s"not an entity: ${junction.name}")
+                      }
+                    case ArrayTypeERD(typ, attr) =>
+                      entityMap get typ.name match {
+                        case Some(t) => ObjectArrayEntityAttribute(typ.name, t, attr map (_.name))
+                        case None    => problem(typ.pos, s"not an entity: ${typ.name}")
+                      }
+                    case LiteralTypeERD(value) => LiteralEntityAttribute(eval(value))
                   }
-                case OneToOneTypeERD(typ, attr) =>
-                  entityMap get typ.name match {
-                    case Some(t) => ObjectOneEntityAttribute(typ.name, t, attr map (_.name))
-                    case None    => problem(typ.pos, s"not an entity: ${typ.name}")
-                  }
-                case JunctionArrayTypeERD(typ, attr, junction) =>
-                  (entityMap get typ.name, entityMap get junction.name) match {
-                    case (Some(t), Some(j)) =>
-                      ObjectArrayJunctionEntityAttribute(typ.name, t, attr map (_.name), junction.name, j)
-                    case (None, _) => problem(typ.pos, s"not an entity: ${typ.name}")
-                    case (_, None) => problem(junction.pos, s"not an entity: ${junction.name}")
-                  }
-                case ArrayTypeERD(typ, attr) =>
-                  entityMap get typ.name match {
-                    case Some(t) => ObjectArrayEntityAttribute(typ.name, t, attr map (_.name))
-                    case None    => problem(typ.pos, s"not an entity: ${typ.name}")
-                  }
-                case LiteralTypeERD(value) => LiteralEntityAttribute(eval(value))
-              }
 
-            attrs += (attr.name -> fieldtype)
-          }
+                attrs += (attr.name -> fieldtype)
+            }
 
           if (pk) {
             if (epk ne null)
@@ -77,7 +86,6 @@ class ERModel(defn: String) {
         entityMap(entity.name).pk = if (epk ne null) Some(epk) else None
         entityMap(entity.name).pkcolumn = if (epkcolumn ne null) Some(epkcolumn) else None
         entityMap(entity.name).attributes = attrs.to(ListMap)
-//      case TypeBlockERD(name, underlying, condition) =>
     }
 
     entityMap.toMap
@@ -107,4 +115,3 @@ class ERModel(defn: String) {
     get(resource, pos).attributes.toList
 
 }
-// todo: check attribute aliases and column names for uniqueness
