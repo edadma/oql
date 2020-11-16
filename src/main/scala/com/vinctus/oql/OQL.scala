@@ -261,7 +261,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       sql.toString
     }
 
-    def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = { // todo: unit tests for subqueries
+    def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = {
       //println("subquery", entityname)
       val QueryOQL(attr, project, select, group, order, limit, offset) = query
       val projectbuf = new ListBuffer[(Option[List[String]], String, String)]

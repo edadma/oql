@@ -24,7 +24,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     link(id1, resource, id2).toJSPromise
   }
 
-  //todo:
+  //todo: support multiple many-to-many relationships between the same two entities
   def link(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
       case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, attrEntityAttr, junctionType, junction)) =>
@@ -59,7 +59,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     unlink(id1, resource, id2).toJSPromise
   }
 
-  //todo:
+  //todo: support multiple many-to-many relationships between the same two entities
   def unlink(id1: Any, attribute: String, id2: Any): Future[Unit] =
     entity.attributes get attribute match {
       case Some(ObjectArrayJunctionEntityAttribute(_, otherEntity, attrEntityAttr, junctionType, junction)) =>
@@ -177,7 +177,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
               val v = obj(k)
 
               if (jsObject(v))
-                List(k -> render(v.asInstanceOf[collection.Map[String, Any]](pk))) // todo: this might have to be js.Dictionary
+                List(k -> render(v.asInstanceOf[js.Dictionary[Any]](pk)))
               else
                 List(k -> render(v))
           }
@@ -208,7 +208,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         case Some(pk) =>
           val res = obj + (pk -> row
             .next()
-            .apply(0)) //todo: suspicious: how do i know that '.apply(0)' always gets the primary key
+            .apply(0)) // only one value is being requested: the primary key
 
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
       }
