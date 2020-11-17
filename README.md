@@ -118,12 +118,15 @@ query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ] .
 project = "{" (attributeProject | "-" identifier | "&" identifier | "*")+ "}"
         | "." attributeProject .
 
-attributeProject =
-                 | identifier "(" [ "*" | identifier ] ")"
+attributeProject = identifier "(" [ "*" | identifier ] ")"
                  | "^" query
                  | query .
 
 select = "[" logicalExpression "]" .
+
+variable = ident { "." ident } .
+
+expression = additiveExpression .
 
 logicalExpression = orExpression .
 
@@ -134,12 +137,17 @@ andExpression = notExpression { "AND" notExpression } .
 notExpression = "NOT" comparisonExpression
               | comparisonExpression .
 
-// todo
 comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
                      | applyExpression [ "NOT" ] "BETWEEN" applyExpression "AND" applyExpression
                      | applyExpression ("IS" "NULL" | "IS" "NOT" "NULL")
                      | applyExpression [ "NOT" ] "IN" expressions
+                     | applyExpression [ "NOT" ] "IN" "(" query ")"
+                     | "EXISTS" "(" query ")"
                      | applyExpression .
+
+additiveExpression = multiplicativeExpression { ("+" | "-") multiplicativeExpression } .
+
+multiplicativeExpression = applyExpression { ("*" | "/") applyExpression } .
 
 expressions = "(" expression { "," expression } ")" .
 
@@ -148,16 +156,16 @@ applyExpression = identifier expressions
 
 primaryExpression = number
                   | string
-                  | "TRUE" | "true" | "FALSE" | "false"
+                  | "TRUE" | "FALSE"
                   | "&" identifier { "." identifier }
+                  | "INTERVAL" singleQuoteString
                   | variable
                   | caseExpression
                   | "(" logicalExpression ")" .
 
-caseExpression = ("CASE" | "case") when+ [ ("ELSE" | "else") expression ]
-                   ("END" | "end") .
+caseExpression = "CASE" when+ [ "ELSE" expression ] "END" .
 
-when = ("WHEN" | "when") logicalExpression ("THEN" | "then") expression .
+when = "WHEN" logicalExpression "THEN" expression .
 
 expression = applyExpression .
 
@@ -165,7 +173,7 @@ order = "<" orderExpressions ">" .
 
 orderExpressions = orderExpression { "," orderExpression } .
 
-orderExpression = expression [ "/" | "\\" ] .
+orderExpression = expression [ "ASC" | "DESC" ] [ "NULLS" ("FIRST" | "LAST") ] .
 
 group = "(" variables ")" .
 

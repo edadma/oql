@@ -109,7 +109,7 @@ class OQLParser extends RegexParsers {
 
   def variable: Parser[VariableExpressionOQL] = rep1sep(ident, ".") ^^ VariableExpressionOQL
 
-  def expression: Parser[ExpressionOQL] = applyExpression
+  def expression: Parser[ExpressionOQL] = additiveExpression
 
   def logicalExpression: Parser[ExpressionOQL] =
     orExpression
