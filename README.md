@@ -63,11 +63,11 @@ oql.query(<query>, conn).then((result: any) => <handle result> )
 
 `<query>` is the OQL query string.
 
-`<handle result>` is your result array handling code.  The `result` object will predictably by structured according to the query.
+`<handle result>` is your result array handling code.  The `result` object will be predictably structured according to the query.
 
 ### Database Description Language
 
-An "Entity-Relationship" style language is used to describe the database.  Only the portions of the database the OQL is being applied to need to be described.
+An "Entity-Relationship" style language is used to describe the database.  Only the portions of the database for which OQL is being used need to be described.
 
 #### Syntax
 
@@ -80,32 +80,40 @@ entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
 
 alias = identifier .
 
-attribute = [ "*" ] identifier [ "(" alias ")" ] ":" type [ "!" ]
+attribute = [ "*" ] attributeName [ "(" alias ")" ] ":" type [ "!" ]
           | identifier "=" json .
 
 type = primitiveType
      | entityType
-     | "[" entityType "]"
-     | "<" entityType ">" [ "<" identifier ">" ]
-     | "[" entityType "]" "(" entityType ")" .
+     | "[" entityType [ "." attributeName ] "]"
+     | "<" entityType [ "." attributeName ] ">"
+     | "[" entityType [ "." attributeName ] "]" "(" entityType ")" .
 
 primitiveType = "text"
-              | "integer"
-              | "double"
+              | "integer" | "int" | "int4"
+              | "bool" | "boolean"
               | "bigint"
+              | "decimal"
+              | "date"
+              | "float" | "float8"
+              | "uuid"
               | "timestamp" .
 
 entityType = identifier .
+
+attributeName = identifier .
 ```
 
+Regarding the `primitiveType` syntax rule, all alternatives on the same line are synonymous.  So, `bool` and `boolean` are synonymous and denote the same type.
+ 
 ### Query Language
 
-The query language is inspired by GraphQL.  Exactly the data that is needed is requested, so as to avoid circularity.
+The query language is inspired by GraphQL. In the following grammar, all keywords (double-quoted string literals) are case-insensitive.
 
 #### Syntax
 
 ```
-query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ]
+query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ] .
 
 project = "{" (attributeProject | "-" identifier | "&" identifier | "*")+ "}"
         | "." attributeProject .
@@ -119,20 +127,18 @@ select = "[" logicalExpression "]" .
 
 logicalExpression = orExpression .
 
-orExpression = andExpression { ("OR" | "or") andExpression } .
+orExpression = andExpression { "OR" andExpression } .
 
-andExpression = notExpression { ("AND" | "and") notExpression } .
+andExpression = notExpression { "AND" notExpression } .
 
-notExpression = ("NOT" | "not") comparisonExpression
+notExpression = "NOT" comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | (["NOT" | "not"]
-                         ("LIKE" | "like" | "ILIKE" | "ilike")) applyExpression
-                     | applyExpression [ "NOT" | "not" ] ("BETWEEN" | "between") applyExpression
-                         ("AND" | "and") applyExpression
-                     | applyExpression ((("IS" | "is") ("NULL" | "null")) |
-                         (("IS" | "is") ("NOT" | "not") ("NULL" | "null")))
-                     | applyExpression (("IN" | "in") | (("NOT" | "not") ("IN" | "in"))) expressions
+// todo
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
+                     | applyExpression [ "NOT" ] "BETWEEN" applyExpression "AND" applyExpression
+                     | applyExpression ("IS" "NULL" | "IS" "NOT" "NULL")
+                     | applyExpression [ "NOT" ] "IN" expressions
                      | applyExpression .
 
 expressions = "(" expression { "," expression } ")" .
