@@ -1,10 +1,10 @@
 name := "@vinctus/oql"
 
-version := "0.1.0"
+version := "0.1.1"
 
 description := "Object Query Language"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.4"
 
 scalacOptions ++= Seq( "-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials", "-language:dynamics" )
 
@@ -33,8 +33,8 @@ enablePlugins(ScalablyTypedConverterPlugin)
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 npmDependencies in Compile ++= Seq(
-  "pg" -> "8.3.0",
-  "@types/pg" -> "7.14.4"
+  "pg" -> "8.5.1",
+  "@types/pg" -> "7.14.7"
 )
 
 libraryDependencies ++= Seq(
