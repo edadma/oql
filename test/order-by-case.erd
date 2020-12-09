@@ -1,0 +1,5 @@
+entity x {
+ *id: integer
+  a: timestamp
+  b: timestamp
+}

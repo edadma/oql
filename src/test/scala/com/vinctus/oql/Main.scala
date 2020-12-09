@@ -16,13 +16,13 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("m2m.tab"))
-  val oql = new OQL(conn, readFile("m2m.erd"))
+  val conn = new RDBConnection(readFile("test/order-by-case.tab"))
+  val oql = new OQL(conn, readFile("test/order-by-case.erd"))
 
   oql.trace = true
 
   for {
-    q <- oql.json("x {* ys} [exists(ys [b = 'b3'])]")
+    q <- oql.json("x <case when a is not null then a else b end>")
   } {
     println(q)
     conn.close()
