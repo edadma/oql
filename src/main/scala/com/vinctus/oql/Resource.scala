@@ -141,7 +141,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
 
     // get key set of column attributes excluding primary key
-//    val attrsNoPKKeys = attrsNoPK.keySet
+    //    val attrsNoPKKeys = attrsNoPK.keySet
 
     // get key set of all column attributes that are required
     val attrsRequiredKeys =
@@ -177,7 +177,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
               val v = obj(k)
 
               if (jsObject(v))
-                List(k -> render(v.asInstanceOf[js.Dictionary[Any]](pk)))
+                List(k -> render(v.asInstanceOf[Map[String, Any]](pk)))
               else
                 List(k -> render(v))
           }
