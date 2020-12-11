@@ -80,13 +80,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
-  def jsQueryOne(oql: String): Future[js.Any] = queryOne(oql) map toJS
+  def jsQueryOne(oql: String): Future[js.Object] = queryOne(oql) map (toJS(_).asInstanceOf[js.Object])
 
-  def jsQueryOne(q: QueryOQL): Future[js.Any] = queryOne(q) map toJS
+  def jsQueryOne(q: QueryOQL): Future[js.Object] = queryOne(q) map (toJS(_).asInstanceOf[js.Object])
 
-  def jsQueryMany(oql: String): Future[js.Any] = queryMany(oql) map toJS
+  def jsQueryMany(oql: String): Future[js.Object] = queryMany(oql) map (toJS(_).asInstanceOf[js.Object])
 
-  def jsQueryMany(q: QueryOQL): Future[js.Any] = queryMany(q) map toJS
+  def jsQueryMany(q: QueryOQL): Future[js.Object] = queryMany(q) map (toJS(_).asInstanceOf[js.Object])
 
   @JSExport("queryOne")
   def jsjsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =

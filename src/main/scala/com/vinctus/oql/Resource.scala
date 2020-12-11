@@ -16,7 +16,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def getMany: Future[List[ListMap[String, Any]]] = builder.getMany
 
-  def jsGetMany: Future[js.Any] = builder.jsGetMany
+  def jsGetMany: Future[js.Object] = builder.jsGetMany
 
   @JSExport("link")
   def jsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
