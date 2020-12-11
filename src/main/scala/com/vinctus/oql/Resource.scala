@@ -92,7 +92,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
         command append s"DELETE FROM ${junction.table}\n"
         command append s"  WHERE $thisCol = ${render(id1)} AND $thatCol = ${render(id2)}\n"
 
-        //print(command.toString)
+        if (oql.trace)
+          println(command.toString)
 
         // execute update command (to get a future)
         oql.conn.command(command.toString).rows map (_ => ())
@@ -111,7 +112,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     command append s"DELETE FROM ${entity.table}\n"
     command append s"  WHERE ${entity.pkcolumn.get} = ${render(id)}\n"
 
-    //print(command.toString)
+    if (oql.trace)
+      println(command.toString)
 
     // execute update command (to get a future)
     oql.conn.command(command.toString).rows map (_ => ())
@@ -176,10 +178,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             case Some(pk) =>
               val v = obj(k)
 
-              if (jsObject(v))
-                List(k -> render(v.asInstanceOf[Map[String, Any]](pk)))
-              else
-                List(k -> render(v))
+              List(k -> render(if (jsObject(v)) v.asInstanceOf[Map[String, Any]](pk) else v))
           }
         case (k, _) => if (attrsRequiredKeys(k)) sys.error(s"attribute '$k' is required") else Nil
       }
@@ -199,7 +198,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     entity.pkcolumn foreach (pk => command append s"  RETURNING $pk\n")
 
-    // print(command.toString)
+    if (oql.trace)
+      println(command.toString)
 
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row => {
@@ -251,7 +251,19 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // build list of attributes to update
     val pairs =
       updates map {
-        case (k, v) => attrs(k).column -> render(v)
+        case (k, v) =>
+          val v1 =
+            if (jsObject(v))
+              entity.attributes(k) match {
+                case ObjectEntityAttribute(_, _, e, _) if e.pk.isDefined =>
+                  v.asInstanceOf[Map[String, Any]](e.pk.get) // todo: unit test
+                case ObjectEntityAttribute(_, _, e, _) =>
+                  sys.error(s"entity '${e.name}' does not have a declared primary key")
+                case _ => sys.error(s"attribute '$k' of entity '${entity.name}' is not an entity attribute")
+              } else
+              v
+
+          attrs(k).column -> render(v1)
       }
 
     val command = new StringBuilder
@@ -261,7 +273,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     command append s"  SET ${pairs map { case (k, v) => s"$k = $v" } mkString ", "}\n"
     command append s"  WHERE ${entity.pkcolumn.get} = ${render(id)}\n"
 
-    //print(command.toString)
+    if (oql.trace)
+      println(command.toString)
 
     // execute update command (to get a future)
     oql.conn.command(command.toString).rows map (_ => ())
