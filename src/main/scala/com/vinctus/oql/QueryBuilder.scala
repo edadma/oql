@@ -20,13 +20,13 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     override def cond(b: Boolean): QueryBuilder = na
 
     @JSExport("getCount")
-    override def jsGetCount(): js.Promise[Int] = na
+    override def jsjsGetCount(): js.Promise[Int] = na
 
     @JSExport("getMany")
-    override def jsGetMany(): js.Promise[js.Array[js.Any]] = na
+    override def jsjsGetMany(): js.Promise[js.Array[js.Any]] = na
 
     @JSExport("getOne")
-    override def jsGetOne(): js.Promise[js.Any] = na
+    override def jsjsGetOne(): js.Promise[js.Any] = na
 
     override def getMany: Future[List[ListMap[String, Any]]] = na
 
@@ -119,13 +119,17 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   def offset(a: Int): QueryBuilder = new QueryBuilder(oql, q.copy(offset = Some(a)))
 
   @JSExport("getMany")
-  def jsGetMany(): js.Promise[js.Any] = check.oql.jsQueryMany(q)
+  def jsjsGetMany(): js.Promise[js.Any] = check.oql.jsjsQueryMany(q)
 
   @JSExport("getOne")
-  def jsGetOne(): js.Promise[js.Any] = check.oql.jsQueryOne(q)
+  def jsjsGetOne(): js.Promise[js.Any] = check.oql.jsjsQueryOne(q)
 
   @JSExport("getCount")
-  def jsGetCount(): js.Promise[Int] = getCount.toJSPromise
+  def jsjsGetCount(): js.Promise[Int] = getCount.toJSPromise
+
+  def jsGetMany: Future[js.Any] = check.oql.jsQueryMany(q)
+
+  def jsGetOne: Future[js.Any] = check.oql.jsQueryOne(q)
 
   def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q)
 

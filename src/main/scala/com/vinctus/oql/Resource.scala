@@ -12,9 +12,11 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   private val builder = oql.queryBuilder().project(name)
 
   @JSExport("getMany")
-  def jsGetMany(): js.Promise[js.Any] = builder.jsGetMany()
+  def jsjsGetMany(): js.Promise[js.Any] = builder.jsjsGetMany()
 
   def getMany: Future[List[ListMap[String, Any]]] = builder.getMany
+
+  def jsGetMany: Future[js.Any] = builder.jsGetMany
 
   @JSExport("link")
   def jsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {

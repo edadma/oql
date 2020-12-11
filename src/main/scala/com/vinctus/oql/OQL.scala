@@ -24,10 +24,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   var trace = false
 
   @JSExport
-  def raw(sql: String, values: js.Array[js.Any]): Promise[js.Array[js.Any]] =
+  def raw(sql: String, values: js.UndefOr[js.Array[js.Any]]): Promise[js.Array[js.Any]] =
     conn
       .asInstanceOf[PostgresConnection]
-      .raw(sql, if (values == js.undefined) js.Array() else values)
+      .raw(sql, if (values.isEmpty) js.Array() else values.get)
 
   @JSExport("create")
   def jsCreate(): js.Promise[Unit] = create.toJSPromise
@@ -80,20 +80,28 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
+  def jsQueryOne(oql: String): Future[js.Any] = queryOne(oql) map toJS
+
+  def jsQueryOne(q: QueryOQL): Future[js.Any] = queryOne(q) map toJS
+
+  def jsQueryMany(oql: String): Future[js.Any] = queryMany(oql) map toJS
+
+  def jsQueryMany(q: QueryOQL): Future[js.Any] = queryMany(q) map toJS
+
   @JSExport("queryOne")
-  def jsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
+  def jsjsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
     toPromiseOne(queryOne(oql, toMap(parameters)))
 
-  def jsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromise(queryOne(q))
+  def jsjsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromiseOne(queryOne(q))
 
   @JSExport("queryMany")
-  def jsQueryMany(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
+  def jsjsQueryMany(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
     toPromise(queryMany(oql, toMap(parameters)))
 
-  def jsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
+  def jsjsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
 
   @JSExport("count")
-  def jsCount(oql: String, parameters: js.Any = js.undefined): js.Promise[Int] =
+  def jsjsCount(oql: String, parameters: js.Any = js.undefined): js.Promise[Int] =
     count(oql, toMap(parameters)) toJSPromise
 
   def json(oql: String, parameters: Map[String, Any] = null): Future[String] = toJSON(queryMany(oql, parameters))
@@ -213,9 +221,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             expressions(list)
           case InSubqueryExpressionOQL(expr, op, query) =>
             expression(expr)
-            sql ++= s" $op (\n${subquery(entityname, entity, query, true, preindent + 2 * INDENT)})"
+            sql ++= s" $op (\n${subquery(entityname, entity, query, results = true, preindent + 2 * INDENT)})"
           case ExistsExpressionOQL(query) =>
-            sql ++= s"EXISTS(\n${subquery(entityname, entity, query, false, preindent + 2 * INDENT)})"
+            sql ++= s"EXISTS(\n${subquery(entityname, entity, query, results = false, preindent + 2 * INDENT)})"
           case BetweenExpressionOQL(expr, op, lower, upper) =>
             expression(expr)
             sql ++= s" $op "
@@ -322,8 +330,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             None,
             preindent
           )
-        case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, attrEntityAttr, junctionType, junction)) => //todo
-          //println("subquery m2m", entityType)
+        case Some(ObjectArrayJunctionEntityAttribute(entityType, attrEntity, _, junctionType, junction)) =>
           val ts = junction.attributes.toList.filter(
             a =>
               a._2
@@ -346,7 +353,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
               case _ => problem(null, s"contains more than one attribute of type '$entityname'")
             }
-          //println(junctionAttr, es.head._1)
 
           if (results)
             branches(
