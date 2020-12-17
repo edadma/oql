@@ -51,11 +51,15 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     @JSExport
     override def add(attribute: QueryBuilder): QueryBuilder = QueryBuilder.this
 
-    @JSExport
-    override def query(q: String, parameters: js.Any = js.undefined): QueryBuilder = QueryBuilder.this
+    @JSExport("query")
+    override def jsQuery(q: String, parameters: js.Any = js.undefined): QueryBuilder = QueryBuilder.this
 
-    @JSExport
-    override def select(s: String, parameters: js.Any = js.undefined): QueryBuilder = QueryBuilder.this
+    @JSExport("select")
+    override def jsSelect(s: String, parameters: js.Any = js.undefined): QueryBuilder = QueryBuilder.this
+
+    override def query(query: String, parameters: Map[String, Any] = null): QueryBuilder = QueryBuilder.this
+
+    override def select(s: String, parameters: Map[String, Any] = null): QueryBuilder = QueryBuilder.this
   }
 
   @JSExport("cond")
@@ -93,13 +97,18 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
         q.copy(source = Ident(resource))
     )
 
-  @JSExport
-  def query(query: String, parameters: js.Any = js.undefined): QueryBuilder =
+  @JSExport("query")
+  def jsQuery(query: String, parameters: js.Any = js.undefined): QueryBuilder =
     new QueryBuilder(oql, OQLParser.parseQuery(template(query, toMap(parameters))))
 
-  @JSExport
-  def select(s: String, parameters: js.Any = js.undefined): QueryBuilder = {
-    val sel = OQLParser.parseSelect(template(s, toMap(parameters)))
+  def query(query: String, parameters: Map[String, Any] = null): QueryBuilder =
+    new QueryBuilder(oql, OQLParser.parseQuery(template(query, parameters)))
+
+  @JSExport("select")
+  def jsSelect(s: String, parameters: js.Any = js.undefined): QueryBuilder = select(s, toMap(parameters))
+
+  def select(s: String, parameters: Map[String, Any] = null): QueryBuilder = {
+    val sel = OQLParser.parseSelect(template(s, parameters))
 
     new QueryBuilder(
       oql,
@@ -112,7 +121,6 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     )
   }
 
-  @JSExport
   def order(attribute: String, sorting: String): QueryBuilder =
     new QueryBuilder(oql, q.copy(order = Some(List((VariableExpressionOQL(List(Ident(attribute))), sorting)))))
 

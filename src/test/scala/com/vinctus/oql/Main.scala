@@ -1,5 +1,6 @@
 package com.vinctus.oql
 
+import typings.node.global.console
 import typings.node.processMod.global.process
 
 import scala.scalajs.js
@@ -46,9 +47,9 @@ object Main extends App {
   val oql = new OQL(conn, readFile("shuttlecontrol.erd"))
 
   for {
-    q1 <- oql.trip.insert(Map())
+    q1 <- oql.queryBuilder().query("organization <createdAt desc>").jsGetMany
   } {
-    println(q1)
+    console.log(q1)
 //    println(q2)
     conn.close()
   }

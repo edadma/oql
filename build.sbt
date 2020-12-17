@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.7"
+version := "0.1.8"
 
 description := "Object Query Language"
 
@@ -26,9 +26,9 @@ enablePlugins(ScalaJSPlugin)
 
 enablePlugins(ScalablyTypedConverterPlugin)
 
-Test / scalaJSUseMainModuleInitializer := true
-
-Test / scalaJSUseTestModuleInitializer := false
+//Test / scalaJSUseMainModuleInitializer := true
+//
+//Test / scalaJSUseTestModuleInitializer := false
 
 jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
