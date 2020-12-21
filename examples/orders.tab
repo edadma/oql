@@ -12,6 +12,7 @@ agent
  A006                  McDen             London              0.15                 078-22255588   
  A004                  Ivan              Torento             0.15                 008-22544166   
  A009                  Benjamin          Hampshair           0.11                 008-22536178   
+ A013                  asdf              Hampshair           0.11                 008-22536178   
 
 customer
  cust_code: text, pk  name: text  

@@ -224,6 +224,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             sql ++= s" $op (\n${subquery(entityname, entity, query, results = true, preindent + 2 * INDENT)})"
           case ExistsExpressionOQL(query) =>
             sql ++= s"EXISTS(\n${subquery(entityname, entity, query, results = false, preindent + 2 * INDENT)})"
+          case SubqueryExpressionOQL(query) =>
+            sql ++= s"(\n${subquery(entityname, entity, query, results = true, preindent + 2 * INDENT)})"
           case BetweenExpressionOQL(expr, op, lower, upper) =>
             expression(expr)
             sql ++= s" $op "

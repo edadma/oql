@@ -17,17 +17,17 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-//  val conn = new RDBConnection(readFile("test/order-by-case.tab"))
-//  val oql = new OQL(conn, readFile("test/order-by-case.erd"))
-//
-//  oql.trace = true
-//
-//  for {
-//    q <- oql.json("x <case when a is not null then a else b end>")
-//  } {
-//    println(q)
-//    conn.close()
-//  }
+  val conn = new RDBConnection(readFile("examples/orders.tab"))
+  val oql = new OQL(conn, readFile("examples/orders.erd"))
+
+  oql.trace = true
+
+  for {
+    q <- oql.json("agent [(orders {count(*)}) = 0]")
+  } {
+    println(q)
+    conn.close()
+  }
 
 //  val conn = new RDBConnection(readFile("m2o.tab"))
 //  val oql = new OQL(conn, readFile("m2o.erd"))
@@ -43,16 +43,15 @@ object Main extends App {
 
 //  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 
-  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-  val oql = new OQL(conn, readFile("shuttlecontrol.erd"))
-
-  for {
-    q1 <- oql.queryBuilder().query("organization <createdAt desc>").jsGetMany
-  } {
-    console.log(q1)
-//    println(q2)
-    conn.close()
-  }
+//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
+//  val oql = new OQL(conn, readFile("shuttlecontrol.erd"))
+//
+//  for {
+//    q1 <- oql.queryBuilder().query("organization <createdAt desc>").jsGetMany
+//  } {
+//    console.log(q1)
+//    conn.close()
+//  }
 
 //  process.env("TZ") = "UTC"
 //

@@ -33,6 +33,7 @@ case class PostfixExpressionOQL(expr: ExpressionOQL, op: String) extends Express
 case class InExpressionOQL(expr: ExpressionOQL, op: String, list: List[ExpressionOQL]) extends ExpressionOQL
 case class InSubqueryExpressionOQL(expr: ExpressionOQL, op: String, query: QueryOQL) extends ExpressionOQL
 case class ExistsExpressionOQL(query: QueryOQL) extends ExpressionOQL
+case class SubqueryExpressionOQL(query: QueryOQL) extends ExpressionOQL
 case class BetweenExpressionOQL(expr: ExpressionOQL, op: String, lower: ExpressionOQL, upper: ExpressionOQL)
     extends ExpressionOQL
 case class GroupedExpressionOQL(expr: ExpressionOQL) extends ExpressionOQL

@@ -187,6 +187,7 @@ class OQLParser extends RegexParsers {
       kw("INTERVAL") ~> singleQuoteString ^^ IntervalLiteralOQL |
       caseExpression |
       variable |
+      "(" ~> query <~ ")" ^^ SubqueryExpressionOQL |
       "(" ~> logicalExpression <~ ")" ^^ GroupedExpressionOQL
 
   def caseExpression: Parser[CaseExpressionOQL] =
