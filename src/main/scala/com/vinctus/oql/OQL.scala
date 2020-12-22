@@ -80,7 +80,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
-  def jsQueryOne(oql: String): Future[js.Object] = queryOne(oql) map (toJS(_).asInstanceOf[js.Object])
+  def jsQueryOne[T <: js.Object](oql: String): Future[T] = queryOne(oql) map (toJS(_).asInstanceOf[T])
 
   def jsQueryOne(q: QueryOQL): Future[js.Object] = queryOne(q) map (toJS(_).asInstanceOf[js.Object])
 
@@ -550,6 +550,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           entity.attributes get attr.name match {
             case None =>
               problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+            case Some(AnyAttribute)              => problem(attr.pos, s"problem")
             case Some(LiteralEntityAttribute(_)) => problem(attr.pos, "literals are not yet supported here")
             case Some(PrimitiveEntityAttribute(column, _, _)) =>
               if (tail != Nil)
@@ -723,6 +724,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (Some(List("count")), "*", AnyAttribute, _, _, _) =>
         projectbuf += ((Some(List("count")), table, "*"))
         PrimitiveProjectionNode("count_*", "count_*", table, "*", AnyAttribute)
+      case (_, _, AnyAttribute, _, _, _) => sys.error("problem")
       case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))
         PrimitiveProjectionNode(agg.map(a => s"${a mkString "_"}_$field").getOrElse(field),
