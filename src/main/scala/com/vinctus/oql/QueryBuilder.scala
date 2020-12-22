@@ -28,9 +28,9 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
     @JSExport("getOne")
     override def jsjsGetOne(): js.Promise[js.Any] = na
 
-    override def jsGetMany: Future[js.Object] = na
+    override def jsGetMany[T <: js.Object]: Future[T] = na
 
-    override def jsGetOne: Future[js.Object] = na
+    override def jsGetOne[T <: js.Object]: Future[Option[T]] = na
 
     override def getMany: Future[List[ListMap[String, Any]]] = na
 
@@ -139,9 +139,9 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   @JSExport("getCount")
   def jsjsGetCount(): js.Promise[Int] = getCount.toJSPromise
 
-  def jsGetMany: Future[js.Object] = check.oql.jsQueryMany(q)
+  def jsGetMany[T <: js.Object]: Future[T] = check.oql.jsQueryMany(q)
 
-  def jsGetOne: Future[js.Object] = check.oql.jsQueryOne(q)
+  def jsGetOne[T <: js.Object]: Future[Option[T]] = check.oql.jsQueryOne(q)
 
   def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q)
 

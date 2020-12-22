@@ -80,13 +80,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
-  def jsQueryOne[T <: js.Object](oql: String): Future[T] = queryOne(oql) map (toJS(_).asInstanceOf[T])
+  def jsQueryOne[T <: js.Object](oql: String): Future[Option[T]] = queryOne(oql) map (_.map(toJS(_).asInstanceOf[T]))
 
-  def jsQueryOne(q: QueryOQL): Future[js.Object] = queryOne(q) map (toJS(_).asInstanceOf[js.Object])
+  def jsQueryOne[T <: js.Object](q: QueryOQL): Future[Option[T]] = queryOne(q) map (_.map(toJS(_).asInstanceOf[T]))
 
-  def jsQueryMany(oql: String): Future[js.Object] = queryMany(oql) map (toJS(_).asInstanceOf[js.Object])
+  def jsQueryMany[T <: js.Object](oql: String): Future[T] = (queryMany(oql) map (toJS(_))).asInstanceOf[Future[T]]
 
-  def jsQueryMany(q: QueryOQL): Future[js.Object] = queryMany(q) map (toJS(_).asInstanceOf[js.Object])
+  def jsQueryMany[T <: js.Object](q: QueryOQL): Future[T] = (queryMany(q) map (toJS(_))).asInstanceOf[Future[T]]
 
   @JSExport("queryOne")
   def jsjsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
@@ -724,6 +724,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case (Some(List("count")), "*", AnyAttribute, _, _, _) =>
         projectbuf += ((Some(List("count")), table, "*"))
         PrimitiveProjectionNode("count_*", "count_*", table, "*", AnyAttribute)
+      case (Some(List("COUNT")), "*", AnyAttribute, _, _, _) =>
+        projectbuf += ((Some(List("COUNT")), table, "*"))
+        PrimitiveProjectionNode("COUNT_*", "COUNT_*", table, "*", AnyAttribute)
       case (_, _, AnyAttribute, _, _, _) => sys.error("problem")
       case (agg, field, attr: PrimitiveEntityAttribute, _, _, _) =>
         projectbuf += ((agg, table, attr.column))

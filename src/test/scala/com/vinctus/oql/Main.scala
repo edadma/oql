@@ -23,7 +23,7 @@ object Main extends App {
   oql.trace = true
 
   for {
-    q <- oql.json("agent [(orders {count(*)}) = 0]")
+    q <- oql.json("agent [(orders {count(*)}) = 0 and commission IN (0.11, 0.12)]")
   } {
     println(q)
     conn.close()
