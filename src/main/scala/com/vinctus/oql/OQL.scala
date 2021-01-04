@@ -9,7 +9,6 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.Promise
 
 object OQL {
   private val builtinSQLVariables = Set("CURRENT_DATE", "CURRENT_TIMESTAMP", "CURRENT_TIME")
@@ -24,7 +23,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   var trace = false
 
   @JSExport
-  def raw(sql: String, values: js.UndefOr[js.Array[js.Any]]): Promise[js.Array[js.Any]] =
+  def raw(sql: String, values: js.UndefOr[js.Array[js.Any]]): js.Promise[js.Array[js.Any]] =
     conn
       .asInstanceOf[PostgresConnection]
       .raw(sql, if (values.isEmpty) js.Array() else values.get)
@@ -167,6 +166,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             case Nil               => if (f == "*") "*" else s"$e.$f"
             case "date_month" :: t => s"date_trunc('month', ${call(t)})"
             case "date_day" :: t   => s"date_trunc('day', ${call(t)})"
+            case "left8" :: t      => s"left(${call(t)}, 8)"
             case h :: t            => s"$h(${call(t)})"
           }
 
@@ -625,9 +625,9 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       project match {
         case _: ProjectAllOQL =>
           entity.attributes filter {
-            case (_, _: EntityColumnAttribute) => true
-            case _                             => false
-          } map { case (k, v)                  => (None, k, v, ProjectAllOQL(), null, false) } toList
+            case (_, _: PrimitiveEntityAttribute) => true
+            case _                                => false
+          } map { case (k, v)                     => (None, k, v, ProjectAllOQL(), null, false) } toList
         case ProjectAttributesOQL(attrs) =>
           var projectall = false
           val aggset = new mutable.HashSet[AggregateAttributeOQL]

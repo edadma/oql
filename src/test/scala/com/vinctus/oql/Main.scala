@@ -1,5 +1,6 @@
 package com.vinctus.oql
 
+import com.vinctus.oql.Testing.starTrekER
 import typings.node.global.console
 import typings.node.processMod.global.process
 
@@ -17,16 +18,15 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("examples/orders.tab"))
-  val oql = new OQL(conn, readFile("examples/orders.erd"))
-
-  oql.trace = true
+//  val conn = new RDBConnection(readFile("examples/orders.tab"))
+//  val oql = new OQL(conn, readFile("examples/orders.erd"))
+//
+//  oql.trace = true
 
   for {
-    q <- oql.json("agent [(orders {count(*)}) = 0 and commission IN (0.11, 0.12)]")
+    q <- starTrekER.json("character {* species {* origin}} [char_id = 3]")
   } {
     println(q)
-    conn.close()
   }
 
 //  val conn = new RDBConnection(readFile("m2o.tab"))

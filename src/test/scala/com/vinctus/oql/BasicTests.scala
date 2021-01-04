@@ -22,7 +22,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "ordered" in {
-    starTrekER.json("character <name>") map { result =>
+    starTrekER.json("character {* species {* origin}} <name>") map { result =>
       result shouldBe
         """
         |[
@@ -161,7 +161,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "deep many-to-one selection" in {
-    starTrekER.json("character [species.origin.name = 'Vulcan']") map { result =>
+    starTrekER.json("character {* species {* origin}} [species.origin.name = 'Vulcan']") map { result =>
       result shouldBe
         """
           |[
@@ -240,7 +240,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "ordered resource selection" in {
-    starTrekER.json("character [char_id < 4] <name>") map { result =>
+    starTrekER.json("character {* species {* origin}} [char_id < 4] <name>") map { result =>
       result shouldBe
         """
           |[
@@ -307,7 +307,7 @@ class BasicTests extends AsyncFreeSpec with Matchers {
   }
 
   "single selection" in {
-    starTrekER.json("character [char_id = 3]") map { result =>
+    starTrekER.json("character {* species {* origin}} [char_id = 3]") map { result =>
       result shouldBe
         """
           |[
