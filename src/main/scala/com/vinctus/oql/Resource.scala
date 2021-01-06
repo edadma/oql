@@ -19,11 +19,13 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def jsGetMany: Future[js.Object] = builder.jsGetMany
 
   @JSExport("link")
-  def jsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
+  def jsjsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = jsLink(e1, resource, e2).toJSPromise
+
+  def jsLink(e1: js.Any, resource: String, e2: js.Any): Future[Unit] = {
     val id1 = if (jsObject(e1)) e1.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e1
     val id2 = if (jsObject(e2)) e2.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e2
 
-    link(id1, resource, id2).toJSPromise
+    link(id1, resource, id2)
   }
 
   //todo: support multiple many-to-many relationships between the same two entities
@@ -54,11 +56,13 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("unlink")
-  def jsUnlink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = {
+  def jsjsUnlink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = jsUnlink(e1, resource, e2).toJSPromise
+
+  def jsUnlink(e1: js.Any, resource: String, e2: js.Any): Future[Unit] = {
     val id1 = if (jsObject(e1)) e1.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e1
     val id2 = if (jsObject(e2)) e2.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e2
 
-    unlink(id1, resource, id2).toJSPromise
+    unlink(id1, resource, id2)
   }
 
   //todo: support multiple many-to-many relationships between the same two entities
@@ -104,8 +108,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     }
 
   @JSExport("delete")
-  def jsDelete(e: js.Any): js.Promise[Unit] =
-    delete(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e).toJSPromise
+  def jsjsDelete(e: js.Any): js.Promise[Unit] = jsDelete(e).toJSPromise
+
+  def jsDelete(e: js.Any): Future[Unit] =
+    delete(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e)
 
   def delete(id: Any): Future[Unit] = {
     val command = new StringBuilder
@@ -122,7 +128,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   }
 
   @JSExport("insert")
-  def jsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(insert(toMap(obj)))
+  def jsjsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(jsInsert(obj))
+
+  def jsInsert(obj: js.Any): Future[Any] = insert(toMap(obj))
 
   def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
@@ -218,8 +226,10 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   }
 
   @JSExport("update")
-  def jsUpdate(e: js.Any, updates: js.Any): js.Promise[Unit] =
-    update(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e, toMap(updates)).toJSPromise
+  def jsjsUpdate(e: js.Any, updates: js.Any): js.Promise[Unit] = jsUpdate(e, updates).toJSPromise
+
+  def jsUpdate(e: js.Any, updates: js.Any): Future[Unit] =
+    update(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e, toMap(updates))
 
   def update(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
     // check if updates has a primary key
