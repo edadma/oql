@@ -16,7 +16,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def getMany: Future[List[ListMap[String, Any]]] = builder.getMany
 
-  def jsGetMany: Future[js.Object] = builder.jsGetMany
+  def jsGetMany[T <: js.Object]: Future[T] = builder.jsGetMany
 
   @JSExport("link")
   def jsjsLink(e1: js.Any, resource: String, e2: js.Any): js.Promise[Unit] = jsLink(e1, resource, e2).toJSPromise
@@ -130,7 +130,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("insert")
   def jsjsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(jsInsert(obj))
 
-  def jsInsert(obj: js.Any): Future[Any] = insert(toMap(obj))
+  def jsInsert[T <: js.Object](obj: js.Any): Future[T] = insert(toMap(obj)).asInstanceOf[Future[T]]
 
   def insert(obj: Map[String, Any]): Future[Any] = {
     // check if the object has a primary key
