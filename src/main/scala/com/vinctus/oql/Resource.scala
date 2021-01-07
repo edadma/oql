@@ -136,7 +136,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // check if the object has a primary key
     entity.pk foreach { pk =>
       // object being inserted should not have a primary key property
-      if (obj contains pk)
+      if (obj.contains(pk) && obj(pk) != js.undefined)
         sys.error(s"Resource.insert: object has a primary key property: $pk = ${obj(pk)}")
     }
 
