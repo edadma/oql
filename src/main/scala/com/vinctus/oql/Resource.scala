@@ -212,7 +212,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       println(command.toString)
 
     // execute insert command (to get a future)
-    oql.conn.command(command.toString).rows map (row => {
+    oql.conn.command(command.toString).rows map (row =>
       entity.pk match {
         case None => obj
         case Some(pk) =>
@@ -221,8 +221,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             .apply(0)) // only one value is being requested: the primary key
 
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
-      }
-    })
+      })
   }
 
   @JSExport("update")

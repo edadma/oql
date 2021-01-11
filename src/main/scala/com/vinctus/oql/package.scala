@@ -1,7 +1,6 @@
 package com.vinctus
 
-import java.time.LocalDate
-
+import java.time.{Instant, LocalDate}
 import scala.scalajs.js
 import js.JSConverters._
 import scala.collection.immutable.ListMap
@@ -30,6 +29,7 @@ package object oql {
 
   def render(a: Any): String =
     a match {
+      case inst: Instant          => s"'$inst'"
       case s: String              => s"'${quote(s)}'"
       case d: js.Date             => s"'${d.toISOString()}'"
       case a: js.Array[_]         => s"(${a map render mkString ","})"

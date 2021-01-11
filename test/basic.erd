@@ -1,0 +1,4 @@
+entity x {
+ *id: integer
+  a: text
+}
