@@ -137,7 +137,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     entity.pk foreach { pk =>
       // object being inserted should not have a primary key property
       if (obj.contains(pk) && obj(pk) != js.undefined)
-        sys.error(s"Resource.insert: object has a primary key property: $pk = ${obj(pk)}")
+        sys.error(s"insert(): object has a primary key property: $pk = ${obj(pk)}")
     }
 
     // get sub-map of all column attributes
@@ -170,11 +170,13 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     // check if object contains undefined attributes
     if ((keyset diff allKeys).nonEmpty)
-      sys.error(s"undefined properties: ${(keyset diff allKeys) map (p => s"'$p'") mkString ", "}")
+      sys.error(
+        s"insert(): undefined properties for entity '$name': ${(keyset diff allKeys) map (p => s"'$p'") mkString ", "}")
 
     // check if object contains all required column attribute properties
     if (!(attrsRequiredKeys subsetOf keyset))
-      sys.error(s"missing required properties: ${attrsRequiredKeys.diff(keyset) map (p => s"'$p'") mkString ", "}")
+      sys.error(
+        s"insert(): missing required properties for entity '$name': ${attrsRequiredKeys.diff(keyset) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
 
