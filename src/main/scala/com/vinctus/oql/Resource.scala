@@ -232,7 +232,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def jsUpdate(e: js.Any, updates: js.Any): Future[Unit] =
     update(if (jsObject(e)) e.asInstanceOf[js.Dictionary[String]](entity.pk.get) else e, toMap(updates))
 
-  def update(id: Any, updates: collection.Map[String, Any]): Future[Unit] = {
+  def update(e: Any, updates: collection.Map[String, Any]): Future[Unit] = {
     // check if updates has a primary key
     entity.pk foreach (pk =>
       // object being updated should not have it's primary key changed
@@ -280,6 +280,11 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       }
 
     val command = new StringBuilder
+    val id =
+      e match {
+        case m: Map[_, _] => m.asInstanceOf[Map[String, Any]].apply(entity.pk.get)
+        case _            => e
+      }
 
     // build update command
     command append s"UPDATE ${entity.table}\n"
