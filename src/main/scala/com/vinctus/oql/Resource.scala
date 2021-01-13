@@ -130,9 +130,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("insert")
   def jsjsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(jsInsert(obj))
 
-  def jsInsert(obj: js.Any): Future[Any] = insert(toMap(obj))
+  def jsInsert(obj: js.Any): Future[Map[String, Any]] = insert(toMap(obj))
 
-  def insert(obj: Map[String, Any]): Future[Any] = {
+  def insert(obj: Map[String, Any]): Future[Map[String, Any]] = {
     // check if the object has a primary key
     entity.pk foreach { pk =>
       // object being inserted should not have a primary key property
