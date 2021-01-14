@@ -134,7 +134,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def jsInsert(obj: js.Any): Future[Map[String, Any]] = insert(toMap(obj))
 
-  def insert(obj: ListMap[String, Any]): Future[DynamicMap] = {
+  def insert(obj: Map[String, Any]): Future[DynamicMap] = {
     // check if the object has a primary key
     entity.pk foreach { pk =>
       // object being inserted should not have a primary key property
@@ -218,7 +218,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row =>
       new DynamicMap(entity.pk match {
-        case None => obj
+        case None => obj to ListMap
         case Some(pk) =>
           val res = obj + (pk -> row
             .next()
