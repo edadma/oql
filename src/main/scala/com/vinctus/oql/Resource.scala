@@ -1,5 +1,7 @@
 package com.vinctus.oql
 
+import com.vinctus.sjs_utils.DynamicMap
+
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,7 +52,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             .get
             ._1
 
-        oql.entity(junctionType).insert(Map(thisAttr -> id1, thatAttr -> id2)) map (_ => ())
+        oql.entity(junctionType).insert(ListMap(thisAttr -> id1, thatAttr -> id2)) map (_ => ())
       case Some(_) => sys.error(s"attribute '$attribute' is not many-to-many")
       case None    => sys.error(s"attribute '$attribute' does not exist on entity '$name'")
     }
@@ -132,7 +134,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
   def jsInsert(obj: js.Any): Future[Map[String, Any]] = insert(toMap(obj))
 
-  def insert(obj: Map[String, Any]): Future[Map[String, Any]] = {
+  def insert(obj: ListMap[String, Any]): Future[DynamicMap] = {
     // check if the object has a primary key
     entity.pk foreach { pk =>
       // object being inserted should not have a primary key property
@@ -215,7 +217,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     // execute insert command (to get a future)
     oql.conn.command(command.toString).rows map (row =>
-      entity.pk match {
+      new DynamicMap(entity.pk match {
         case None => obj
         case Some(pk) =>
           val res = obj + (pk -> row
@@ -223,7 +225,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
             .apply(0)) // only one value is being requested: the primary key
 
           attrs map { case (k, _) => k -> res.getOrElse(k, null) } to ListMap
-      })
+      }))
   }
 
   @JSExport("update")
