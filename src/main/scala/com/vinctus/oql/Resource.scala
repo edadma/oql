@@ -165,7 +165,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val keyset = obj.keySet
 
     // get key set of all attributes
-    val allKeys = attrs.keySet
+    val allKeys = entity.attributes.keySet
 
     // check if object contains undefined attributes
     if ((keyset diff allKeys).nonEmpty)
