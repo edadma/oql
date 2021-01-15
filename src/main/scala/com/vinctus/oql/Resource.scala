@@ -154,11 +154,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     // get sub-map of column attributes excluding primary key
     val attrsNoPK = entity.pk.fold(attrs)(attrs - _)
 
-    // get key set of column attributes excluding primary key
-    //    val attrsNoPKKeys = attrsNoPK.keySet
-
     // get key set of all column attributes that are required
-    val attrsRequiredKeys =
+    val attrsRequired =
       attrsNoPK.filter {
         case (_, attr: EntityColumnAttribute) => attr.required
         case _                                => false
@@ -168,17 +165,17 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val keyset = obj.keySet
 
     // get key set of all attributes
-    val allKeys = entity.attributes.keySet
+    val allKeys = attrs.keySet
 
     // check if object contains undefined attributes
     if ((keyset diff allKeys).nonEmpty)
       sys.error(
-        s"insert(): undefined properties for entity '$name': ${(keyset diff allKeys) map (p => s"'$p'") mkString ", "}")
+        s"insert(): found properties not defined for entity '$name': ${(keyset diff allKeys) map (p => s"'$p'") mkString ", "}")
 
     // check if object contains all required column attribute properties
-    if (!(attrsRequiredKeys subsetOf keyset))
+    if (!(attrsRequired subsetOf keyset))
       sys.error(
-        s"insert(): missing required properties for entity '$name': ${attrsRequiredKeys.diff(keyset) map (p => s"'$p'") mkString ", "}")
+        s"insert(): missing required properties for entity '$name': ${(attrsRequired diff keyset) map (p => s"'$p'") mkString ", "}")
 
     val command = new StringBuilder
 
@@ -194,7 +191,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
               List(k -> render(if (jsObject(v)) v.asInstanceOf[Map[String, Any]](pk) else v))
           }
-        case (k, _) => if (attrsRequiredKeys(k)) sys.error(s"attribute '$k' is required") else Nil
+        case (k, _) => if (attrsRequired(k)) sys.error(s"attribute '$k' is required") else Nil
       }
 
     // check for empty insert
