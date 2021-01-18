@@ -34,7 +34,7 @@ export class QueryBuilder {
 
   offset(a: number): QueryBuilder
 
-  getOne(): Promise<any>
+  getOne(): Promise<any | undefined>
 
   getMany(): Promise<any[]>
 
