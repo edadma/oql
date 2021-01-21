@@ -1,5 +1,7 @@
 package com.vinctus.oql
 
+import com.vinctus.sjs_utils.DynamicMap
+
 import scala.scalajs.js
 import js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
@@ -105,10 +107,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   def json(oql: String, parameters: Map[String, Any] = null): Future[String] = toJSON(queryMany(oql, parameters))
 
-  def queryOne(oql: String, parameters: Map[String, Any] = null): Future[Option[ListMap[String, Any]]] =
+  def queryOne(oql: String, parameters: Map[String, Any] = null): Future[Option[DynamicMap]] =
     queryOne(OQLParser.parseQuery(template(oql, parameters)))
 
-  def queryOne(q: QueryOQL): Future[Option[ListMap[String, Any]]] =
+  def queryOne(q: QueryOQL): Future[Option[DynamicMap]] =
     queryMany(q) map {
       case Nil       => None
       case List(row) => Some(row)
@@ -128,10 +130,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     }
   }
 
-  def queryMany(oql: String, parameters: Map[String, Any] = null): Future[List[ListMap[String, Any]]] =
+  def queryMany(oql: String, parameters: Map[String, Any] = null): Future[List[DynamicMap]] =
     queryMany(OQLParser.parseQuery(template(oql, parameters)))
 
-  def queryMany(q: QueryOQL): Future[List[ListMap[String, Any]]] = {
+  def queryMany(q: QueryOQL): Future[List[DynamicMap]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
@@ -506,7 +508,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[List[String]], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
-                           graph: Seq[ProjectionNode]): Future[List[ListMap[String, Any]]] = {
+                           graph: Seq[ProjectionNode]): Future[List[DynamicMap]] = {
     val sql =
       writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, None)
 
@@ -526,8 +528,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       .rows
       .flatMap(result => {
         val list = result.toList
-        val futurebuf = new ListBuffer[Future[List[ListMap[String, Any]]]]
-        val futuremap = new mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]]
+        val futurebuf = new ListBuffer[Future[List[DynamicMap]]]
+        val futuremap = new mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]]
 
         list foreach (futures(_, futurebuf, futuremap, projectmap, graph))
         Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph)))
@@ -927,8 +929,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   }
 
   private def futures(row: ResultRow,
-                      futurebuf: ListBuffer[Future[List[ListMap[String, Any]]]],
-                      futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
+                      futurebuf: ListBuffer[Future[List[DynamicMap]]],
+                      futuremap: mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]],
                       projectmap: Map[(String, String), Int],
                       nodes: Seq[ProjectionNode]): Unit = {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
@@ -1026,14 +1028,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
 
   private def build(row: ResultRow,
                     projectmap: Map[(String, String), Int],
-                    futuremap: mutable.HashMap[(ResultRow, Int), Future[List[ListMap[String, Any]]]],
+                    futuremap: mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]],
                     branches: Seq[ProjectionNode]) = {
-    def build(branches: Seq[ProjectionNode]): ListMap[String, Any] =
+    def build(branches: Seq[ProjectionNode]): DynamicMap =
       branches match {
         case Seq(LiftedProjectionNode(Some(fk), branches)) => if (row(projectmap(fk)) == null) null else build(branches)
         case Seq(LiftedProjectionNode(None, branches))     => build(branches)
         case _ =>
-          (branches map {
+          new DynamicMap((branches map {
             case EntityProjectionNode(field, Some(fk), branches) =>
               field -> (if (row(projectmap(fk)) == null) null else build(branches))
             case EntityProjectionNode(field, None, branches)        => field -> build(branches)
@@ -1056,7 +1058,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 case Some(Success(_))          => sys.error(s"not one-to-one: $field")
                 case a                         => sys.error(s"failed to execute query: $a")
               }
-          }).to(ListMap)
+          }) to ListMap)
       }
 
     build(branches)

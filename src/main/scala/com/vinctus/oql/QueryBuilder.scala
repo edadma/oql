@@ -1,5 +1,7 @@
 package com.vinctus.oql
 
+import com.vinctus.sjs_utils.DynamicMap
+
 import scala.scalajs.js
 import js.annotation.JSExport
 import js.JSConverters._
@@ -32,7 +34,7 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
 
     override def jsGetOne[T <: js.Object]: Future[Option[T]] = na
 
-    override def getMany: Future[List[ListMap[String, Any]]] = na
+    override def getMany: Future[List[DynamicMap]] = na
 
     override def getCount: Future[Int] = na
 
@@ -143,9 +145,9 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
 
   def jsGetOne[T <: js.Object]: Future[Option[T]] = check.oql.jsQueryOne(q)
 
-  def getMany: Future[List[ListMap[String, Any]]] = check.oql.queryMany(q)
+  def getMany: Future[List[DynamicMap]] = check.oql.queryMany(q)
 
-  def getOne: Future[Option[ListMap[String, Any]]] = check.oql.queryOne(q)
+  def getOne: Future[Option[DynamicMap]] = check.oql.queryOne(q)
 
   def getCount: Future[Int] = oql.count(q)
 

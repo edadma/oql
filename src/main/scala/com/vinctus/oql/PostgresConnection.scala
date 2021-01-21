@@ -1,12 +1,11 @@
 package com.vinctus.oql
 
-import typings.pg.mod.{Pool, PoolClient, PoolConfig, QueryArrayConfig, QueryResult}
+import typings.pg.mod.{Pool, PoolClient, PoolConfig, QueryArrayConfig}
 import typings.pg.pgStrings
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
-import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("PostgresConnection")
