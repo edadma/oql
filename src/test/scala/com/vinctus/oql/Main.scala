@@ -17,31 +17,33 @@ object Main extends App {
     fs.readFileSync(name).toString
   }
 
-  val conn = new RDBConnection(readFile("test/basic.tab"))
-  val oql = new OQL(conn, readFile("test/basic.erd"))
-
-  oql.trace = true
-
-  for {
-    q <- oql.x.insert(Map("a" -> "qwer"))
-  } {
-    println(q)
-  }
-
-//  val conn = new RDBConnection(readFile("m2o.tab"))
-//  val oql = new OQL(conn, readFile("m2o.erd"))
+//  val conn = new RDBConnection(readFile("test/basic.tab"))
+//  val oql = new OQL(conn, readFile("test/basic.erd"))
 //
 //  oql.trace = true
 //
 //  for {
-//    q <- oql.json("y {id b xs} [2 IN (xs {id} [a like 'a%'])]") // {a}
+//    q <- oql.x.insert(Map("a" -> "qwer"))
 //  } {
 //    println(q)
-//    conn.close()
 //  }
 
-//  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
+//  val conn = new RDBConnection(readFile("test/m2o.tab"))
+//  val oql = new OQL(conn, readFile("test/m2o.erd"))
 
+  val conn = new RDBConnection(readFile("test/m2m.tab"))
+  val oql = new OQL(conn, readFile("test/m2m.erd"))
+
+  oql.trace = true
+
+  for {
+    q <- oql.json("y {id b xs} [(xs {COUNT(*)}) = 1 AND EXISTS (xs [id = 2])]") // AND EXISTS (xs [id = 2])
+  } {
+    println(q)
+    conn.close()
+  }
+
+  //  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
 //  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
 //  val oql = new OQL(conn, readFile("shuttlecontrol.erd"))
 //

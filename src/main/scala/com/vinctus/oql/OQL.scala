@@ -273,15 +273,14 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       sql.toString
     }
 
-    def subquery(entityname: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = {
-      //println("subquery", entityname)
+    def subquery(entityName: String, entity: Entity, query: QueryOQL, results: Boolean, preindent: Int) = {
       val QueryOQL(attr, project, select, group, order, limit, offset) = query
       val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
       val joinbuf = new ListBuffer[(String, String, String, String, String)]
 
       entity.attributes get attr.name match {
         case None =>
-          problem(attr.pos, s"resource '$entityname' doesn't have an attribute '${attr.name}'")
+          problem(attr.pos, s"resource '$entityName' doesn't have an attribute '${attr.name}'")
         case Some(ObjectArrayEntityAttribute(entityType, attrEntity, attrEntityAttr)) =>
           val column =
             if (attrEntityAttr.isDefined) {
@@ -296,12 +295,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                   a._2
                     .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
               es.length match {
-                case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+                case 0 => problem(null, s"does not contain an attribute of type '$entityName'")
                 case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-                case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+                case _ => problem(null, s"contains more than one attribute of type '$entityName'")
               }
             }
-//          val graph =
 
           if (results)
             branches(
@@ -316,7 +314,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             )
 
           if (entity.pkcolumn.isEmpty)
-            sys.error(s"entity '$entityname' doesn't have a declared primary key")
+            sys.error(s"entity '$entityName' doesn't have a declared primary key")
 
           val pkwhere = EqualsExpressionOQL(entity.table, entity.pkcolumn.get, s"${attrEntity.table}.$column")
 
@@ -353,15 +351,17 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 .isInstanceOf[ObjectEntityAttribute] && a._2.asInstanceOf[ObjectEntityAttribute].entity == entity)
           val column =
             es.length match {
-              case 0 => problem(null, s"does not contain an attribute of type '$entityname'")
+              case 0 => problem(null, s"does not contain an attribute of type '$entityName'")
               case 1 => es.head._2.asInstanceOf[ObjectEntityAttribute].column
-              case _ => problem(null, s"contains more than one attribute of type '$entityname'")
+              case _ => problem(null, s"contains more than one attribute of type '$entityName'")
             }
+
+//          println("subquery m2m", entityName, entityType, junctionType, junctionAttr, project)
 
           if (results)
             branches(
-              entityType,
-              attrEntity,
+              junctionType, //entityType,
+              junction, //attrEntity,
               ProjectAttributesOQL(
                 List(
                   QueryOQL(
@@ -381,7 +381,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             )
 
           if (entity.pkcolumn.isEmpty)
-            sys.error(s"entity '$entityname' doesn't have a declared primary key")
+            sys.error(s"entity '$entityName' doesn't have a declared primary key")
 
           val pkwhere = EqualsExpressionOQL(entity.table, entity.pkcolumn.get, s"${junction.table}.$column")
 
@@ -671,8 +671,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                 propidset += attr
 
                 attrType(attr) match {
-                  case _: ObjectEntityAttribute | _: ObjectArrayEntityAttribute =>
-                    List((None, attr.name, attrType(attr), null, null, true))
+                  case a @ (_: ObjectEntityAttribute | _: ObjectArrayEntityAttribute) =>
+                    List((None, attr.name, a /*attrType(attr)*/, null, null, true))
                   case a => problem(attr.pos, s"can only apply a reference operator to an object attribute: $a")
                 }
               case a @ AggregateAttributeOQL(agg, attr) =>
@@ -687,9 +687,10 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                   case _ => problem(agg.last.pos, s"can only apply a function to a primitive attribute or '*'")
                 }
               case QueryOQL(id, _, _, _, _, _, _) if propidset(id) => problem(id.pos, "duplicate property")
-              case query @ QueryOQL(attr, project, None, None, None, None, None) =>
+              case query @ QueryOQL(attr, project1, None, None, None, None, None) =>
                 propidset += attr
-                List((None, attr.name, attrType(attr), project, query, false))
+                //println(entityname, project, query)
+                List((None, attr.name, attrType(attr), project1, query, false))
               case query @ QueryOQL(source, project, _, _, _, _, _) =>
                 propidset += source
 
