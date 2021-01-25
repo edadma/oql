@@ -5,8 +5,7 @@ import com.vinctus.sjs_utils.DynamicMap
 import scala.scalajs.js
 import js.annotation.JSExport
 import js.JSConverters._
-import js.{JSON, |}
-import scala.collection.immutable.ListMap
+import js.JSON
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
