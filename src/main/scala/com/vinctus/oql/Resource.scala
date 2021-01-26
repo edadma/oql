@@ -1,6 +1,8 @@
 package com.vinctus.oql
 
-import com.vinctus.sjs_utils.DynamicMap
+import com.vinctus.sjs_utils.{DynamicMap, Mappable}
+import com.vinctus.sjs_utils.Mappable.materializeMappable
+import com.vinctus.sjs_utils.Implicits._
 
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
@@ -133,6 +135,9 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def jsjsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(jsInsert(obj))
 
   def jsInsert(obj: js.Any): Future[Map[String, Any]] = insert(toMap(obj))
+
+  def insert[T <: Product: Mappable](obj: T): Future[T] =
+    insert(obj: Map[String, Any]) map (m => implicitly[Mappable[T]].fromMap(m))
 
   def insert(obj: Map[String, Any]): Future[DynamicMap] = {
     // check if the object has a primary key

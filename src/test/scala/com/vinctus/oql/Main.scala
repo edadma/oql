@@ -31,14 +31,41 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("test/m2o.tab"))
 //  val oql = new OQL(conn, readFile("test/m2o.erd"))
 
-  val conn = new RDBConnection(readFile("test/m2m.tab"))
-  val oql = new OQL(conn, readFile("test/m2m.erd"))
+//  val conn = new RDBConnection(readFile("test/m2m.tab"))
+//  val oql = new OQL(conn, readFile("test/m2m.erd"))
 
-  oql.trace = true
+  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
+  val oql = new OQL(
+    conn,
+    """
+      |entity employee {
+      |     *emp_id: integer
+      |      name (emp_name): text
+      |      job_title: text
+      |      manager (manager_id): employee
+      |      department (dep_id): department
+      |    }
+      |    
+      |    entity department {
+      |     *dep_id: integer
+      |      name (dep_name): text
+      |}""".stripMargin
+  )
+
+//  oql.trace = true
+
+  case class Department(name: String, dep_id: js.UndefOr[Int] = js.undefined)
+
+  import com.vinctus.sjs_utils.{DynamicMap, Mappable}
+  import com.vinctus.sjs_utils.Mappable.materializeMappable
 
   for {
-    q <- oql.json("y {id b xs} [(xs {COUNT(*)}) = 1 AND EXISTS (xs [id = 2])]") // AND EXISTS (xs [id = 2])
+//    q <- oql.json("y {id b xs} [(xs {COUNT(*)}) = 1 AND EXISTS (xs [id = 2])]") // AND EXISTS (xs [id = 2])
+    r <- oql.department.insert(Department("asdf"))
+//    r <- oql.department.insert(Map("name" -> "SKUNKWORKS"))
+    q <- oql.json("department")
   } {
+    println(r)
     println(q)
     conn.close()
   }

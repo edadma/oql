@@ -1,0 +1,35 @@
+CREATE DATABASE employees;
+
+CREATE TABLE department (
+  dep_id SERIAL PRIMARY KEY,
+  dep_name TEXT
+);
+
+INSERT INTO department (dep_id, dep_name) VALUES
+  (1001, 'FINANCE'),
+  (2001, 'AUDIT'),
+  (3001, 'MARKETING');
+
+CREATE TABLE employee (
+  emp_id SERIAL PRIMARY KEY,
+  emp_name TEXT,
+  job_title TEXT,
+  manager_id INTEGER REFERENCES employee,
+  dep_id INTEGER REFERENCES department
+);
+
+INSERT INTO employee (emp_id, emp_name, job_title, manager_id, dep_id) VALUES
+  (68319, 'KAYLING', 'PRESIDENT', null, 1001),
+  (66928, 'BLAZE', 'MANAGER', 68319, 3001),
+  (67832, 'CLARE', 'MANAGER', 68319, 1001),
+  (65646, 'JONAS', 'MANAGER', 68319, 2001),
+  (67858, 'SCARLET', 'ANALYST', 65646, 2001),
+  (69062, 'FRANK', 'ANALYST', 65646, 2001),
+  (63679, 'SANDRINE', 'CLERK', 69062, 2001),
+  (64989, 'ADELYN', 'SALESREP', 66928, 3001),
+  (65271, 'WADE', 'SALESREP', 66928, 3001),
+  (66564, 'MADDEN', 'SALESREP', 66928, 3001),
+  (68454, 'TUCKER', 'SALESREP', 66928, 3001),
+  (68736, 'ADNRES', 'CLERK', 67858, 2001),
+  (69000, 'JULIUS', 'CLERK', 66928, 3001),
+  (69324, 'MARKER', 'CLERK', 67832, 1001);
