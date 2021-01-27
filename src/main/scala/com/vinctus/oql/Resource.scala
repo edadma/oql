@@ -272,15 +272,29 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
       updates map {
         case (k, v) =>
           val v1 =
-            if (jsObject(v))
-              entity.attributes(k) match {
-                case ObjectEntityAttribute(_, _, e, _) if e.pk.isDefined =>
-                  v.asInstanceOf[Map[String, Any]](e.pk.get) // todo: unit test
-                case ObjectEntityAttribute(_, _, e, _) =>
-                  sys.error(s"entity '${e.name}' does not have a declared primary key")
-                case _ => sys.error(s"attribute '$k' of entity '${entity.name}' is not an entity attribute")
-              } else
-              v
+            v match {
+              case p: Product =>
+                entity.attributes(k) match {
+                  case ObjectEntityAttribute(_, _, e, _) if e.pk.isDefined =>
+                    p.productElementNames.indexOf(e.pk.get) match {
+                      case -1  => sys.error(s"primary key not found in case class: ${e.pk.get}")
+                      case idx => p.productElement(idx)
+                    }
+                  case ObjectEntityAttribute(_, _, e, _) =>
+                    sys.error(s"entity '${e.name}' does not have a declared primary key")
+                  case _ => sys.error(s"attribute '$k' of entity '${entity.name}' is not an entity attribute")
+                }
+              case _ =>
+                if (jsObject(v))
+                  entity.attributes(k) match {
+                    case ObjectEntityAttribute(_, _, e, _) if e.pk.isDefined =>
+                      v.asInstanceOf[Map[String, Any]](e.pk.get) // todo: unit test
+                    case ObjectEntityAttribute(_, _, e, _) =>
+                      sys.error(s"entity '${e.name}' does not have a declared primary key")
+                    case _ => sys.error(s"attribute '$k' of entity '${entity.name}' is not an entity attribute")
+                  } else
+                  v
+            }
 
           attrs(k).column -> render(v1)
       }
