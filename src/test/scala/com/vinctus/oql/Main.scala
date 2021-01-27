@@ -56,13 +56,13 @@ object Main extends App {
 
   case class Department(name: String, dep_id: js.UndefOr[Int] = js.undefined)
 
-  import com.vinctus.sjs_utils.{DynamicMap, Mappable}
+  import com.vinctus.sjs_utils.{map, DynamicMap, Mappable}
   import com.vinctus.sjs_utils.Mappable.materializeMappable
 
   for {
 //    q <- oql.json("y {id b xs} [(xs {COUNT(*)}) = 1 AND EXISTS (xs [id = 2])]") // AND EXISTS (xs [id = 2])
-    r <- oql.department.insert(Department("asdf"))
-//    r <- oql.department.insert(Map("name" -> "SKUNKWORKS"))
+//    r <- oql.department.insert(Department("asdf"))
+    r <- oql.department.insert(map(name = "SKUNKWORKS"))
     q <- oql.json("department")
   } {
     println(r)

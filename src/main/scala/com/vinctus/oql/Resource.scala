@@ -1,5 +1,6 @@
 package com.vinctus.oql
 
+import com.sun.tools.javac.code.TypeTag
 import com.vinctus.sjs_utils.{DynamicMap, Mappable}
 import com.vinctus.sjs_utils.Mappable.materializeMappable
 import com.vinctus.sjs_utils.Implicits._
@@ -10,6 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import js.JSConverters._
+import scala.reflect.ClassTag
 
 class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
@@ -134,7 +136,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("insert")
   def jsjsInsert(obj: js.Any): js.Promise[js.Any] = toPromise(jsInsert(obj))
 
-  def jsInsert(obj: js.Any): Future[Map[String, Any]] = insert(toMap(obj))
+  def jsInsert(obj: js.Any): Future[DynamicMap] = insert(toMap(obj))
 
   def insert[T <: Product: Mappable](obj: T): Future[T] =
     insert(obj: Map[String, Any]) map (m => implicitly[Mappable[T]].fromMap(m))
