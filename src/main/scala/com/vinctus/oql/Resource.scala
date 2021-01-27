@@ -288,8 +288,17 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
     val command = new StringBuilder
     val id =
       e match {
-        case m: Map[_, _] => m.asInstanceOf[Map[String, Any]].apply(entity.pk.get)
-        case _            => e
+        case m: Map[_, _] =>
+          m.asInstanceOf[Map[String, Any]].get(entity.pk.get) match {
+            case None     => sys.error(s"primary key not found in map: ${entity.pk.get}")
+            case Some(pk) => pk
+          }
+        case p: Product =>
+          p.productElementNames.indexOf(entity.pk.get) match {
+            case -1  => sys.error(s"primary key not found in case class: ${entity.pk.get}")
+            case idx => p.productElement(idx)
+          }
+        case _ => e
       }
 
     // build update command
