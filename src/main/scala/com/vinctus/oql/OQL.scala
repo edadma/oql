@@ -2,6 +2,7 @@ package com.vinctus.oql
 
 import com.vinctus.sjs_utils.DynamicMap
 
+import java.time.Instant
 import scala.scalajs.js
 import js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
@@ -81,59 +82,64 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryBuilder() =
     new QueryBuilder(this, QueryOQL(null, ProjectAllOQL(), None, None, None, None, None))
 
-  def jsQueryOne[T <: js.Object](oql: String): Future[Option[T]] = queryOne(oql) map (_.map(toJS(_).asInstanceOf[T]))
+  def jsQueryOne[T <: js.Object](oql: String): Future[Option[T]] =
+    queryOne(oql, jsdate = true) map (_.map(toJS(_).asInstanceOf[T]))
 
-  def jsQueryOne[T <: js.Object](q: QueryOQL): Future[Option[T]] = queryOne(q) map (_.map(toJS(_).asInstanceOf[T]))
+  def jsQueryOne[T <: js.Object](q: QueryOQL): Future[Option[T]] =
+    queryOne(q, jsdate = true) map (_.map(toJS(_).asInstanceOf[T]))
 
-  def jsQueryMany[T <: js.Object](oql: String): Future[T] = (queryMany(oql) map (toJS(_))).asInstanceOf[Future[T]]
+  def jsQueryMany[T <: js.Object](oql: String): Future[T] =
+    (queryMany(oql, jsdate = true) map (toJS(_))).asInstanceOf[Future[T]]
 
-  def jsQueryMany[T <: js.Object](q: QueryOQL): Future[T] = (queryMany(q) map (toJS(_))).asInstanceOf[Future[T]]
+  def jsQueryMany[T <: js.Object](q: QueryOQL): Future[T] =
+    (queryMany(q, jsdate = true) map (toJS(_))).asInstanceOf[Future[T]]
 
   @JSExport("queryOne")
   def jsjsQueryOne(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
-    toPromiseOne(queryOne(oql, toMap(parameters)))
+    toPromiseOne(queryOne(oql, toMap(parameters), jsdate = true))
 
-  def jsjsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromiseOne(queryOne(q))
+  def jsjsQueryOne(q: QueryOQL): js.Promise[js.Any] = toPromiseOne(queryOne(q, jsdate = true))
 
   @JSExport("queryMany")
   def jsjsQueryMany(oql: String, parameters: js.Any = js.undefined): js.Promise[js.Any] =
-    toPromise(queryMany(oql, toMap(parameters)))
+    toPromise(queryMany(oql, toMap(parameters), jsdate = true))
 
-  def jsjsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q))
+  def jsjsQueryMany(q: QueryOQL): js.Promise[js.Any] = toPromise(queryMany(q, jsdate = true))
 
   @JSExport("count")
   def jsjsCount(oql: String, parameters: js.Any = js.undefined): js.Promise[Int] =
-    count(oql, toMap(parameters)) toJSPromise
+    count(oql, toMap(parameters), jsdate = true) toJSPromise
 
-  def json(oql: String, parameters: Map[String, Any] = null): Future[String] = toJSON(queryMany(oql, parameters))
+  def json(oql: String, parameters: Map[String, Any] = null): Future[String] =
+    toJSON(queryMany(oql, parameters, jsdate = false))
 
-  def queryOne(oql: String, parameters: Map[String, Any] = null): Future[Option[DynamicMap]] =
-    queryOne(OQLParser.parseQuery(template(oql, parameters)))
+  def queryOne(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean): Future[Option[DynamicMap]] =
+    queryOne(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def queryOne(q: QueryOQL): Future[Option[DynamicMap]] =
-    queryMany(q) map {
+  def queryOne(q: QueryOQL, jsdate: Boolean): Future[Option[DynamicMap]] =
+    queryMany(q, jsdate) map {
       case Nil       => None
       case List(row) => Some(row)
       case _         => sys.error("queryOne: more than one was found")
     }
 
-  def count(oql: String, parameters: Map[String, Any] = null): Future[Int] =
-    count(OQLParser.parseQuery(template(oql, parameters)))
+  def count(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean): Future[Int] =
+    count(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def count(q: QueryOQL): Future[Int] = {
-    queryMany(
-      q.copy(project = ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
-             order = None)) map {
+  def count(q: QueryOQL, jsdate: Boolean): Future[Int] = {
+    queryMany(q.copy(project = ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
+                     order = None),
+              jsdate) map {
       case Nil       => sys.error("count: zero rows were found")
       case List(row) => row("count_*").asInstanceOf[Int]
       case _         => sys.error("count: more than one row was found")
     }
   }
 
-  def queryMany(oql: String, parameters: Map[String, Any] = null): Future[List[DynamicMap]] =
-    queryMany(OQLParser.parseQuery(template(oql, parameters)))
+  def queryMany(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean): Future[List[DynamicMap]] =
+    queryMany(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def queryMany(q: QueryOQL): Future[List[DynamicMap]] = {
+  def queryMany(q: QueryOQL, jsdate: Boolean): Future[List[DynamicMap]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
@@ -141,7 +147,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
     val graph =
       branches(resource.name, entity, project, group.isEmpty, projectbuf, joinbuf, List(entity.table), Nil)
 
-    executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph)
+    executeQuery(resource.name, select, group, order, limit, offset, None, entity, projectbuf, joinbuf, graph, jsdate)
   }
 
   private val INDENT = 2
@@ -508,7 +514,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                            entity: Entity,
                            projectbuf: ListBuffer[(Option[List[String]], String, String)],
                            joinbuf: ListBuffer[(String, String, String, String, String)],
-                           graph: Seq[ProjectionNode]): Future[List[DynamicMap]] = {
+                           graph: Seq[ProjectionNode],
+                           jsdate: Boolean): Future[List[DynamicMap]] = {
     val sql =
       writeQuery(resource, select, group, order, limit, offset, entityType, entity, projectbuf, joinbuf, None)
 
@@ -531,8 +538,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
         val futurebuf = new ListBuffer[Future[List[DynamicMap]]]
         val futuremap = new mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]]
 
-        list foreach (futures(_, futurebuf, futuremap, projectmap, graph))
-        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph)))
+        list foreach (futures(_, futurebuf, futuremap, projectmap, graph, jsdate))
+        Future.sequence(futurebuf).map(_ => list map (build(_, projectmap, futuremap, graph, jsdate)))
       })
   }
 
@@ -933,7 +940,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                       futurebuf: ListBuffer[Future[List[DynamicMap]]],
                       futuremap: mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]],
                       projectmap: Map[(String, String), Int],
-                      nodes: Seq[ProjectionNode]): Unit = {
+                      nodes: Seq[ProjectionNode],
+                      jsdate: Boolean): Unit = {
     def futures(nodes: Seq[ProjectionNode]): Unit = {
       nodes foreach {
         case _: PrimitiveProjectionNode | _: LiteralProjectionNode =>
@@ -962,7 +970,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes
+            nodes,
+            jsdate
           )
 
           futurebuf += future
@@ -989,7 +998,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes
+            nodes,
+            jsdate
           )
 
           futurebuf += future
@@ -1016,7 +1026,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
             entity,
             subprojectbuf,
             subjoinbuf,
-            nodes
+            nodes,
+            jsdate
           )
 
           futurebuf += future
@@ -1030,7 +1041,8 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   private def build(row: ResultRow,
                     projectmap: Map[(String, String), Int],
                     futuremap: mutable.HashMap[(ResultRow, Int), Future[List[DynamicMap]]],
-                    branches: Seq[ProjectionNode]) = {
+                    branches: Seq[ProjectionNode],
+                    jsdate: Boolean) = {
     def build(branches: Seq[ProjectionNode]): DynamicMap =
       branches match {
         case Seq(LiftedProjectionNode(Some(fk), branches)) => if (row(projectmap(fk)) == null) null else build(branches)
@@ -1039,9 +1051,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
           new DynamicMap((branches map {
             case EntityProjectionNode(field, Some(fk), branches) =>
               field -> (if (row(projectmap(fk)) == null) null else build(branches))
-            case EntityProjectionNode(field, None, branches)        => field -> build(branches)
-            case LiteralProjectionNode(field, value)                => field -> value
-            case PrimitiveProjectionNode(prop, column, table, _, _) => prop -> row(projectmap((table, column)))
+            case EntityProjectionNode(field, None, branches) => field -> build(branches)
+            case LiteralProjectionNode(field, value)         => field -> value
+            case PrimitiveProjectionNode(prop, column, table, _, _) =>
+              prop -> (row(projectmap((table, column))) match {
+                case d: js.Date if !jsdate => Instant.ofEpochMilli(d.getTime().toLong)
+                case x                     => x
+              })
             case node @ EntityArrayJunctionProjectionNode(_, field, _, _, _, _, _, _, _, _, _) =>
               futuremap((row, node.serial)).value match {
                 case Some(Success(list)) => field -> (list map (m => m.head._2))

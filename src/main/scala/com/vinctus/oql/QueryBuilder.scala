@@ -33,9 +33,11 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
 
     override def jsGetOne[T <: js.Object]: Future[Option[T]] = na
 
-    override def getMany: Future[List[DynamicMap]] = na
+    override def getMany(jsdate: Boolean = false): Future[List[DynamicMap]] = na
 
-    override def getCount: Future[Int] = na
+    override def getOne(jsdate: Boolean = false): Future[Option[DynamicMap]] = na
+
+    override def getCount(jsdate: Boolean = false): Future[Int] = na
 
     @JSExport
     override def limit(a: Int): QueryBuilder = QueryBuilder.this
@@ -138,19 +140,19 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   def jsjsGetOne(): js.Promise[js.Any] = check.oql.jsjsQueryOne(q)
 
   @JSExport("getCount")
-  def jsjsGetCount(): js.Promise[Int] = getCount.toJSPromise
+  def jsjsGetCount(): js.Promise[Int] = getCount().toJSPromise
 
   def jsGetMany[T <: js.Object]: Future[T] = check.oql.jsQueryMany(q)
 
   def jsGetOne[T <: js.Object]: Future[Option[T]] = check.oql.jsQueryOne(q)
 
-  def getMany: Future[List[DynamicMap]] = check.oql.queryMany(q)
+  def getMany(jsdate: Boolean = false): Future[List[DynamicMap]] = check.oql.queryMany(q, jsdate)
 
-  def getOne: Future[Option[DynamicMap]] = check.oql.queryOne(q)
+  def getOne(jsdate: Boolean = false): Future[Option[DynamicMap]] = check.oql.queryOne(q, jsdate)
 
-  def getCount: Future[Int] = oql.count(q)
+  def getCount(jsdate: Boolean = false): Future[Int] = oql.count(q, jsdate)
 
   def json: Future[String] =
-    getMany.map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
+    getMany().map(value => JSON.stringify(toJS(value), null.asInstanceOf[js.Array[js.Any]], 2))
 
 }

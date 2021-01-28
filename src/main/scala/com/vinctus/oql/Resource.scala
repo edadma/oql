@@ -20,7 +20,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   @JSExport("getMany")
   def jsjsGetMany(): js.Promise[js.Any] = builder.jsjsGetMany()
 
-  def getMany: Future[List[DynamicMap]] = builder.getMany
+  def getMany(jsdate: Boolean = false): Future[List[DynamicMap]] = builder.getMany(jsdate)
 
   def jsGetMany[T <: js.Object]: Future[T] = builder.jsGetMany
 
