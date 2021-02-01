@@ -6,10 +6,11 @@
   - [Overview](#overview)
   - [Installation](#installation)
   - [API](#api)
-    - [Database Description Language](#database-description-language)
-      - [Syntax](#syntax)
+  - [Syntax](#syntax)
+    - [Data Modeling Language](#data-modeling-language)
+      - [Production Rules](#production-rules)
     - [Query Language](#query-language)
-      - [Syntax](#syntax-1)
+      - [Production Rules](#production-rules-1)
   - [Examples](#examples)
     - [Example (many-to-one)](#example-many-to-one)
     - [Example (many-to-many)](#example-many-to-many)
@@ -25,7 +26,7 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval, however there are class methods for performing mutations.  Furthermore, mutation operations all abide by the supplied ER database description, i.e. aliases.  
+*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval, however there are class methods for performing mutations.  Furthermore, mutation operations all abide by the supplied Entity-Relationship database description, i.e. aliases.  
 
 Some features of *OQL* include:
 
@@ -54,26 +55,29 @@ The following TypeScript snippet provides an overview of the API.
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
 const conn = new PostgresConnection( <host>, <port>, <database>, <user>, <password>, <max>)
-const oql = new OQL( <entity-relationship description> )
+const oql = new OQL( <data model> )
 
 oql.query(<query>, conn).then((result: any) => <handle result> )
 ```
 
 `<host>`, `<port>`, `<database>`, `<user>`, `<password>`, and `<max>` are the connection pool (`PoolConfig`) parameters for the Postgres database you are querying.
 
-`<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  However, primary keys of tables that are being queried should always be included, even if you're not interested in retrieving the primary keys themselves.
+`<data model>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  However, primary keys of tables that are being queried should always be included, even if you're not interested in retrieving the primary keys themselves.
 
 `<query>` is the OQL query string.
 
 `<handle result>` is your result array handling code.  The `result` object will be predictably structured according to the query.
 
-### Database Description Language
+Syntax
+------
+
+The syntax of both the data modeling language and the query language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is just the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  The definition for `json` ([JSON syntax](https://www.json.org/json-en.html)) has been omitted.
+
+### Data Modeling Language
 
 An "Entity-Relationship" style language is used to describe the database.  Only the portions of the database for which OQL is being used need to be described.
 
-#### Syntax
-
-The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  The definition for `json` ([JSON syntax](https://www.json.org/json-en.html)) has been omitted.
+#### Production Rules
 
 ```
 model = entity+ .
@@ -110,7 +114,7 @@ Regarding the `primitiveType` syntax rule, all alternatives on the same line are
 
 The query language is inspired by GraphQL. In the following grammar, all keywords (double-quoted string literals) are case-insensitive.
 
-#### Syntax
+#### Production Rules
 
 ```
 query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ] .
@@ -299,7 +303,7 @@ The query `employee { name manager.name department.name } [job_title = 'CLERK']`
 
 ### Example (many-to-many)
 
-This example presents a very simple "student" database where students are enrolled in classes, so that the students and classes are in a *many-to-many* relationship.  The example has tables and fields that are intentionally poorly named so as to demonstrate the aliasing features of the database description language.
+This example presents a very simple "student" database where students are enrolled in classes, so that the students and classes are in a *many-to-many* relationship.  The example has tables and fields that are intentionally poorly named so as to demonstrate the aliasing features of the database modeling language.
 
 Get [PostgreSQL](https://hub.docker.com/_/postgres) running in a [docker container](https://www.docker.com/resources/what-container):
 
