@@ -137,7 +137,8 @@ andExpression = notExpression { "AND" notExpression } .
 notExpression = "NOT" comparisonExpression
               | comparisonExpression .
 
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" |
+                         [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
                      | applyExpression [ "NOT" ] "BETWEEN" applyExpression "AND" applyExpression
                      | applyExpression ("IS" "NULL" | "IS" "NOT" "NULL")
                      | applyExpression [ "NOT" ] "IN" expressions
