@@ -25,12 +25,12 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
+*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval, however there are class methods for performing mutations.  Furthermore, mutation operations all abide by the supplied ER database description, i.e. aliases.  
 
 Some features of *OQL* include:
 
 - very similar to [GraphQL](https://graphql.org/) (for querying)
-- uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
+- uses a very simple [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
 - works with the [PostgreSQL database system](https://www.postgresql.org/)
 - designed to work with existing databases without having to change the database at all
 
@@ -43,6 +43,8 @@ Installation is done using the [npm install command](https://docs.npmjs.com/down
 
 `$ npm install @vinctus/oql`
 
+TypeScript declarations are included in the package.
+
 API
 ---
 
@@ -51,13 +53,13 @@ The following TypeScript snippet provides an overview of the API.
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection( <database username>, <database password>)
+const conn = new PostgresConnection( <host>, <port>, <database>, <user>, <password>, <max>)
 const oql = new OQL( <entity-relationship description> )
 
 oql.query(<query>, conn).then((result: any) => <handle result> )
 ```
 
-`<database username>` and `<database password>` are the username and password of the Postgres database you are querying.
+`<host>`, `<port>`, `<database>`, `<user>`, `<password>`, and `<max>` are the connection pool (`PoolConfig`) parameters for the Postgres database you are querying.
 
 `<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  However, primary keys of tables that are being queried should always be included, even if you're not interested in retrieving the primary keys themselves.
 
@@ -71,24 +73,24 @@ An "Entity-Relationship" style language is used to describe the database.  Only 
 
 #### Syntax
 
-The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
+The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  The definition for `json` ([JSON syntax](https://www.json.org/json-en.html)) has been omitted.
 
 ```
 model = entity+ .
-
 entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
-
+digit = "0" | "1" | … | "8" | "9" .
+upperCase = "A" | "B" | … | "Y" | "Z" .
+lowerCase = "a" | "b" | … | "y" | "z" .
+identChar = upperCase | lowerCase | "_" | "$" .
+identifier = identChar { identChar | digit } .
 alias = identifier .
-
 attribute = [ "*" ] attributeName [ "(" alias ")" ] ":" type [ "!" ]
           | identifier "=" json .
-
 type = primitiveType
      | entityType
      | "[" entityType [ "." attributeName ] "]"
      | "<" entityType [ "." attributeName ] ">"
      | "[" entityType [ "." attributeName ] "]" "(" entityType ")" .
-
 primitiveType = "text"
               | "integer" | "int" | "int4"
               | "bool" | "boolean"
@@ -98,9 +100,7 @@ primitiveType = "text"
               | "float" | "float8"
               | "uuid"
               | "timestamp" .
-
 entityType = identifier .
-
 attributeName = identifier .
 ```
 
@@ -114,46 +114,32 @@ The query language is inspired by GraphQL. In the following grammar, all keyword
 
 ```
 query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ] .
-
 project = "{" (attributeProject | "-" identifier | "&" identifier | "*")+ "}"
         | "." attributeProject .
-
 attributeProject = identifier "(" [ "*" | identifier ] ")"
                  | "^" query
                  | query .
-
 select = "[" logicalExpression "]" .
-
 variable = ident { "." ident } .
-
 expression = additiveExpression .
-
 logicalExpression = orExpression .
-
 orExpression = andExpression { "OR" andExpression } .
-
 andExpression = notExpression { "AND" notExpression } .
-
 notExpression = "NOT" comparisonExpression
               | comparisonExpression .
-
-comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!=" | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
+comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!="
+                         | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
                      | applyExpression [ "NOT" ] "BETWEEN" applyExpression "AND" applyExpression
                      | applyExpression ("IS" "NULL" | "IS" "NOT" "NULL")
                      | applyExpression [ "NOT" ] "IN" expressions
                      | applyExpression [ "NOT" ] "IN" "(" query ")"
                      | "EXISTS" "(" query ")"
                      | applyExpression .
-
 additiveExpression = multiplicativeExpression { ("+" | "-") multiplicativeExpression } .
-
 multiplicativeExpression = applyExpression { ("*" | "/") applyExpression } .
-
 expressions = "(" expression { "," expression } ")" .
-
 applyExpression = identifier expressions
                 | primaryExpression .
-
 primaryExpression = number
                   | string
                   | "TRUE" | "FALSE"
@@ -161,24 +147,16 @@ primaryExpression = number
                   | "INTERVAL" singleQuoteString
                   | variable
                   | caseExpression
+                  | "(" query ")"
                   | "(" logicalExpression ")" .
-
 caseExpression = "CASE" when+ [ "ELSE" expression ] "END" .
-
 when = "WHEN" logicalExpression "THEN" expression .
-
 expression = applyExpression .
-
 order = "<" orderExpressions ">" .
-
 orderExpressions = orderExpression { "," orderExpression } .
-
 orderExpression = expression [ "ASC" | "DESC" ] [ "NULLS" ("FIRST" | "LAST") ] .
-
 group = "(" variables ")" .
-
 variables = variable { "," variable } .
-
 restrict = "|" integer [ "," integer ] "|"
          | "|" "," integer "|" .
 ```
@@ -212,6 +190,11 @@ Create a simple database by copy-pasting the following (yes, all in one shot) at
 ```sql
 CREATE DATABASE employees;
 
+CREATE TABLE department (
+  dep_id SERIAL PRIMARY KEY,
+  dep_name TEXT
+);
+
 CREATE TABLE employee (
   emp_id SERIAL PRIMARY KEY,
   emp_name TEXT,
@@ -220,10 +203,10 @@ CREATE TABLE employee (
   dep_id INTEGER REFERENCES department
 );
 
-CREATE TABLE department (
-  dep_id SERIAL PRIMARY KEY,
-  dep_name TEXT
-);
+INSERT INTO department (dep_id, dep_name) VALUES
+  (1001, 'FINANCE'),             
+  (2001, 'AUDIT'),
+  (3001, 'MARKETING');
 
 INSERT INTO employee (emp_id, emp_name, job_title, manager_id, dep_id) VALUES
   (68319, 'KAYLING', 'PRESIDENT', null, 1001),
@@ -240,11 +223,6 @@ INSERT INTO employee (emp_id, emp_name, job_title, manager_id, dep_id) VALUES
   (68736, 'ADNRES', 'CLERK', 67858, 2001),
   (69000, 'JULIUS', 'CLERK', 66928, 3001),
   (69324, 'MARKER', 'CLERK', 67832, 1001);
-
-INSERT INTO department (dep_id, dep_name) VALUES
-  (1001, 'FINANCE'),             
-  (2001, 'AUDIT'),
-  (3001, 'MARKETING');
 ```
 
 Run the following TypeScript program:
@@ -252,7 +230,7 @@ Run the following TypeScript program:
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection('postgres', 'docker')
+const conn = new PostgresConnection("localhost", 5432, "postgres", 'postgres', 'docker', false)
 const oql = 
   new OQL(`
     entity employee {
@@ -391,7 +369,7 @@ Run the following TypeScript program:
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection('postgres', 'docker')
+const conn = new PostgresConnection("localhost", 5432, "postgres", 'postgres', 'docker', false)
 const oql = 
   new OQL(`
     entity class {
