@@ -38,13 +38,32 @@ Some features of *OQL* include:
 Installation
 ------------
 
-This is a [Node.js](https://nodejs.org/en/) module available through the [npm registry](https://www.npmjs.com/).
+### Node.js
+
+There is a [Node.js](https://nodejs.org/en/) module available through the [npm registry](https://www.npmjs.com/).
 
 Installation is done using the [npm install command](https://docs.npmjs.com/downloading-and-installing-packages-locally):
 
 `$ npm install @vinctus/oql`
 
 TypeScript declarations are included in the package.
+
+### Scala.js
+
+There is a [Scala.js](https://www.scala-js.org/) library available through [Github Packages](https://github.com/features/packages).
+
+Add the following lines to your `build.sbt`:
+
+```sbt
+externalResolvers += "OQL" at "https://maven.pkg.github.com/vinctustech/oql"
+
+libraryDependencies += "com.vinctus" %%% "-vinctus-oql" % "0.1.47",
+
+npmDependencies in Compile ++= Seq(
+  "pg" -> "8.5.1",
+  "@types/pg" -> "7.14.7"
+)
+```
 
 API
 ---
@@ -55,9 +74,9 @@ The following TypeScript snippet provides an overview of the API.
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
 const conn = new PostgresConnection( <host>, <port>, <database>, <user>, <password>, <max>)
-const oql = new OQL( <data model> )
+const oql = new OQL( conn, <data model> )
 
-oql.query(<query>, conn).then((result: any) => <handle result> )
+oql.query(<query>).then((result: any) => <handle result> )
 ```
 
 `<host>`, `<port>`, `<database>`, `<user>`, `<password>`, and `<max>` are the connection pool (`PoolConfig`) parameters for the Postgres database you are querying.
@@ -67,6 +86,9 @@ oql.query(<query>, conn).then((result: any) => <handle result> )
 `<query>` is the OQL query string.
 
 `<handle result>` is your result array handling code.  The `result` object will be predictably structured according to the query.
+
+### `OQL` Methods
+
 
 Syntax
 ------
