@@ -83,18 +83,14 @@ upperCase = "A" | "B" | … | "Y" | "Z" .
 lowerCase = "a" | "b" | … | "y" | "z" .
 identChar = upperCase | lowerCase | "_" | "$" .
 identifier = identChar { identChar | digit } .
-
 alias = identifier .
-
 attribute = [ "*" ] attributeName [ "(" alias ")" ] ":" type [ "!" ]
           | identifier "=" json .
-
 type = primitiveType
      | entityType
      | "[" entityType [ "." attributeName ] "]"
      | "<" entityType [ "." attributeName ] ">"
      | "[" entityType [ "." attributeName ] "]" "(" entityType ")" .
-
 primitiveType = "text"
               | "integer" | "int" | "int4"
               | "bool" | "boolean"
@@ -104,9 +100,7 @@ primitiveType = "text"
               | "float" | "float8"
               | "uuid"
               | "timestamp" .
-
 entityType = identifier .
-
 attributeName = identifier .
 ```
 
@@ -120,29 +114,19 @@ The query language is inspired by GraphQL. In the following grammar, all keyword
 
 ```
 query = identifier [ project ] [ select ] [ group ] [ order ] [ restrict ] .
-
 project = "{" (attributeProject | "-" identifier | "&" identifier | "*")+ "}"
         | "." attributeProject .
-
 attributeProject = identifier "(" [ "*" | identifier ] ")"
                  | "^" query
                  | query .
-
 select = "[" logicalExpression "]" .
-
 variable = ident { "." ident } .
-
 expression = additiveExpression .
-
 logicalExpression = orExpression .
-
 orExpression = andExpression { "OR" andExpression } .
-
 andExpression = notExpression { "AND" notExpression } .
-
 notExpression = "NOT" comparisonExpression
               | comparisonExpression .
-
 comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!="
                          | [ "NOT" ] ("LIKE" | "ILIKE")) applyExpression
                      | applyExpression [ "NOT" ] "BETWEEN" applyExpression "AND" applyExpression
@@ -151,16 +135,11 @@ comparisonExpression = applyExpression ("<=" | ">=" | "<" | ">" | "=" | "!="
                      | applyExpression [ "NOT" ] "IN" "(" query ")"
                      | "EXISTS" "(" query ")"
                      | applyExpression .
-
 additiveExpression = multiplicativeExpression { ("+" | "-") multiplicativeExpression } .
-
 multiplicativeExpression = applyExpression { ("*" | "/") applyExpression } .
-
 expressions = "(" expression { "," expression } ")" .
-
 applyExpression = identifier expressions
                 | primaryExpression .
-
 primaryExpression = number
                   | string
                   | "TRUE" | "FALSE"
@@ -168,24 +147,16 @@ primaryExpression = number
                   | "INTERVAL" singleQuoteString
                   | variable
                   | caseExpression
+                  | "(" query ")"
                   | "(" logicalExpression ")" .
-
 caseExpression = "CASE" when+ [ "ELSE" expression ] "END" .
-
 when = "WHEN" logicalExpression "THEN" expression .
-
 expression = applyExpression .
-
 order = "<" orderExpressions ">" .
-
 orderExpressions = orderExpression { "," orderExpression } .
-
 orderExpression = expression [ "ASC" | "DESC" ] [ "NULLS" ("FIRST" | "LAST") ] .
-
 group = "(" variables ")" .
-
 variables = variable { "," variable } .
-
 restrict = "|" integer [ "," integer ] "|"
          | "|" "," integer "|" .
 ```
@@ -219,6 +190,11 @@ Create a simple database by copy-pasting the following (yes, all in one shot) at
 ```sql
 CREATE DATABASE employees;
 
+CREATE TABLE department (
+  dep_id SERIAL PRIMARY KEY,
+  dep_name TEXT
+);
+
 CREATE TABLE employee (
   emp_id SERIAL PRIMARY KEY,
   emp_name TEXT,
@@ -227,10 +203,10 @@ CREATE TABLE employee (
   dep_id INTEGER REFERENCES department
 );
 
-CREATE TABLE department (
-  dep_id SERIAL PRIMARY KEY,
-  dep_name TEXT
-);
+INSERT INTO department (dep_id, dep_name) VALUES
+  (1001, 'FINANCE'),             
+  (2001, 'AUDIT'),
+  (3001, 'MARKETING');
 
 INSERT INTO employee (emp_id, emp_name, job_title, manager_id, dep_id) VALUES
   (68319, 'KAYLING', 'PRESIDENT', null, 1001),
@@ -247,11 +223,6 @@ INSERT INTO employee (emp_id, emp_name, job_title, manager_id, dep_id) VALUES
   (68736, 'ADNRES', 'CLERK', 67858, 2001),
   (69000, 'JULIUS', 'CLERK', 66928, 3001),
   (69324, 'MARKER', 'CLERK', 67832, 1001);
-
-INSERT INTO department (dep_id, dep_name) VALUES
-  (1001, 'FINANCE'),             
-  (2001, 'AUDIT'),
-  (3001, 'MARKETING');
 ```
 
 Run the following TypeScript program:
@@ -259,7 +230,7 @@ Run the following TypeScript program:
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection('postgres', 'docker')
+const conn = new PostgresConnection("localhost", 5432, "postgres", 'postgres', 'docker', false)
 const oql = 
   new OQL(`
     entity employee {
@@ -398,7 +369,7 @@ Run the following TypeScript program:
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection('postgres', 'docker')
+const conn = new PostgresConnection("localhost", 5432, "postgres", 'postgres', 'docker', false)
 const oql = 
   new OQL(`
     entity class {
