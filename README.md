@@ -53,8 +53,7 @@ The following TypeScript snippet provides an overview of the API.
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection( <host>, <port>, <database>, 
-               <user>, <password>, <max>)
+const conn = new PostgresConnection( <host>, <port>, <database>, <user>, <password>, <max>)
 const oql = new OQL( <entity-relationship description> )
 
 oql.query(<query>, conn).then((result: any) => <handle result> )
