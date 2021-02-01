@@ -68,6 +68,8 @@ npmDependencies in Compile ++= Seq(
 API
 ---
 
+The TypeScript API is documented first here followed by a few notes on the Scala.js API which is very similar.
+
 The following TypeScript snippet provides an overview of the API.
 
 ```typescript
@@ -87,7 +89,26 @@ oql.query(<query>).then((result: any) => <handle result> )
 
 `<handle result>` is your result array handling code.  The `result` object will be predictably structured according to the query.
 
-### `OQL` Methods
+### The `OQL` Class
+
+These are the methods of the `OQL` class. Brackets are a parameter signifies an optional parameter.
+
+#### queryOne(query, [parameters])
+
+`query` is the query string written in the [OQL query language](#query-language). If `parameters` is given, each parameter is referenced in the query as `:name` where `name` is the name of the parameter.
+
+For example
+
+```typescript
+oql.queryOne('user {id name email} [id < :id]', {id: 12345})
+```
+
+gets the `id`, `name`, and `email` for user with id 12345.
+
+```typescript
+oql.queryMany('product {id name price sku supplier {id name}} [price < :max]', {max: 100.00})
+```
+
 
 
 Syntax
