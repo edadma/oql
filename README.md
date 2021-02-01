@@ -25,12 +25,12 @@ OQL
 Overview
 --------
 
-*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval and not mutations of any kind.
+*OQL* (Object Query Language) is a language for querying a relational database.  The syntax is inspired by GraphQL and is similar, but not identical.  Some capabilities missing from GraphQL have been added, and some capabilities found in GraphQL are implemented differently.  *OQL* only provides support for data retrieval, however there are class methods for performing mutations.  Furthermore, mutation operations all abide by the supplied ER database description, i.e. aliases.  
 
 Some features of *OQL* include:
 
 - very similar to [GraphQL](https://graphql.org/) (for querying)
-- uses an easy to write [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
+- uses a very simple [Entity-Relationship model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) description of the database
 - works with the [PostgreSQL database system](https://www.postgresql.org/)
 - designed to work with existing databases without having to change the database at all
 
@@ -43,6 +43,8 @@ Installation is done using the [npm install command](https://docs.npmjs.com/down
 
 `$ npm install @vinctus/oql`
 
+TypeScript declarations are included in the package.
+
 API
 ---
 
@@ -51,13 +53,14 @@ The following TypeScript snippet provides an overview of the API.
 ```typescript
 import { OQL, PostgresConnection } from '@vinctus/oql'
 
-const conn = new PostgresConnection( <database username>, <database password>)
+const conn = new PostgresConnection( <host>, <port>, <database>, 
+               <user>, <password>, <max>)
 const oql = new OQL( <entity-relationship description> )
 
 oql.query(<query>, conn).then((result: any) => <handle result> )
 ```
 
-`<database username>` and `<database password>` are the username and password of the Postgres database you are querying.
+`<host>`, `<port>`, `<database>`, `<user>`, `<password>`, and `<max>` are the connection pool (`PoolConfig`) parameters for the Postgres database you are querying.
 
 `<entity-relationship description>` describes the parts of the database being queried.  It's not necessary to describe every field of every table in the database, only what is being retrieved with *OQL*.  However, primary keys of tables that are being queried should always be included, even if you're not interested in retrieving the primary keys themselves.
 
@@ -71,12 +74,16 @@ An "Entity-Relationship" style language is used to describe the database.  Only 
 
 #### Syntax
 
-The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  Definitions for `json` ([json syntax](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)) and `identifier` have been omitted.
+The syntax of the data description language is given using a kind of enhanced [Wirth Syntax Notation](https://en.wikipedia.org/wiki/Wirth_syntax_notation).  The enhancement is the use of a postfix "+" to mean one-or-more repetition of the preceding pattern.  The definition for `json` ([JSON syntax](https://www.json.org/json-en.html)) has been omitted.
 
 ```
 model = entity+ .
-
 entity = "entity" identifier [ "(" alias ")" ] "{" attribute+ "}" .
+digit = "0" | "1" | … | "8" | "9" .
+upperCase = "A" | "B" | … | "Y" | "Z" .
+lowerCase = "a" | "b" | … | "y" | "z" .
+identChar = upperCase | lowerCase | "_" | "$" .
+identifier = identChar { identChar | digit } .
 
 alias = identifier .
 

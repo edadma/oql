@@ -9,12 +9,18 @@ import js.annotation.{JSExport, JSExportTopLevel}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @JSExportTopLevel("PostgresConnection")
-class PostgresConnection(host: String, port: Double, database: String, user: String, password: String, ssl: js.Any)
+class PostgresConnection(host: String,
+                         port: Double,
+                         database: String,
+                         user: String,
+                         password: String,
+                         ssl: js.Any,
+                         max: Int = 5)
     extends Connection {
 
   private val pool = new Pool(
     js.Dynamic
-      .literal(host = host, port = port, database = database, user = user, password = password, ssl = ssl, max = 2)
+      .literal(host = host, port = port, database = database, user = user, password = password, ssl = ssl, max = max)
       .asInstanceOf[PoolConfig])
 
   def command(sql: String): ResultSet =
