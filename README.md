@@ -5,7 +5,18 @@
 - [OQL](#oql)
   - [Overview](#overview)
   - [Installation](#installation)
+    - [Node.js](#nodejs)
+    - [Scala.js](#scalajs)
   - [API](#api)
+    - [The `OQL` Class](#the-oql-class)
+      - [count(query, [parameters])](#countquery-parameters)
+      - [entity(name)](#entityname)
+      - [queryBuilder()](#querybuilder)
+      - [queryOne(query, [parameters])](#queryonequery-parameters)
+      - [queryMany(query, [parameters])](#querymanyquery-parameters)
+      - [raw(sql, [values])](#rawsql-values)
+    - [The `QueryBuilder` Class](#the-querybuilder-class)
+    - [The `Resource` Class](#the-resource-class)
   - [Syntax](#syntax)
     - [Data Modeling Language](#data-modeling-language)
       - [Production Rules](#production-rules)
@@ -93,9 +104,29 @@ oql.query(<query>).then((result: any) => <handle result> )
 
 These are the methods of the `OQL` class. Brackets are a parameter signifies an optional parameter.
 
+#### count(query, [parameters])
+
+Returns a promise for the number of objects where `query` is the query string written in the [OQL query language](#query-language). If `parameters` is given, each parameter is referenced in the query as `:name` where `name` is the name of the parameter.
+
+For example
+
+```typescript
+oql.count('product [price < :max]', {max: 100.00})
+```
+
+gets the number of products that are less than $100.
+
+#### entity(name)
+
+Returns a `Resource` instance for OQL class instance that it was called on. See [The `Resource` Class](#the-resource-class) for a method reference.
+
+#### queryBuilder()
+
+Returns a `QueryBuilder` instance for OQL class instance that it was called on. See [The `QueryBuilder` Class](#the-querybuilder-class) for a method reference.
+
 #### queryOne(query, [parameters])
 
-`query` is the query string written in the [OQL query language](#query-language). If `parameters` is given, each parameter is referenced in the query as `:name` where `name` is the name of the parameter.
+Returns a promise for zero or one object where `query` is the query string written in the [OQL query language](#query-language). If `parameters` is given, each parameter is referenced in the query as `:name` where `name` is the name of the parameter.
 
 For example
 
@@ -105,11 +136,25 @@ oql.queryOne('user {id name email} [id < :id]', {id: 12345})
 
 gets the `id`, `name`, and `email` for user with id 12345.
 
+#### queryMany(query, [parameters])
+
+Returns a promise for an array of objects where `query` is the query string written in the [OQL query language](#query-language). If `parameters` is given, each parameter is referenced in the query as `:name` where `name` is the name of the parameter.
+
+For example
+
 ```typescript
-oql.queryMany('product {id name price sku supplier {id name}} [price < :max]', {max: 100.00})
+oql.queryMany('product {id name price supplier.name} [price < :max]', {max: 100.00})
 ```
 
+gets the `id`, `name`, `price` and `supplier.name` for products that are less than $100.
 
+#### raw(sql, [values])
+
+Perform the raw SQL query and return a promise for the results where `sql` is the query string and `values` are query parameter values. 
+
+### The `QueryBuilder` Class
+
+### The `Resource` Class
 
 Syntax
 ------
