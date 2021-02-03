@@ -116,7 +116,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryOne(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[Option[DynamicMap]] =
     queryOne(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def queryOne(q: QueryOQL, jsdate: Boolean = false): Future[Option[DynamicMap]] =
+  def queryOne(q: QueryOQL, jsdate: Boolean): Future[Option[DynamicMap]] =
     queryMany(q, jsdate) map {
       case Nil       => None
       case List(row) => Some(row)
@@ -126,7 +126,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def count(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[Int] =
     count(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def count(q: QueryOQL, jsdate: Boolean = false): Future[Int] = {
+  def count(q: QueryOQL, jsdate: Boolean): Future[Int] = {
     queryMany(q.copy(project = ProjectAttributesOQL(List(AggregateAttributeOQL(List(Ident("count")), Ident("*")))),
                      order = None),
               jsdate) map {
@@ -139,7 +139,7 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def queryMany(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[List[DynamicMap]] =
     queryMany(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
-  def queryMany(q: QueryOQL, jsdate: Boolean = false): Future[List[DynamicMap]] = {
+  def queryMany(q: QueryOQL, jsdate: Boolean): Future[List[DynamicMap]] = {
     val QueryOQL(resource, project, select, group, order, limit, offset) = q
     val entity = model.get(resource.name, resource.pos)
     val projectbuf = new ListBuffer[(Option[List[String]], String, String)]
