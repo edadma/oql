@@ -1,7 +1,7 @@
 package com.vinctus.oql
 
 import com.sun.tools.javac.code.TypeTag
-import com.vinctus.sjs_utils.{DynamicMap, Mappable, jsObject, toMap}
+import com.vinctus.sjs_utils.{DynamicMap, Mappable, jsObject, map2cc, toMap}
 import com.vinctus.sjs_utils.Mappable.materializeMappable
 import com.vinctus.sjs_utils.Implicits._
 
@@ -139,7 +139,7 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
   def jsInsert(obj: js.Any): Future[DynamicMap] = insert(toMap(obj))
 
   def insert[T <: Product: Mappable](obj: T): Future[T] =
-    insert(obj: Map[String, Any]) map (m => implicitly[Mappable[T]].fromMap(m))
+    insert(obj: Map[String, Any]) map map2cc[T] //implicitly[Mappable[T]].fromMap(m))
 
   def insert(obj: Map[String, Any]): Future[DynamicMap] = {
     // check if the object has a primary key

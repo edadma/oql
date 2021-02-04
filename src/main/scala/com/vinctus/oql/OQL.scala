@@ -1,6 +1,6 @@
 package com.vinctus.oql
 
-import com.vinctus.sjs_utils.{DynamicMap, toJS, toMap}
+import com.vinctus.sjs_utils.{DynamicMap, Mappable, map2cc, toJS, toMap}
 
 import java.time.Instant
 import scala.scalajs.js
@@ -135,6 +135,13 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
       case _         => sys.error("count: more than one row was found")
     }
   }
+
+  def ccQueryMany[T <: Product: Mappable](oql: String,
+                                          parameters: Map[String, Any] = null,
+                                          jsdate: Boolean = false): Future[List[T]] =
+    queryMany(oql, parameters, jsdate) map (_ map map2cc[T])
+
+  def queryMany[T <: Product: Mappable](oql: String): Future[List[T]] = ccQueryMany(oql, null)
 
   def queryMany(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[List[DynamicMap]] =
     queryMany(OQLParser.parseQuery(template(oql, parameters)), jsdate)
