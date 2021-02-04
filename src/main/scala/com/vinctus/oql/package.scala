@@ -48,25 +48,6 @@ package object oql {
       case "\n" => """\\n"""
     })
 
-  def jsObject(v: Any): Boolean =
-    js.typeOf(v) == "object" && (v != null) && !v.isInstanceOf[Long] && !v.isInstanceOf[js.Date] && !v
-      .isInstanceOf[js.Array[_]]
-
-  def toMap(obj: js.Any): ListMap[String, Any] = {
-    def toMap(obj: js.Any): ListMap[String, Any] = {
-      var map: ListMap[String, Any] = obj.asInstanceOf[js.Dictionary[js.Any]].to(ListMap)
-
-      for ((k, v) <- map)
-        if (jsObject(v))
-          map = map + ((k, toMap(v.asInstanceOf[js.Any])))
-
-      map
-    }
-
-    if (obj == js.undefined) null
-    else toMap(obj)
-  }
-
   def toPromise[T](result: Future[T]): js.Promise[js.Any] = result map toJS toJSPromise
 
   def toPromiseOne[T](result: Future[Option[T]]): js.Promise[js.Any] = toPromise(result map (_.getOrElse(js.undefined)))

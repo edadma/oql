@@ -1,6 +1,6 @@
 package com.vinctus.oql
 
-import com.vinctus.sjs_utils.{DynamicMap, toJS}
+import com.vinctus.sjs_utils.{DynamicMap, toJS, toMap}
 
 import scala.scalajs.js
 import js.annotation.JSExport

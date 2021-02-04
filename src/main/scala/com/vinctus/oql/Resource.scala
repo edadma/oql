@@ -1,7 +1,7 @@
 package com.vinctus.oql
 
 import com.sun.tools.javac.code.TypeTag
-import com.vinctus.sjs_utils.{DynamicMap, Mappable}
+import com.vinctus.sjs_utils.{DynamicMap, Mappable, jsObject, toMap}
 import com.vinctus.sjs_utils.Mappable.materializeMappable
 import com.vinctus.sjs_utils.Implicits._
 
