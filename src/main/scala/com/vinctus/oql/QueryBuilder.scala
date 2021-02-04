@@ -1,6 +1,6 @@
 package com.vinctus.oql
 
-import com.vinctus.sjs_utils.{DynamicMap, toJS, toMap}
+import com.vinctus.sjs_utils.{DynamicMap, Mappable, map2cc, toJS, toMap}
 
 import scala.scalajs.js
 import js.annotation.JSExport
@@ -145,6 +145,8 @@ class QueryBuilder private[oql] (private val oql: OQL, private[oql] val q: Query
   def jsGetMany[T <: js.Object]: Future[T] = check.oql.jsQueryMany(q)
 
   def jsGetOne[T <: js.Object]: Future[Option[T]] = check.oql.jsQueryOne(q)
+
+  def getMany[T <: Product: Mappable]: Future[List[T]] = getMany() map (_ map map2cc[T])
 
   def getMany(jsdate: Boolean = false): Future[List[DynamicMap]] = check.oql.queryMany(q, jsdate)
 
