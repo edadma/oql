@@ -1,5 +1,7 @@
 package com.vinctus
 
+import com.vinctus.sjs_utils.toJS
+
 import java.time.{Instant, LocalDate}
 import scala.scalajs.js
 import js.JSConverters._
@@ -92,20 +94,6 @@ package object oql {
       case "float" | "float8"         => Some("FLOAT")
       case "uuid"                     => Some("UUID")
       case _                          => None
-    }
-
-  def toJS(a: Any): js.Any =
-    a match {
-      case Some(a)         => a.asInstanceOf[js.Any]
-      case None            => js.undefined
-      case date: LocalDate => new js.Date(date.getYear, date.getMonthValue - 1, date.getDayOfMonth)
-      case d: BigDecimal   => d.toDouble
-      case l: Seq[_]       => l map toJS toJSArray
-      case m: Map[_, _] =>
-        (m map { case (k, v) => k -> toJS(v) })
-          .asInstanceOf[Map[String, Any]]
-          .toJSDictionary
-      case _ => a.asInstanceOf[js.Any]
     }
 
 }
