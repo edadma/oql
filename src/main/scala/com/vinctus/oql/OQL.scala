@@ -113,6 +113,11 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
   def json(oql: String, parameters: Map[String, Any] = null): Future[String] =
     toJSON(queryMany(oql, parameters))
 
+  def ccQueryOne[T <: Product: Mappable](oql: String,
+                                         parameters: Map[String, Any] = null,
+                                         jsdate: Boolean = false): Future[Option[T]] =
+    queryOne(oql, parameters, jsdate) map (_ map map2cc[T])
+
   def queryOne(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[Option[DynamicMap]] =
     queryOne(OQLParser.parseQuery(template(oql, parameters)), jsdate)
 
@@ -140,8 +145,6 @@ class OQL(private[oql] val conn: Connection, erd: String) extends Dynamic {
                                           parameters: Map[String, Any] = null,
                                           jsdate: Boolean = false): Future[List[T]] =
     queryMany(oql, parameters, jsdate) map (_ map map2cc[T])
-
-  def queryMany[T <: Product: Mappable](oql: String): Future[List[T]] = ccQueryMany(oql, null)
 
   def queryMany(oql: String, parameters: Map[String, Any] = null, jsdate: Boolean = false): Future[List[DynamicMap]] =
     queryMany(OQLParser.parseQuery(template(oql, parameters)), jsdate)
