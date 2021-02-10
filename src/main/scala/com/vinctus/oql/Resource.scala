@@ -265,7 +265,8 @@ class Resource private[oql] (oql: OQL, name: String, entity: Entity) {
 
     // check if object contains extrinsic attributes
     if ((keyset diff attrsNoPKKeys).nonEmpty)
-      sys.error(s"extrinsic properties: ${(keyset diff attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
+      sys.error(
+        s"extrinsic properties not found in entity '${entity.name}': ${(keyset diff attrsNoPKKeys) map (p => s"'$p'") mkString ", "}")
 
     // build list of attributes to update
     val pairs =
