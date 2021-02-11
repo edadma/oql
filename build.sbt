@@ -1,6 +1,6 @@
 name := "@vinctus/oql"
 
-version := "0.1.57"
+version := "0.1.58"
 
 description := "Object Query Language"
 
@@ -34,7 +34,7 @@ jsEnv := new org.scalajs.jsenv.nodejs.NodeJSEnv()
 
 npmDependencies in Compile ++= Seq(
   "pg" -> "8.5.1",
-  "@types/pg" -> "7.14.7"
+  "@types/pg" -> "7.14.9"
 )
 
 libraryDependencies ++= Seq(
