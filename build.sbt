@@ -40,7 +40,7 @@ npmDependencies in Compile ++= Seq(
 libraryDependencies ++= Seq(
   "org.scalatest" %%% "scalatest" % "3.2.3" % "test",
   "xyz.hyperreal" %%% "rdb-sjs" % "0.1.0-snapshot.5" % "test",
-  "com.vinctus" %%% "sjs-utils" % "0.1.0-snapshot.16"
+  "com.vinctus" %%% "sjs-utils" % "0.1.0-snapshot.17"
 )
 
 libraryDependencies ++= Seq(
