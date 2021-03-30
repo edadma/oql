@@ -15,7 +15,7 @@ class PostgresConnection(host: String,
                          user: String,
                          password: String,
                          ssl: js.Any,
-                         max: Int = 5)
+                         max: Int)
     extends Connection {
 
   private val pool = new Pool(
@@ -31,7 +31,7 @@ class PostgresConnection(host: String,
         .flatMap(
           (client: PoolClient) =>
             client
-              .query[js.Array[js.Any], js.Any](QueryArrayConfig[js.Any](pgStrings.array, sql))
+              .query[js.Array[js.Any], js.Any](QueryArrayConfig[js.Any](sql))
               .toFuture
               .andThen(_ => client.release()))
         .toJSPromise

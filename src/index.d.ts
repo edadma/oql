@@ -64,7 +64,7 @@ export class OQL {
 
 export class PostgresConnection extends Connection {
 
-  constructor(host: string, port: number, database: string, user: string, password: string, ssl: any, max: number = 5)
+  constructor(host: string, port: number, database: string, user: string, password: string, ssl: any, max: number)
 
   close(): void
 

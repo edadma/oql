@@ -1,8 +1,8 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.4.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.5.0")
 
 resolvers += Resolver.bintrayRepo("oyvindberg", "converter")
 
-addSbtPlugin("org.scalablytyped.converter" % "sbt-converter" % "1.0.0-beta29.2")
+addSbtPlugin("org.scalablytyped.converter" % "sbt-converter" % "1.0.0-beta31")
 
 resolvers += Resolver.bintrayRepo("edadma", "sbt-plugins")
 

@@ -1,10 +1,10 @@
 name := "@vinctus/oql"
 
-version := "0.1.61"
+version := "0.1.62"
 
 description := "Object Query Language"
 
-scalaVersion := "2.13.4"
+scalaVersion := "2.13.5"
 
 scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-language:postfixOps", "-language:implicitConversions", "-language:existentials", "-language:dynamics")
 
@@ -38,9 +38,9 @@ npmDependencies in Compile ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %%% "scalatest" % "3.2.3" % "test",
+  "org.scalatest" %%% "scalatest" % "3.2.5" % "test",
   "xyz.hyperreal" %%% "rdb-sjs" % "0.1.0-snapshot.5" % "test",
-  "com.vinctus" %%% "sjs-utils" % "0.1.0-snapshot.17"
+  "com.vinctus" %%% "sjs-utils" % "0.1.0-snapshot.18"
 )
 
 libraryDependencies ++= Seq(
