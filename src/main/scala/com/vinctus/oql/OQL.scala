@@ -1,6 +1,7 @@
 package com.vinctus.oql
 
 import com.vinctus.sjs_utils.{DynamicMap, Mappable, map2cc, toJS, toMap}
+import typings.node.global.console
 
 import java.time.Instant
 import scala.scalajs.js

@@ -9,6 +9,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import typings.pg.mod.types.setTypeParser
 
+import scala.async.Async.{async, await}
+
 object Main extends App {
 
   private val fs = g.require("fs")
@@ -34,221 +36,287 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("test/m2m.tab"))
 //  val oql = new OQL(conn, readFile("test/m2m.erd"))
 
-  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
+  val conn = new PostgresConnection("localhost", 5433, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false, 10)
   val oql = new OQL(
     conn,
     """
-      |entity employee {
-      |     *emp_id: integer
-      |      name (emp_name): text
-      |      job_title: text
-      |      manager (manager_id): employee
-      |      department (dep_id): department
-      |    }
-      |    
-      |    entity department {
-      |     *dep_id: integer
-      |      name (dep_name): text
-      |}""".stripMargin
+      |  entity account (accounts) {
+      |   *id: uuid
+      |    name: text!
+      |    industry: text!
+      |    phoneNumber (phone_number): text
+      |    country: text!
+      |    uom: text!
+      |    enabled: bool!
+      |    plan: text!
+      |    paymentMethodExempt (payment_method_exempt): bool!
+      |    stripeCustomerId (stripe_customer_id): text
+      |    stripeSubscriptionId (stripe_subscription_id): text
+      |    stripeSubscriptionTripId (stripe_subscription_trip_id): text
+      |    stripeSubscriptionSmsId (stripe_subscription_sms_id): text
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    trialEndAt (trial_end_at): timestamp!
+      |    stores: [store]
+      |    users: [user]
+      |  }
+      |
+      |  entity place (places) {
+      |   *id: uuid
+      |    store (store_id): store!
+      |    latitude: float8!
+      |    longitude: float8!
+      |    address: text!
+      |    isFavorite (is_favorite): bool!
+      |    createdAt (created_at): timestamp!
+      |  }
+      |
+      |  entity virtualPhoneNumber (virtual_phone_numbers) {
+      |   *id: uuid
+      |    digits: text!
+      |  }
+      |
+      |  entity store (stores) {
+      |   *id: uuid
+      |    enabled: bool!
+      |    account (account_id): account!
+      |    name: text!
+      |    timezoneId (timezone_id): text!
+      |    place (place_id): place
+      |    color: text!
+      |    iconUrl (icon_url): text
+      |    markerUrl (marker_url): text
+      |    radiusBound (radius_bound): int4
+      |    virtualPhoneNumber (virtual_phone_number_id): virtualPhoneNumber!
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    users: [user] (users_stores)
+      |    vehicles: [vehicle]
+      |    workflows: [workflow]
+      |    trips: [trip]
+      |  }
+      |
+      |  entity user (users) {
+      |   *id: uuid
+      |    account (account_id): account!
+      |    role: text!
+      |    email: text!
+      |    emailVerified (email_verified): bool!
+      |    password: text!
+      |    firstName (first_name): text!
+      |    lastName (last_name): text!
+      |    language: text!
+      |    phoneNumber (phone_number): text!
+      |    fcmToken (fcm_token): text
+      |    enabled: bool!
+      |    loginToken (login_token): text!
+      |    lastLoginAt (last_login_at): timestamp
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    stores: [store] (users_stores)
+      |    vehicle: <vehicle.driver>
+      |  }
+      |
+      |  entity pendingInvitation (pending_invitations) {
+      |   *id: uuid
+      |    account (account_id): account!
+      |    role: text!
+      |    email: text!
+      |    stores: [store] (pending_invitations_stores)
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    expiresAt (expires_at): timestamp!
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |  }
+      |
+      |  entity users_stores {
+      |    user (user_id): user
+      |    store (store_id): store
+      |  }
+      |
+      |  entity pending_invitations_stores {
+      |    pendingInvitation (pending_invitation_id): pendingInvitation
+      |    store (store_id): store
+      |  }
+      |
+      |  entity vehicle (vehicles) {
+      |   *id: uuid
+      |    driver (driver_id): user
+      |    type: text!
+      |    enabled: bool!
+      |    seats: int4!
+      |    make: text!
+      |    model: text!
+      |    color: text!
+      |    licensePlate (license_plate): text!
+      |    store (store_id): store!
+      |    vehicleCoordinate (vehicle_coordinate_id): vehicleCoordinate
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    trips: [trip]
+      |  }
+      |
+      |  entity vehicleCoordinate (vehicle_coordinates) {
+      |   *id: uuid
+      |    vehicle (vehicle_id): vehicle!
+      |    driver (driver_id): user
+      |    latitude: float8!
+      |    longitude: float8!
+      |    altitude: float8!
+      |    accuracy: float8!
+      |    altitudeAccuracy (altitude_accuracy): float8!
+      |    heading: float8!
+      |    speed: float8!
+      |    createdAt (created_at): timestamp!
+      |  }
+      |
+      |  entity customer (customers) {
+      |   *id: uuid
+      |    store (store_id): store!
+      |    firstName (first_name): text
+      |    lastName (last_name): text
+      |    phoneNumber (phone_number): text!
+      |    email: text
+      |    language: text!
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    places: [place] (customers_places)
+      |    enabled: bool!
+      |  }
+      |
+      |  entity customers_places {
+      |    customer (customer_id): customer
+      |    place (place_id): place
+      |  }
+      |
+      |  entity messageTemplate (message_templates) {
+      |   *id: uuid
+      |    name: text!
+      |    enabled: bool!
+      |    type: text!
+      |    store (store_id): store!
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    locales: [messageTemplateLocale]
+      |  }
+      |
+      |  entity messageTemplateLocale (message_template_locales) {
+      |    *id: uuid
+      |    messageTemplate (message_template_id): messageTemplate!
+      |    language: text!
+      |    template: text!
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |  }
+      |
+      |  entity workflow (workflows) {
+      |   *id: uuid
+      |    store (store_id): store!
+      |    enabled: bool!
+      |    name: text!
+      |    description: text
+      |    steps: [workflowStep]
+      |    customerRequired (customer_required): bool!
+      |    emailRequired (email_required): bool!
+      |    defaultReturnTripWorkflow (default_return_trip_workflow): workflow
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |  }
+      |
+      |  entity workflowStep (workflow_steps) {
+      |   *id: uuid
+      |    workflow (workflow_id): workflow!
+      |    type: text!
+      |    name: text!
+      |    place (place_id): place
+      |    position: int4!
+      |    messageTemplate (message_template_id): messageTemplate
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |  }
+      |
+      |  entity trip (trips) {
+      |   *id: uuid
+      |    reference: text!
+      |    state: text!
+      |    position: int4!
+      |    seats: int4!
+      |    shortUrl (short_url): text!
+      |    customer (customer_id): customer!
+      |    store (store_id): store!
+      |    workflow (workflow_id): workflow!
+      |    vehicle (vehicle_id): vehicle
+      |    returnTrip (return_trip_id): trip
+      |    returnTripFor (return_trip_for_id): trip
+      |    createdAt (created_at): timestamp!
+      |    requestedAt (requested_at): timestamp
+      |    scheduledAt (scheduled_at): timestamp
+      |    confirmedAt (confirmed_at): timestamp
+      |    confirmedBy (confirmed_by): user
+      |    notifyAt (notify_at): timestamp
+      |    updatedAt (updated_at): timestamp
+      |    finishedAt (finished_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |    notes: [tripNote]
+      |    drivers: [user] (trips_drivers)
+      |    steps: [tripStep]
+      |  }
+      |
+      |  entity tripNote (trip_notes) {
+      |   *id: uuid
+      |    content: text!
+      |    trip (trip_id): trip!
+      |    createdAt (created_at): timestamp!
+      |    updatedAt (updated_at): timestamp
+      |    createdBy (created_by): user
+      |    updatedBy (updated_by): user
+      |  }
+      |
+      |  entity trips_drivers {
+      |    trip (trip_id): trip!
+      |    driver (driver_id): user!
+      |  }
+      |
+      |  entity tripStep (trip_steps) {
+      |   *id: uuid
+      |    type: text!
+      |    trip (trip_id): trip!
+      |    driver (driver_id): user
+      |    name: text!
+      |    place (place_id): place
+      |    imageUrl (image_url): text
+      |    position: int4!
+      |    vehicle (vehicle_id): vehicle
+      |    distance: float8
+      |    finishedAt (finished_at): timestamp
+      |    messageTemplate (message_template_id): messageTemplate
+      | }""".stripMargin
   )
 
 //  oql.trace = true
 
-  case class Department(name: String, dep_id: js.UndefOr[Int] = js.undefined)
-
-  import com.vinctus.sjs_utils.{map, DynamicMap, Mappable}
-  import com.vinctus.sjs_utils.Mappable.materializeMappable
-
   for {
-//    q <- oql.json("y {id b xs} [(xs {COUNT(*)}) = 1 AND EXISTS (xs [id = 2])]") // AND EXISTS (xs [id = 2])
-//    r <- oql.department.insert(Department("asdf"))
-    r <- oql.department.insert(map(name = "SKUNKWORKS"))
-    q <- oql.json("department")
+    q <- oql.queryMany("account [name IN :name]", Map("name" -> js.Array("demo")))
   } {
-    println(r)
     println(q)
-    conn.close()
   }
-
-  //  setTypeParser(20, (s: Any) => s.asInstanceOf[String].toDouble)
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("shuttlecontrol.erd"))
-//
-//  for {
-//    q1 <- oql.queryBuilder().query("organization <createdAt desc>").jsGetMany
-//  } {
-//    console.log(q1)
-//    conn.close()
-//  }
-
-//  process.env("TZ") = "UTC"
-//
-//  val conn = new PostgresConnection("localhost", 5432, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false)
-//  val oql = new OQL(conn, readFile("sc.erd"))
-//
-//  oql.trace = true
-//
-//  for {
-//    q <- oql.json("tenant [active and exists(stations [exists(trips [createdTime > '2020-09-04T17:30:36.673169Z'])])]")
-//  } {
-//    println(q)
-//    conn.close()
-//  }
-
-  //  val conn = new PostgresConnection("localhost", 5432, "postgres", "postgres", "docker", false)
-//  val oql = new OQL(conn, readFile("m2m.erd"))
-
-//  val conn = new RDBConnection(readFile("examples/northwind.tab"))
-//  val oql = new OQL(conn, readFile("examples/northwind.erd"))
-//
-//  oql.trace = true
-//
-//  for {
-////    q1 <- oql.json("Suppliers {CompanyName} [Products]")
-//    q1 <- oql.json("Products {SupplierID.CompanyName} [UnitPrice = 22]")
-//  } {
-//    println(q1)
-//    conn.close()
-//  }
-
-//  val conn = new RDBConnection(
-//    """
-//      |t
-//      | id: integer, pk  a: timestamp
-//      | 1                2020-09-29T13:02:14.338Z
-//      | 2                2020-09-29T13:02:35.699Z
-//      |""".stripMargin
-//  )
-//  val oql = new OQL(conn,
-//                    """
-//      |entity t {
-//      | *id: integer
-//      |  a: date
-//      |}
-//      |""".stripMargin)
-
-//  val conn = new RDBConnection(
-//    """
-//      |t
-//      | id: integer, pk  a: text
-//      | 1                asdf
-//      | 2                zxcv
-//      |""".stripMargin
-//  )
-//  val oql = new OQL(conn,
-//                    """
-//      |entity t {
-//      | *id: integer
-//      |  a: text
-//      |}
-//      |""".stripMargin)
-
-  //  oql.tenant.insert(Map("domain" -> "asdf", "active" -> true, "createdAt" -> new js.Date)).onComplete {
-//    case Failure(exception) => println(exception)
-//    case Success(value)     => println(value)
-//  }
-
-  /*
-  set() test
-   */
-//  for {
-//    q1 <- oql.json("user [id = 7]")
-//    _ <- oql.user.set(7, Map("firstName" -> "amoray", "lastName" -> "PREMIUM"))
-//    q2 <- oql.json("user [id = 7]")
-//  } {
-//    println(q1, q2)
-//    conn.close()
-//  }
-
-//  val qb = oql
-//    .queryBuilder()
-//    .query("""customer
-//             |  {id firstName lastName email language phoneNumber station {id name} createdAt}
-//             |  [station.id IN ('762225a5-b4ba-4933-8f3c-9092a25e8947', '68bd2f8b-3003-4e23-8f3c-a1f3ef0bd58b')]
-//             |  <createdAt DESC>""".stripMargin)
-//
-//  for {
-//    customers <- qb.offset(0).limit(10).getMany
-//    count <- qb.getCount
-//  } {
-//    println(customers)
-//    println(count)
-//    conn.close()
-//  }
-
-  /*
-  unlink() test
-   */
-//  oql.station.unlink(1, "users", 1).onComplete {
-//    case Failure(exception) => println(exception)
-//    case Success(value)     => println(value)
-//  }
-
-//  for {
-//    q1 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
-//    _ <- oql.station.unlink(1, "users", 2)
-//    q2 <- oql.json("station {id name users {id firstName lastName roles.roleName}}")
-//  } {
-//    println(q1, q2)
-//    conn.close()
-//  }
-
-  //  conn
-//    .query("insert into t (a, b) values ('zxcv', 789) returning id")
-//    .rowSet
-//    .onComplete {
-//      case Failure(exception) => throw exception
-//      case Success(value) =>
-//        println(value.next.apply(0))
-//        conn.close()
-//    }
-
-//  val conn = new RDBConnection(readFile("examples/un.tab"))
-//  val oql = new OQL(conn, readFile("examples/un.erd"))
-
-//  oql
-//  .raw("select * from users where user_type = 'DriverUser'", js.undefined.asInstanceOf[js.Array[js.Any]])
-//    .raw("select * from users where user_type = $1", js.Array("DriverUser"))
-//    .toFuture
-//    .map(js.JSON.stringify(_, null.asInstanceOf[js.Array[js.Any]], 2)) //_.toArray.toList.map(_.asInstanceOf[js.Dictionary[String]])
-//    .json("tenant [exists(stations [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])])]")
-//    .json("station [exists(users [email = 'cedrick+admin@shuttlecontrol.com'])]")
-//    .json("rep { name country.name }")
-//    .json("planet [name = :name]", Map("name" -> "Qo'noS"))
-//    .json("trip {createdTime} [createdTime >= current_date - interval '30 days']")
-
-//  val conn = employeesDB
-//  val oql = employeesER
-//
-//  oql
-//    .json("employee { name manager.name } [job_title = 'PRESIDENT']")
-
-  //  val conn = new PostgresConnection("postgres", "docker")
-
-//  val conn = ordersDB
-//  val oql = ordersER
-//
-//  oql
-//    .json(
-//      "order { sum(ord_amount) count(ord_amount) agent.agent_name } [ord_amount between 3000 and 4000] (agent.agent_name) <agent.agent_name>",
-//      conn)
-//    .json("order { ord_num &agent } [ord_amount between 3000 and 4000]")
-
-//  val conn = studentDB
-//  val oql = studentER
-//
-//  oql
-//    .queryBuilder(conn)
-//    .project("student", "name")
-//    .add(oql.queryBuilder(conn).project("classes").order("name", "ASC"))
-//    .json
-//    .json("student { * classes { * students } <name> } [name = 'John']")
-//    .json("enrollment { ^student { * classes } } [&class = 9]")
-//    .onComplete {
-//      case Failure(exception) => throw exception
-//      case Success(value) =>
-//        println(value)
-//        conn.close()
-//    }
 
 }
