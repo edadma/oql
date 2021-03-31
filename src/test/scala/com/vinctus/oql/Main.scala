@@ -36,7 +36,8 @@ object Main extends App {
 //  val conn = new RDBConnection(readFile("test/m2m.tab"))
 //  val oql = new OQL(conn, readFile("test/m2m.erd"))
 
-  val conn = new PostgresConnection("localhost", 5433, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false, 10)
+  val conn =
+    new PostgresConnection("localhost", 5433, "shuttlecontrol", "shuttlecontrol", "shuttlecontrol", false, 10000, 10)
   val oql = new OQL(
     conn,
     """

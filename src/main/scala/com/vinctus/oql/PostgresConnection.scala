@@ -1,7 +1,6 @@
 package com.vinctus.oql
 
 import typings.pg.mod.{Pool, PoolClient, PoolConfig, QueryArrayConfig}
-import typings.pg.pgStrings
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
@@ -14,14 +13,21 @@ class PostgresConnection(host: String,
                          database: String,
                          user: String,
                          password: String,
-                         ssl: js.Any,
+                         ssl: Boolean,
+                         idleTimeoutMillis: Int,
                          max: Int)
     extends Connection {
 
   private val pool = new Pool(
-    js.Dynamic
-      .literal(host = host, port = port, database = database, user = user, password = password, ssl = ssl, max = max)
-      .asInstanceOf[PoolConfig])
+    PoolConfig()
+      .setHost(host)
+      .setPort(port)
+      .setDatabase(database)
+      .setUser(user)
+      .setPassword(password)
+      .setSsl(ssl)
+      .setIdleTimeoutMillis(idleTimeoutMillis)
+      .setMax(max))
 
   def command(sql: String): ResultSet =
     new PostgresArrayResultSet(
