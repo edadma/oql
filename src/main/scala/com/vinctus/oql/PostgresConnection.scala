@@ -1,11 +1,13 @@
 package com.vinctus.oql
 
+import typings.node.tlsMod.ConnectionOptions
 import typings.pg.mod.{Pool, PoolClient, PoolConfig, QueryArrayConfig}
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import js.annotation.{JSExport, JSExportTopLevel}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.scalajs.js.|
 
 @JSExportTopLevel("PostgresConnection")
 class PostgresConnection(host: String,
@@ -13,7 +15,7 @@ class PostgresConnection(host: String,
                          database: String,
                          user: String,
                          password: String,
-                         ssl: Boolean,
+                         ssl: js.Any,
                          idleTimeoutMillis: Int,
                          max: Int)
     extends Connection {
@@ -25,7 +27,7 @@ class PostgresConnection(host: String,
       .setDatabase(database)
       .setUser(user)
       .setPassword(password)
-      .setSsl(ssl)
+      .setSsl(ssl.asInstanceOf[Boolean | ConnectionOptions])
       .setIdleTimeoutMillis(idleTimeoutMillis)
       .setMax(max))
 
