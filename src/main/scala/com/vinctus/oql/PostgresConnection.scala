@@ -15,7 +15,7 @@ class PostgresConnection(host: String,
                          database: String,
                          user: String,
                          password: String,
-                         ssl: Boolean|ConnectionOptions,
+                         ssl: js.Any,
                          idleTimeoutMillis: Int,
                          max: Int)
     extends Connection {
@@ -27,7 +27,7 @@ class PostgresConnection(host: String,
       .setDatabase(database)
       .setUser(user)
       .setPassword(password)
-      .setSsl(ssl)
+      .setSsl(ssl.asInstanceOf[Boolean | ConnectionOptions])
       .setIdleTimeoutMillis(idleTimeoutMillis)
       .setMax(max))
 
